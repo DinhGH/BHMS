@@ -1,8 +1,7 @@
 import "./App.css";
-import HomePageOwner from "./pages/HomePageOwner";
 
 function App() {
-  return <HomePageOwner />;
+  return <></>;
 }
 
 export default App;
