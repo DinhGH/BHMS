@@ -1,0 +1,176 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins&display=swap');
+
+* {
+    font-family: "Poppins", sans-serif;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+:root {
+    --white: #ffffff;
+    --grey-text: #666666;
+    --grey-border: #cccccc;
+}
+
+.signup-page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background-color: var(--white);
+    color: var(--secondary);
+    padding: 1.25rem;
+}
+
+.form-signup {
+    display: flex;
+    flex-direction: column;
+    margin-top: 1.875rem;
+    color: var(--grey-text);
+    width: 100%;
+    max-width: 51.25rem;
+}
+
+input {
+    margin-top: 0.3125rem;
+    padding: 0.9375rem;
+    border: 1.5px solid var(--grey-border);
+    border-radius: 0.75rem;
+    font-size: 1rem;
+    width: 100%;
+}
+
+.inp {
+    margin-bottom: 1.5rem;
+}
+
+.btn-hidepass {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.3125rem;
+}
+
+.btn-hidepass button {
+    border: none;
+    background: none;
+    color: var(--grey-text);
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+.btn-create {
+    margin: 1.25rem 0;
+    font-size: 0.9375rem;
+    text-align: center;
+}
+
+.btn-create button {
+    margin-top: 1rem;
+    width: 100%;
+    padding: 1rem;
+    background-color: var(--grey-border);
+    color: var(--white);
+    border: none;
+    border-radius: 3.125rem;
+    font-size: 1.125rem;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.3s;
+}
+
+.btn-create button:hover {
+    background-color: var(--primary); 
+}
+
+.btn-create button:active{
+    background-color: var(--secondary); 
+    transform: translateY(5px);
+}
+
+.signup-byanother {
+    margin-top: 1.25rem;
+    width: 100%;
+    max-width: 31.25rem;
+    font-size: 1rem;
+    text-align: center;
+}
+
+.another-btn {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 1.25rem;
+}
+
+.another-btn > button {
+    flex: 1;
+    padding: 0.75rem;
+    background: var(--white);
+    color: var(--secondary);
+    border: 1.5px solid var(--grey-border);
+    border-radius: 3.125rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.625rem;
+    font-size: 1rem;
+    white-space: nowrap;
+    transition: transform 0.5s ease, background-color 0.3s;    
+}
+
+.another-btn > button:active {
+    background-color: var(--light-bg);    
+}
+
+.another-btn > button:hover {
+    transform: translateY(-15px);
+}
+
+.another-btn img,
+.another-btn svg {
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
+.error-message {
+    color: #e74c3c; 
+    font-size: 0.875rem; 
+    margin-top: 0.3125rem;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    text-align: left; 
+}
+
+
+.input-error {
+    border: 1.5px solid #e74c3c !important; 
+    background-color: #fceae9; 
+}
+
+.toggle-pass-btn {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1rem;
+    color: var(--grey-text);
+}
+
+.toggle-pass-btn img {
+    width: 1.25rem; 
+}
+
+@media (max-width: 30rem) {
+    .another-btn {
+        flex-direction: column;
+    }
+    .another-btn > button {
+        width: 100%;
+    }
+}

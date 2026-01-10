@@ -1,0 +1,21 @@
+import React from 'react';
+
+export default function Navbar(){
+    return(
+      <nav className="navbar">
+        <div className="logo-section">
+          <img src="/images/logo.png" alt="Logo" className='logo-img'/>
+          <span className="logo-text">Boarding House Management System</span>
+        </div>
+        <div className="nav-links">
+          <a href="#home">Home</a>
+          <a href="#features">Our Features</a>
+          <a href="#pricing">Pricing</a>
+          <a href="#about">About Us</a>
+          <span className="divider"></span>
+          <button className="btn-reg">Register</button>
+          <button className="btn-login">Login</button>
+        </div>
+      </nav>
+    )
+}

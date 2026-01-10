@@ -1,0 +1,26 @@
+:root {
+  --primary: #2563EB;     /* Xanh dương chủ đạo */
+  --secondary: #1E293B;   /* Màu đen xanh (Text) */
+  --accent: #F59E0B;      /* Màu cam nhấn (Button/Icon) */
+  --light-bg: #F1F5F9;    /* Nền xám nhạt */
+  --white: #ffffff;
+  --grey: #B8B8B8;
+  --grey-text: #666666;
+}
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Inter', system-ui, sans-serif; 
+  scroll-behavior: smooth; 
+}
+
+body {
+  color: var(--secondary);
+  line-height: 1.6;
+}
+
+.container {
+  width: 100%;
+  overflow-x: hidden;
+}
