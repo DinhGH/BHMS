@@ -89,7 +89,7 @@ function Sidebar({ activeSection, setActiveSection }) {
         <div className="flex flex-col h-full">
           <div className="p-6 border-b border-gray-300">
             <div className="flex items-center gap-3">
-              <FaBuilding className="text-2xl text-black flex-shrink-0" />
+              <FaBuilding className="text-2xl text-black shrink-0" />
               {isOpen && (
                 <span className="text-xl font-bold text-black tracking-wider">
                   BHMS
@@ -110,7 +110,7 @@ function Sidebar({ activeSection, setActiveSection }) {
                 onClick={() => handleMenuClick(item.id)}
                 title={!isOpen ? item.label : ""}
               >
-                <span className="text-lg flex-shrink-0">{item.icon}</span>
+                <span className="text-lg shrink-0">{item.icon}</span>
                 {isOpen && (
                   <span className="text-sm font-medium truncate">
                     {item.label}
@@ -126,7 +126,7 @@ function Sidebar({ activeSection, setActiveSection }) {
               onClick={handleLogout}
               title={!isOpen ? "Logout" : ""}
             >
-              <FaSignOutAlt className="text-lg flex-shrink-0" />
+              <FaSignOutAlt className="text-lg shrink-0" />
               {isOpen && <span className="text-sm font-medium">Log Out</span>}
             </button>
           </div>
