@@ -4,6 +4,7 @@ generator client {
 
 datasource db {
   provider = "mysql"
+  url      = env("DATABASE_URL")
 }
 
 model BoardingHouse {
@@ -118,7 +119,7 @@ model User {
   role         User_role
   status       User_status    @default(ACTIVE)
   createdAt    DateTime       @default(now())
-  updatedAt    DateTime
+  updatedAt    DateTime       @updatedAt
   Notification Notification[]
   Owner        Owner?
   Report       Report[]

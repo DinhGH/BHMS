@@ -11,6 +11,9 @@ export default function SignUp() {
         password: ""
     });
 
+    const [alert, setAlert] = useState({ show: false, type: 'success', message: '', closing: false });
+    const ALERT_TRANSITION = 600; // must match CSS transition duration (ms)
+
     const [showPassword, setShowPassword] = useState(false);
 
 const [errors, setErrors] = useState({});
@@ -55,34 +58,41 @@ const validateForm = () => {
         e.preventDefault();
         if (validateForm()) {
             try {
-                // Gọi API lên server backend
-                const response = await fetch('http://localhost:4000/api/signup', {
+                const resp = await fetch('http://localhost:4000/api/signup', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(formData), // Gửi dữ liệu đi
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        fullName: formData.fullName,
+                        email: formData.email,
+                        password: formData.password
+                    })
                 });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    // Thành công
-                    alert("Đăng ký thành công!");
-                    console.log("Success:", data);
-                    // Chuyển hướng sang trang login (nếu cậu dùng react-router-dom)
-                    // window.location.href = "/login"; 
+                const data = await resp.json();
+                if (resp.ok) {
+                    setFormData({ fullName: "", email: "", password: "" });
+                    // show, then close with animation, then redirect
+                    const display = 1200;
+                    setAlert({ show: true, type: 'success', message: 'Register Successfully! Wait for going to logging in page...', closing: false });
+                    setTimeout(() => setAlert(a => ({ ...a, closing: true })), display);
+                    setTimeout(() => {
+                        setAlert({ show: false, type: 'success', message: '', closing: false });
+                        window.location.href = '/login';
+                    }, display + ALERT_TRANSITION);
                 } else {
-                    // Thất bại (ví dụ: trùng email)
-                    alert(data.message || "Đăng ký thất bại");
+                    const display = 3500;
+                    setAlert({ show: true, type: 'error', message: data.error || 'Register Failed!', closing: false });
+                    setTimeout(() => setAlert(a => ({ ...a, closing: true })), display);
+                    setTimeout(() => setAlert({ show: false, type: 'error', message: '', closing: false }), display + ALERT_TRANSITION);
                 }
-
-            } catch (error) {
-                console.error("Error:", error);
-                alert("Lỗi kết nối đến server!");
+            } catch (err) {
+                console.error(err);
+                const display = 3500;
+                setAlert({ show: true, type: 'error', message: 'Can not connect to the server!', closing: false });
+                setTimeout(() => setAlert(a => ({ ...a, closing: true })), display);
+                setTimeout(() => setAlert({ show: false, type: 'error', message: '', closing: false }), display + ALERT_TRANSITION);
             }
         } else {
-            console.log("Form có lỗi, vui lòng kiểm tra lại.");
+            console.log("There are errors in Form!, Please checking again.");
         }
     };
 
@@ -91,6 +101,18 @@ const validateForm = () => {
             <h1>Create An Account</h1>
             <p>Already have an account? <a href="/login">Log in</a></p>
             
+            {alert.show && (
+                <div className="signup-alert">
+                    <div className={`alert alert--${alert.type} ${alert.closing ? 'alert--closing' : ''}`} role="alert">
+                        <span>{alert.message}</span>
+                        <button className="alert__close" onClick={() => {
+                            setAlert(a => ({ ...a, closing: true }));
+                            setTimeout(() => setAlert({ show: false, type: a.type, message: '', closing: false }), ALERT_TRANSITION);
+                        }} aria-label="Close">×</button>
+                    </div>
+                </div>
+            )}
+
             <form className="form-signup" onSubmit={handleSubmit}>
                 <label htmlFor="fullName">What should we call you?</label>
                 <input
