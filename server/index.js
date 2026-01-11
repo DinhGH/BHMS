@@ -3,7 +3,7 @@ dotenv.config();
 
 import express from "express";
 import cors from "cors";
-import { prisma } from "./lib/prisma.js";
+import userRouter from "./src/routers/admin.routes.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -21,6 +21,8 @@ app.use(express.json());
 // });
 
 // Start server
+app.use("/api/users", userRouter);
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
