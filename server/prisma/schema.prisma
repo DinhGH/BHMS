@@ -6,6 +6,91 @@ datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
 }
+<<<<<<< HEAD
+=======
+//////////////////////////////////////////////////
+// ENUMS
+//////////////////////////////////////////////////
+
+enum Role {
+  ADMIN
+  OWNER
+  TENANT
+}
+
+enum UserStatus {
+  ACTIVE
+  BLOCKED
+}
+
+enum InvoiceStatus {
+  PENDING
+  PAID
+  OVERDUE
+}
+
+enum ReportStatus {
+  PENDING
+  PROCESSING
+  RESOLVED
+}
+
+enum PaymentMethod {
+  GATEWAY
+  QR_TRANSFER
+}
+
+//////////////////////////////////////////////////
+// USERS & AUTH
+//////////////////////////////////////////////////
+
+model User {
+  id            Int        @id @default(autoincrement())
+  email         String     @unique
+  passwordHash  String?
+  fullName      String?
+  provider      String?    // local | google | facebook
+  role          Role
+  status        UserStatus @default(ACTIVE)
+
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  owner         Owner?
+  tenant        Tenant?
+
+  reports       Report[]
+  notifications Notification[]
+}
+
+//////////////////////////////////////////////////
+// OWNER
+//////////////////////////////////////////////////
+
+model Owner {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @unique
+  user      User     @relation(fields: [userId], references: [id])
+
+  houses    BoardingHouse[]
+}
+
+//////////////////////////////////////////////////
+// TENANT
+//////////////////////////////////////////////////
+
+model Tenant {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @unique
+  user      User     @relation(fields: [userId], references: [id])
+
+  invoices  Invoice[]
+}
+
+//////////////////////////////////////////////////
+// BOARDING HOUSE & ROOM
+//////////////////////////////////////////////////
+>>>>>>> 6f58779ed2c4631fb4a87994c9fa1c80376bea51
 
 model BoardingHouse {
   id          Int      @id @default(autoincrement())
@@ -15,6 +100,7 @@ model BoardingHouse {
   electricFee Float
   waterFee    Float
   services    Json?
+<<<<<<< HEAD
   createdAt   DateTime @default(now())
   Owner       Owner    @relation(fields: [ownerId], references: [id])
   Room        Room[]
@@ -43,12 +129,84 @@ model Invoice {
   @@index([tenantId], map: "Invoice_tenantId_fkey")
 }
 
+=======
+
+  owner       Owner    @relation(fields: [ownerId], references: [id])
+  rooms       Room[]
+
+  createdAt   DateTime @default(now())
+}
+
+model Room {
+  id            Int      @id @default(autoincrement())
+  houseId       Int
+  name          String
+  price         Float
+  isLocked      Boolean  @default(false)
+
+  electricMeter Float    @default(0)
+  waterMeter    Float    @default(0)
+
+  house         BoardingHouse @relation(fields: [houseId], references: [id])
+  invoices      Invoice[]
+
+  createdAt     DateTime @default(now())
+}
+
+//////////////////////////////////////////////////
+// INVOICE & PAYMENT
+//////////////////////////////////////////////////
+
+model Invoice {
+  id            Int           @id @default(autoincrement())
+
+  roomId        Int
+  tenantId      Int
+
+  roomPrice     Float
+  electricCost  Float
+  waterCost     Float
+  serviceCost   Float
+  totalAmount   Float
+
+  status        InvoiceStatus @default(PENDING)
+  month         Int
+  year          Int
+
+  createdAt     DateTime      @default(now())
+
+  room          Room          @relation(fields: [roomId], references: [id])
+  tenant        Tenant        @relation(fields: [tenantId], references: [id])
+  payments      Payment[]
+
+  @@unique([roomId, month, year]) // tránh tạo trùng hóa đơn
+}
+
+model Payment {
+  id            Int           @id @default(autoincrement())
+  invoiceId     Int
+  method        PaymentMethod
+  amount        Float
+  proofImage    String?
+  confirmed     Boolean       @default(false)
+
+  createdAt     DateTime      @default(now())
+
+  invoice       Invoice       @relation(fields: [invoiceId], references: [id])
+}
+
+//////////////////////////////////////////////////
+// NOTIFICATION
+//////////////////////////////////////////////////
+
+>>>>>>> 6f58779ed2c4631fb4a87994c9fa1c80376bea51
 model Notification {
   id        Int      @id @default(autoincrement())
   userId    Int
   title     String
   content   String
   isRead    Boolean  @default(false)
+<<<<<<< HEAD
   createdAt DateTime @default(now())
   User      User     @relation(fields: [userId], references: [id])
 
@@ -160,4 +318,27 @@ enum User_status {
 enum User_active {
   YES
   NO
+=======
+
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+//////////////////////////////////////////////////
+// REPORT
+//////////////////////////////////////////////////
+
+model Report {
+  id        Int          @id @default(autoincrement())
+  senderId  Int
+  target    String       // OWNER / ADMIN
+  content   String
+  images    Json?
+  status    ReportStatus @default(PENDING)
+
+  createdAt DateTime     @default(now())
+
+  sender    User         @relation(fields: [senderId], references: [id])
+>>>>>>> 6f58779ed2c4631fb4a87994c9fa1c80376bea51
 }

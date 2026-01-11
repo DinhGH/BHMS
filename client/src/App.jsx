@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { Routes, Route, useLocation } from 'react-router-dom'; 
 import { useEffect, useState } from 'react';
 import LandingPage from './pages/LandingPage/landing-page.jsx';
@@ -33,3 +34,12 @@ function App() {
 }
 
 export default App;
+=======
+import "./App.css";
+
+function App() {
+  return <></>;
+}
+
+export default App;
+>>>>>>> 6f58779ed2c4631fb4a87994c9fa1c80376bea51

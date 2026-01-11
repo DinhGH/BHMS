@@ -340,7 +340,6 @@
     margin-bottom: 15px;
 }
 
-/* Mô tả */
 .popup-description {
     font-size: 16px;
     color: #666;
@@ -348,7 +347,6 @@
     line-height: 1.6;
 }
 
-/* Danh sách tính năng */
 .popup-features {
     list-style: none;
     padding: 0;
@@ -431,8 +429,8 @@
 }
 
 .review-card img{
-  width: 94px;
-  height: 114px;
+  width: 210px;
+  height: 174px;
   padding: 4px;
   border-radius: 20%;
   margin-bottom: 16px;

@@ -1,0 +1,22 @@
+{
+    "sqltools.connections": [
+        {
+            "mysqlOptions": {
+                "authProtocol": "default",
+                "enableSsl": "Disabled"
+            },
+            "ssh": "Disabled",
+            "previewLimit": 50,
+            "server": "mainline.proxy.rlwy.net",
+            "port": 34064,
+            "sshOptions": {
+                "port": 22
+            },
+            "driver": "MySQL",
+            "name": "db",
+            "database": "bhms",
+            "username": "root",
+            "password": "WhCdOVBMQYdebCiLACFurkHFNcviHzRF"
+        }
+    ]
+}

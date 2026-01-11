@@ -261,7 +261,6 @@ const validateForm = () => {
                         className="social-btn google-btn"
                         onClick={(e) => {
                             e.preventDefault();
-                            // Trigger GoogleLogin component
                             const googleBtnContainer = document.querySelector('.google-login-wrapper');
                             const googleBtn = googleBtnContainer?.querySelector('[role="button"]');
                             googleBtn?.click();

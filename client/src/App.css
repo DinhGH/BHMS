@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 :root {
   --primary: #2563EB;     /* Xanh dương chủ đạo */
   --secondary: #1E293B;   /* Màu đen xanh (Text) */
@@ -55,3 +56,6 @@ body {
     transform: translateY(-20px);
   }
 }
+=======
+@import "tailwindcss";
+>>>>>>> 6f58779ed2c4631fb4a87994c9fa1c80376bea51
