@@ -27,7 +27,7 @@ const reviews = [
     },
     {
       id:4,
-      img: "/images/avatartd.jpg",
+      img: "/images/avatarht.jpg",
       name: "Nguyen Duy Quy",
       location: "Thanh Khe, Da Nang",
       rating: "4.8/5",
@@ -35,7 +35,7 @@ const reviews = [
     },
     {
       id:5,
-      img: "/images/avatartd.jpg",
+      img: "/images/avatardh.jpg",
       name: "Tran Cong Danh",
       location: "Thanh Khe, Da Nang",
       rating: "4.7/5",
@@ -43,14 +43,14 @@ const reviews = [
     },
     {
       id:6,
-      img: "/images/avatartd.jpg",
+      img: "/images/avatarht.jpg",
       name: "Le Minh Tuan",
       location: "Hai Chau, Da Nang",
       rating: "4.9/5",
       comment: "I highly recommend this system to all boarding house owners. The automation features have significantly reduced my workload."
     },{
       id:7,
-      img: "/images/avatartd.jpg",
+      img: "/images/avatardh.jpg",
       name: "Ly Quoc Phong",
       location: "Ninh Kieu, Can Tho",
       rating: "4.8/5",
@@ -58,7 +58,7 @@ const reviews = [
     },
     {
       id:8,
-      img: "/images/avatartd.jpg",
+      img: "/images/avatarht.jpg",
       name: "Tran Minh Hieu",
       location: "Dong Da, Ha Noi",
       rating: "4.7/5",
