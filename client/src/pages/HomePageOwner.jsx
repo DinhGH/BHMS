@@ -78,7 +78,7 @@ function HomePageOwner() {
       {/* Overlay to close panels */}
       {(showNotifications || showProfile) && (
         <div
-          className="fixed inset-0 bg-black/10 z-40"
+          className="fixed inset-0 bg-transparent z-40 bottom-0"
           onClick={() => {
             setShowNotifications(false);
             setShowProfile(false);
@@ -88,12 +88,16 @@ function HomePageOwner() {
 
       {/* Notifications Panel */}
       <div
-        className={`fixed top-14 right-0 bottom-0 w-full sm:w-96 bg-white border-l border-slate-200 z-50 transform transition-transform duration-300 ease-in-out ${
+        className={`fixed right-0 bottom-0 w-full sm:w-80 bg-white border-l border-slate-200 z-50 transform transition-transform duration-300 ease-in-out shadow-xl ${
           showNotifications ? "translate-x-0" : "translate-x-full"
         }`}
+        style={{
+          height: "calc(100vh - 65px)",
+          top: "65px",
+        }}
       >
         <div className="h-full flex flex-col">
-          <div className="h-12 flex items-center px-4 border-b border-slate-200 font-semibold text-sm sm:text-base text-slate-900">
+          <div className="h-12 flex items-center justify-center px-4 border-b border-slate-200 font-semibold text-sm sm:text-base text-slate-900">
             Notifications
           </div>
           <div className="p-4 border-b border-slate-200">
@@ -124,9 +128,13 @@ function HomePageOwner() {
 
       {/* Profile Panel */}
       <div
-        className={`fixed top-14 right-0 bottom-0 w-full sm:w-96 bg-white border-l border-slate-200 z-50 transform transition-transform duration-300 ease-in-out ${
+        className={`fixed right-0 bottom-0 w-full sm:w-80 bg-white border-l border-slate-200 z-50 transform transition-transform duration-300 ease-in-out shadow-xl ${
           showProfile ? "translate-x-0" : "translate-x-full"
         }`}
+        style={{
+          height: "calc(100vh - 65px)",
+          top: "65px",
+        }}
       >
         <div className="h-full flex flex-col">
           <div className="h-12 flex items-center px-4 border-b border-slate-200 font-semibold text-sm sm:text-base text-slate-900">
