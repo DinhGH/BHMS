@@ -4,6 +4,8 @@ dotenv.config();
 import express from "express";
 import cors from "cors";
 import { prisma } from "./lib/prisma.js";
+import notificationRoutes from "./routes/notifications.js";
+import tenantRoutes from "./routes/tenant.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -15,10 +17,9 @@ app.use(
 );
 app.use(express.json());
 
-// Sample route
-// app.get("/", (req, res) => {
-//   res.send("Welcome to the BHMS server!");
-// });
+// API routes
+app.use("/api/notifications", notificationRoutes);
+app.use("/api/tenant", tenantRoutes);
 
 // Start server
 app.listen(PORT, () => {
