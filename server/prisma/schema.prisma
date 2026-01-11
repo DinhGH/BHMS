@@ -117,13 +117,16 @@ model User {
   fullName     String?
   provider     String?
   role         User_role
-  status       User_status    @default(ACTIVE)
+  status       User_status    @default(NO_RENTING)
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
+  active       User_active    @default(YES)
   Notification Notification[]
   Owner        Owner?
   Report       Report[]
   Tenant       Tenant?
+
+  @@index([email])
 }
 
 enum Payment_method {
@@ -143,13 +146,18 @@ enum User_role {
   TENANT
 }
 
-enum User_status {
-  ACTIVE
-  BLOCKED
-}
-
 enum Invoice_status {
   PENDING
   PAID
   OVERDUE
+}
+
+enum User_status {
+  RENTING
+  NO_RENTING
+}
+
+enum User_active {
+  YES
+  NO
 }

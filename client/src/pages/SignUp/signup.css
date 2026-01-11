@@ -105,7 +105,7 @@ input {
     margin-top: 1.25rem;
 }
 
-.another-btn > button {
+.social-btn {
     flex: 1;
     padding: 0.75rem;
     background: var(--white);
@@ -122,12 +122,21 @@ input {
     transition: transform 0.5s ease, background-color 0.3s;    
 }
 
-.another-btn > button:active {
+.social-btn:active {
     background-color: var(--light-bg);    
 }
 
-.another-btn > button:hover {
+.social-btn:hover {
     transform: translateY(-15px);
+}
+
+.google-btn {
+    flex: 1;
+}
+
+.google-login-wrapper {
+    flex: 1;
+    display: none !important;
 }
 
 .another-btn img,
@@ -166,7 +175,6 @@ input {
     width: 1.25rem; 
 }
 
-/* Notification / alert styles */
 .signup-alert {
     width: 100%;
     max-width: 51.25rem;
@@ -188,7 +196,7 @@ input {
     animation: slideDown 320ms ease both;
     transition: opacity 600ms cubic-bezier(.2,.9,.2,1), transform 600ms cubic-bezier(.2,.9,.2,1), max-height 600ms cubic-bezier(.2,.9,.2,1), padding 600ms cubic-bezier(.2,.9,.2,1);
     overflow: hidden;
-    max-height: 160px; /* allows smooth collapse */
+    max-height: 160px; 
 }
 
 .alert span { flex: 1; font-size: 0.95rem; }
@@ -220,7 +228,6 @@ input {
     to { transform: translateY(0); opacity: 1 }
 }
 
-/* When hiding, apply smooth fade and upward motion */
 .alert--closing {
     opacity: 0 !important;
     transform: translateY(-8px) !important;
@@ -230,7 +237,6 @@ input {
     max-height: 0 !important;
 }
 
-/* Responsive adjustments for small screens */
 @media (max-width: 480px) {
     .signup-alert { padding: 0 1rem; }
     .alert {

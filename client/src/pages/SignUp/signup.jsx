@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import './signup.css';
-// Import icon từ thư viện
 import { FcGoogle } from "react-icons/fc"; 
 import { FaFacebookF, FaEye, FaEyeSlash } from "react-icons/fa"; 
+import { GoogleLogin } from '@react-oauth/google';
+import axios from 'axios';
 
 export default function SignUp() {
     const [formData, setFormData] = useState({
@@ -12,8 +13,7 @@ export default function SignUp() {
     });
 
     const [alert, setAlert] = useState({ show: false, type: 'success', message: '', closing: false });
-    const ALERT_TRANSITION = 600; // must match CSS transition duration (ms)
-
+    const ALERT_TRANSITION = 600; 
     const [showPassword, setShowPassword] = useState(false);
 
 const [errors, setErrors] = useState({});
@@ -36,21 +36,18 @@ const validateForm = () => {
         let newErrors = {};
         const pass = formData.password;
 
-        // Kiểm tra password
         if (!pass) {
             newErrors.password = "Please enter your password.";
         } else if (pass.length < 8) {
             newErrors.password = "Password must be at least 8 characters.";
         } else if (!/[0-9]/.test(pass)) {
             newErrors.password = "Password must contain at least one number.";
-        } else if (!/[!@#$%^&*(),.?":{}|<>]/.test(pass)) { // Kiểm tra ký tự đặc biệt
+        } else if (!/[!@#$%^&*(),.?":{}|<>]/.test(pass)) { 
             newErrors.password = "Password must contain at least one symbol.";
         }
 
-        // Cập nhật state lỗi
         setErrors(newErrors);
 
-        // Nếu không có lỗi nào (object rỗng) thì trả về true
         return Object.keys(newErrors).length === 0;
     };
 
@@ -70,7 +67,6 @@ const validateForm = () => {
                 const data = await resp.json();
                 if (resp.ok) {
                     setFormData({ fullName: "", email: "", password: "" });
-                    // show, then close with animation, then redirect
                     const display = 1200;
                     setAlert({ show: true, type: 'success', message: 'Register Successfully! Wait for going to logging in page...', closing: false });
                     setTimeout(() => setAlert(a => ({ ...a, closing: true })), display);
@@ -95,6 +91,97 @@ const validateForm = () => {
             console.log("There are errors in Form!, Please checking again.");
         }
     };
+
+    React.useEffect(() => {
+        window.fbAsyncInit = function() {
+            window.FB.init({
+                appId      : '1855106328705397', 
+                cookie     : true,
+                xfbml      : true,
+                version    : 'v18.0'
+            });
+        };
+
+        (function(d, s, id) {
+            var js, fjs = d.getElementsByTagName(s)[0];
+            if (d.getElementById(id)) return;
+            js = d.createElement(s); js.id = id;
+            js.src = "https://connect.facebook.net/en_US/sdk.js";
+            fjs.parentNode.insertBefore(js, fjs);
+        }(document, 'script', 'facebook-jssdk'));
+    }, []);
+
+    const handleFacebookLogin = () => {
+    console.log('handleFacebookLogin called'); // Debug
+    console.log('FB object:', window.FB); // Debug
+    
+    if (!window.FB) {
+        console.error('Facebook SDK not loaded');
+        setAlert({ 
+            show: true, 
+            type: 'error', 
+            message: 'Facebook SDK not loaded yet!, Please wait...', 
+            closing: false 
+        });
+        return;
+    }
+
+    console.log('Calling FB.login...'); // Debug
+    
+    window.FB.login((response) => {
+        console.log('FB.login response:', response); // Debug
+        
+        if (response.authResponse) {
+            const { accessToken, userID } = response.authResponse;
+            console.log('Auth successful, token:', accessToken); // Debug
+            
+            window.FB.api('/me', { fields: 'id,name,email,picture' }, async (userInfo) => {
+                console.log("FB User Info:", userInfo); // Debug
+                
+                try {
+                    const res = await axios.post(
+                        'http://localhost:4000/api/facebook-signup',
+                        {
+                            token: accessToken,
+                            facebookId: userID,
+                            email: userInfo.email,
+                            name: userInfo.name
+                        }
+                    );
+                    
+                    console.log('Backend response:', res.data); // Debug
+                    
+                    localStorage.setItem('authToken', res.data.token);
+                    setAlert({ 
+                        show: true, 
+                        type: 'success', 
+                        message: 'Login with Facebook Successfully! Wait for going to loggin in page...', 
+                        closing: false 
+                    });
+                    setTimeout(() => window.location.href = '/login', 1500);
+                    
+                } catch (error) {
+                    console.error('Backend error:', error); // Debug
+                    const msg = error.response?.data?.error || 'Facebook login failed!';
+                    setAlert({ 
+                        show: true, 
+                        type: 'error', 
+                        message: msg, 
+                        closing: false 
+                    });
+                }
+            });
+        } else {
+            console.log('User cancelled or not authorized');
+            setAlert({ 
+                show: true, 
+                type: 'error', 
+                message: 'You cancelled Facebook sign up', 
+                closing: false 
+            });
+        }
+    }, { scope: 'public_profile,email' });
+};
 
     return (
         <div className="signup-page">
@@ -169,22 +256,64 @@ const validateForm = () => {
             <div className="signup-byanother">
                 <p>OR Continue with</p>
                 <div className="another-btn">
-                    {/* Nút Google */}
-                    <button type="button" className="social-btn">
+                    <button 
+                        type="button" 
+                        className="social-btn google-btn"
+                        onClick={(e) => {
+                            e.preventDefault();
+                            // Trigger GoogleLogin component
+                            const googleBtnContainer = document.querySelector('.google-login-wrapper');
+                            const googleBtn = googleBtnContainer?.querySelector('[role="button"]');
+                            googleBtn?.click();
+                        }}
+                    >
                         <div className="icon-wrapper">
                             <FcGoogle size={22} />
                         </div>
                         <span>Google</span>
                     </button>
 
-                    {/* Nút Facebook */}
-                    <button type="button" className="social-btn">
-                        <div className="icon-wrapper">
-                             {/* Facebook icon gốc màu đen, t chỉnh màu xanh cho giống thật */}
-                            <FaFacebookF size={20} color="#1877F2" />
-                        </div>
-                        <span>Facebook</span>
-                    </button>
+                    <div className="google-login-wrapper" style={{ display: 'none' }}>
+                        <GoogleLogin
+                            onSuccess={async (credentialResponse) => {
+                                try {
+                                    const response = await axios.post(
+                                        'http://localhost:4000/api/google-signup',
+                                        { token: credentialResponse.credential }
+                                    );
+
+                                    localStorage.setItem('authToken', response.data.token);
+                                    
+                                    setAlert({ show: true, type: 'success', message: 'Register with Google Successfully! Wait for going to logging in page...', closing: false });
+                                    setTimeout(() => {
+                                        window.location.href = '/login';
+                                    }, 1500);
+                                } catch (error) {
+                                    console.error('Google login failed:', error);
+                                    setAlert({ show: true, type: 'error', message: 'Google login failed: ' + (error.response?.data?.error || error.message), closing: false });
+                                }
+                            }}
+                            onError={() => {
+                                console.log('Login Failed');
+                                setAlert({ show: true, type: 'error', message: 'Google login failed!', closing: false });
+                            }}
+                        />
+                    </div>
+
+<button 
+    type="button" 
+    className="social-btn facebook-btn" 
+    onClick={(e) => {
+        e.preventDefault();
+        console.log('Facebook button clicked'); // Debug log
+        handleFacebookLogin();
+    }}
+>
+    <div className="icon-wrapper">
+        <FaFacebookF size={20} color="#1877F2" />
+    </div>
+    <span>Facebook</span>
+</button>
                 </div>
             </div>
         </div>

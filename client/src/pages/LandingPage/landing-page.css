@@ -6,8 +6,7 @@
   padding: 1.2rem 5%;
   background: rgba(255, 255, 255, 0.95);
   position: fixed;
-  width: 100%;
-  top: 0;
+  inset: 0 0 auto 0;
   z-index: 1000;
   box-shadow: 0 2px 15px rgba(0,0,0,0.05);
 }
@@ -177,7 +176,7 @@
 
 /* 5. FEATURES SECTION */
 .features {
-  padding: 160px 10%;
+  padding: 100px 10%;
   text-align: center;
   min-height: 100vh;
   background: var(--white);
@@ -226,7 +225,7 @@
 
 /* 6. PRICING SECTION */
 .pricing {
-  padding: 160px 10%;
+  padding: 100px 10%;
   background: var(--light-bg);
   min-height: 100vh;
   text-align: center;
@@ -258,7 +257,6 @@
 }
 .pricing-card img {
     width: 100%;
-    height: 450px;
     object-fit: cover;
     margin: 20px 0;
     border-radius: 8px;
@@ -279,10 +277,105 @@
     background: #334155;
 }
 
+.popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.popup-content {
+    min-height: 90vh;
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.popup-close {
+    position: absolute;
+    top: -5px;
+    right: 15px;
+    background: transparent;
+    border: none;
+    font-size: 50px;
+    cursor: pointer;
+    color: #666;
+}
+
+.popup-close:hover {
+    color: #000;
+}
+
+.popup-content img {
+    width: 100%;
+    height: 323px;
+    object-fit: cover;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.popup-content h3 {
+    font-size: 28px;
+    margin-bottom: 10px;
+    color: var(--secondary);
+}
+
+/* Giá */
+.popup-price {
+    font-size: 24px;
+    font-weight: bold;
+    color: #007bff;
+    margin-bottom: 15px;
+}
+
+/* Mô tả */
+.popup-description {
+    font-size: 16px;
+    color: #666;
+    margin-bottom: 20px;
+    line-height: 1.6;
+}
+
+/* Danh sách tính năng */
+.popup-features {
+    list-style: none;
+    padding: 0;
+}
+
+.popup-features li {
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+    font-size: 15px;
+    color: #555;
+}
+
+.popup-features li:before {
+    content: "✓ ";
+    color: #28a745;
+    font-weight: bold;
+    margin-right: 10px;
+}
+
+.popup-features li:last-child {
+    border-bottom: none;
+}
+
 /* 8. ABOUT SECTION */
 
 .about {
-  padding: 160px 10%;
+  padding: 100px 10%;
   text-align: center;
   min-height: 100vh;
   background: var(--white);
@@ -325,7 +418,7 @@
 
 .reviews{
   position: relative;
-  padding: 160px 10%;
+  padding: 100px 10%;
   text-align: center;
   min-height: 100vh;
   background: var(--light-bg);
@@ -419,7 +512,7 @@
 .footer {
   background: #334155;
   color: var(--white);
-  padding: 40px 10%;
+  padding: 30px 5%;
   display: flex;
   flex-direction: column;
   text-align: center;

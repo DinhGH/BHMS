@@ -1,6 +1,8 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export default function Navbar(){
+    const navigate = useNavigate();
     return(
       <nav className="navbar">
         <div className="logo-section">
@@ -13,7 +15,7 @@ export default function Navbar(){
           <a href="#pricing">Pricing</a>
           <a href="#about">About Us</a>
           <span className="divider"></span>
-          <button className="btn-reg">Register</button>
+          <button className="btn-reg" onClick={() => navigate('/signup')}>Register</button>
           <button className="btn-login">Login</button>
         </div>
       </nav>

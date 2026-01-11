@@ -1,15 +1,34 @@
-import { Routes, Route } from 'react-router-dom'; // Nhớ cài: npm i react-router-dom
+import { Routes, Route, useLocation } from 'react-router-dom'; 
+import { useEffect, useState } from 'react';
 import LandingPage from './pages/LandingPage/landing-page.jsx';
 import './App.css';
 import SignUp from './pages/SignUp/signup.jsx';
-// Sau này ông sẽ import thêm trang Owner ở đây
-// import OwnerLayout from './layouts/OwnerLayout';
 
 function App() {
+  const location = useLocation();
+  const [displayLocation, setDisplayLocation] = useState(location);
+  const [transitionStage, setTransitionStage] = useState('enter');
+
+  useEffect(() => {
+    if (location !== displayLocation) {
+      setTransitionStage('exit');
+    }
+  }, [location, displayLocation]);
+
   return (
-    <Routes>
-      <Route path="/" element={<SignUp />} />
-    </Routes>
+    <div className={`page-${transitionStage}`}
+      onAnimationEnd={() => {
+        if (transitionStage === 'exit') {
+          setDisplayLocation(location);
+          setTransitionStage('enter');
+        }
+      }}
+    >
+      <Routes location={displayLocation}>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/signup" element={<SignUp />} />
+      </Routes>
+    </div>
   );
 }
 
