@@ -1,4 +1,3 @@
-import { useState } from "react";
 import {
   FaBuilding,
   FaDoorOpen,
@@ -13,9 +12,7 @@ import {
   FaTimes,
 } from "react-icons/fa";
 
-function Sidebar({ activeSection, setActiveSection }) {
-  const [isOpen, setIsOpen] = useState(true);
-
+function Sidebar({ activeSection, setActiveSection, isOpen, setIsOpen }) {
   const menuItems = [
     {
       id: "dashboard",
@@ -61,6 +58,7 @@ function Sidebar({ activeSection, setActiveSection }) {
 
   const handleMenuClick = (id) => {
     setActiveSection(id);
+    setIsOpen(false); // Close sidebar on mobile after selection
   };
 
   const handleLogout = () => {
@@ -70,81 +68,68 @@ function Sidebar({ activeSection, setActiveSection }) {
 
   return (
     <>
-      <button
-        className={`fixed top-4 left-4 z-50 md:hidden bg-gray-300 text-black p-2 rounded-lg hover:bg-gray-400 transition-colors ${
-          isOpen ? "hidden" : "block"
-        }`}
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        <FaBars className="text-xl" />
-      </button>
-
+      {/* Sidebar */}
       <aside
         className={`${
           isOpen ? "translate-x-0" : "-translate-x-full"
-        } md:translate-x-0 fixed md:relative z-40 h-full bg-white border-r border-gray-300 transition-all duration-300 ${
-          isOpen ? "w-64" : "w-0 md:w-20"
-        }`}
+        } lg:translate-x-0 fixed lg:relative z-40 h-full bg-white border-r border-gray-300 transition-transform duration-300 w-64 lg:w-64`}
       >
         <div className="flex flex-col h-full">
-          <div className="p-6 border-b border-gray-300">
+          {/* Logo/Header */}
+          <div className="p-4 sm:p-5 md:p-6 border-b border-gray-300 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <FaBuilding className="text-2xl text-black shrink-0" />
-              {isOpen && (
-                <span className="text-xl font-bold text-black tracking-wider">
-                  BHMS
-                </span>
-              )}
+              <FaBuilding className="text-xl sm:text-2xl text-black shrink-0" />
+              <span className="text-lg sm:text-xl font-bold text-black tracking-wider">
+                BHMS
+              </span>
             </div>
-          </div>
-
-          <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-            {menuItems.map((item) => (
-              <button
-                key={item.id}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
-                  activeSection === item.id
-                    ? "bg-gray-200 text-black shadow-lg border-l-4 border-black"
-                    : "text-gray-600 hover:bg-gray-100 hover:text-black"
-                }`}
-                onClick={() => handleMenuClick(item.id)}
-                title={!isOpen ? item.label : ""}
-              >
-                <span className="text-lg shrink-0">{item.icon}</span>
-                {isOpen && (
-                  <span className="text-sm font-medium truncate">
-                    {item.label}
-                  </span>
-                )}
-              </button>
-            ))}
-          </nav>
-
-          <div className="p-3 border-t border-gray-300">
             <button
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-600 hover:bg-red-200 hover:text-red-800 transition-all duration-200"
-              onClick={handleLogout}
-              title={!isOpen ? "Logout" : ""}
-            >
-              <FaSignOutAlt className="text-lg shrink-0" />
-              {isOpen && <span className="text-sm font-medium">Log Out</span>}
-            </button>
-          </div>
-
-          {isOpen && (
-            <button
-              className="absolute top-4 right-4 md:hidden text-gray-600 hover:text-black"
+              className="lg:hidden text-gray-600 hover:text-black"
               onClick={() => setIsOpen(false)}
             >
               <FaTimes className="text-xl" />
             </button>
-          )}
+          </div>
+
+          {/* Navigation Menu */}
+          <nav className="flex-1 p-2 sm:p-3 space-y-1 overflow-y-auto">
+            {menuItems.map((item) => (
+              <button
+                key={item.id}
+                className={`w-full flex items-center gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg transition-all duration-200 text-left ${
+                  activeSection === item.id
+                    ? "bg-gray-200 text-black shadow-md border-l-4 border-black"
+                    : "text-gray-600 hover:bg-gray-100 hover:text-black"
+                }`}
+                onClick={() => handleMenuClick(item.id)}
+              >
+                <span className="text-base sm:text-lg shrink-0">
+                  {item.icon}
+                </span>
+                <span className="text-xs sm:text-sm font-medium truncate">
+                  {item.label}
+                </span>
+              </button>
+            ))}
+          </nav>
+
+          {/* Logout Button */}
+          <div className="p-2 sm:p-3 border-t border-gray-300">
+            <button
+              className="w-full flex items-center gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg text-gray-600 hover:bg-red-100 hover:text-red-800 transition-all duration-200"
+              onClick={handleLogout}
+            >
+              <FaSignOutAlt className="text-base sm:text-lg shrink-0" />
+              <span className="text-xs sm:text-sm font-medium">Log Out</span>
+            </button>
+          </div>
         </div>
       </aside>
 
+      {/* Mobile Overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-30 z-30 md:hidden"
+          className="fixed inset-0 bg-black bg-opacity-40 z-30 lg:hidden"
           onClick={() => setIsOpen(false)}
         ></div>
       )}
