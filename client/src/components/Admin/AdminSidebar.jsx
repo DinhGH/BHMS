@@ -34,6 +34,10 @@ export default function AdminSidebar({ user }) {
     },
   ];
 
+  const filteredMenuItems = menuItems.filter((item) =>
+    item.label.toLowerCase().includes(search.toLowerCase().trim())
+  );
+
   // xu ly logout
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -91,10 +95,11 @@ export default function AdminSidebar({ user }) {
 
         {/* Search */}
         <div className="flex ">
-          <div className="w-64">
+          <div className="w-full">
             <SearchInput
               value={search}
               onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search menu..."
             />
           </div>
         </div>
@@ -102,23 +107,29 @@ export default function AdminSidebar({ user }) {
 
       {/* Menu */}
       <nav className="flex-1 p-4">
-        {menuItems.map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            end={item.end}
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors ${
-                isActive
-                  ? "bg-blue-50 text-blue-600"
-                  : "text-gray-700 hover:bg-gray-100"
-              }`
-            }
-          >
-            <span className="text-xl">{item.icon}</span>
-            <span className="font-medium">{item.label}</span>
-          </NavLink>
-        ))}
+        {filteredMenuItems.length > 0 ? (
+          filteredMenuItems.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.end}
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors ${
+                  isActive
+                    ? "bg-blue-50 text-blue-600"
+                    : "text-gray-700 hover:bg-gray-100"
+                }`
+              }
+            >
+              <span className="text-xl">{item.icon}</span>
+              <span className="font-medium">{item.label}</span>
+            </NavLink>
+          ))
+        ) : (
+          <div className="text-center text-gray-500 py-4 text-sm">
+            No matching menu items
+          </div>
+        )}
       </nav>
 
       {/* Footer */}
