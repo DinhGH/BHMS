@@ -1,7 +1,8 @@
 import { prisma } from "../lib/prisma.js";
 import bcrypt from "bcryptjs";
-import { Role, User_status, User_active } from "@prisma/client";
+import pkg from "@prisma/client";
 
+const { Role, User_status, User_active } = pkg;
 /**
  * GET /api/users
  * Lấy danh sách user
