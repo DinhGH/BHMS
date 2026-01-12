@@ -14,7 +14,7 @@ export default function Hero(){
           </div>
         </div>
         <div className="hero-image">
-          <img src="/images/hero-banner.jpg" alt="Dashboard Preview" className='hero-img'/>
+          <img src="/images/hr-bnr.webp" alt="Dashboard Preview" className='hero-img'/>
         </div>
       </header>
     )

@@ -70,16 +70,11 @@
   background-color: var(--secondary);
   margin: 0 5px;
 }
-.btn-reg {
-  background: transparent;
-  color: var(--secondary);
-  border: 2px solid var(--secondary);
-}
-
-.btn-login {
+.btn-login .btn-reg {
   background: var(--xam-btn);
   color: var(--secondary);
   box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);
+
 }
 
 .btn-reg:hover{
