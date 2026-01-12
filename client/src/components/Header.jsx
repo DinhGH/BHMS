@@ -13,7 +13,9 @@ export default function Header({
           {/* Logo */}
           <div className="flex items-center gap-2 text-slate-900">
             <img src="./icon.png" alt="BHMS Logo" className="w-6 h-6" />
-            <span className="font-bold tracking-wide">BHMS</span>
+            <span className="font-bold tracking-wide">
+              Boarding House Management System
+            </span>
           </div>
 
           {/* Right */}
