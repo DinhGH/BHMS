@@ -1,8 +1,13 @@
 import "./App.css";
+import { Routes, Route } from "react-router-dom";
 import HomePageOwner from "./pages/HomePageOwner";
 
 function App() {
-  return <HomePageOwner />;
+  return (
+    <Routes>
+      <Route path="/owner" element={<HomePageOwner />} />
+    </Routes>
+  );
 }
 
 export default App;
