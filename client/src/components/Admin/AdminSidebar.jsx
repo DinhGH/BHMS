@@ -1,12 +1,15 @@
 import React, { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import SearchInput from "./SearchInput.jsx";
-import { CiLogout, CiSettings } from "react-icons/ci";
-import { IoIosNotificationsOutline } from "react-icons/io";
-import { MdOutlineSpaceDashboard } from "react-icons/md";
-import { FaRegUserCircle } from "react-icons/fa";
-import { TbReportSearch } from "react-icons/tb";
+import { CiLogout } from "react-icons/ci";
+import {
+  FaTachometerAlt,
+  FaUsers,
+  FaBell,
+  FaExclamationCircle,
+} from "react-icons/fa";
 
+import { AiFillSetting } from "react-icons/ai";
 export default function AdminSidebar({ user }) {
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState(2);
@@ -16,18 +19,18 @@ export default function AdminSidebar({ user }) {
     {
       to: "/admin",
       label: "Dashboard",
-      icon: <MdOutlineSpaceDashboard className="h-6 w-6" />,
+      icon: <FaTachometerAlt className="h-6 w-6" />,
       end: true,
     },
     {
       to: "/admin/users",
       label: "Users",
-      icon: <FaRegUserCircle className="h-6 w-6" />,
+      icon: <FaUsers className="h-6 w-6" />,
     },
     {
       to: "/admin/report",
       label: "Report",
-      icon: <TbReportSearch className="w-6 h-6" />,
+      icon: <FaExclamationCircle className="w-6 h-6" />,
     },
   ];
 
@@ -71,13 +74,13 @@ export default function AdminSidebar({ user }) {
             className="p-2 hover:bg-gray-100 rounded-full"
             onClick={handleSettings}
           >
-            <CiSettings className="h-6 w-6" />
+            <AiFillSetting className="h-6 w-6" />
           </button>
           <button
             className="p-2 hover:bg-gray-100 rounded-full relative"
             onClick={handleNotifications}
           >
-            <IoIosNotificationsOutline className="h-6 w-6" />
+            <FaBell className="h-6 w-6" />
             {notifications > 0 && (
               <span className="absolute top-0 right-0 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
                 {notifications}

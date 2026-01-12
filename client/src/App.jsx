@@ -1,6 +1,6 @@
 import React from "react";
 import { Routes, Route } from "react-router-dom";
-import Users from "./pages/Admin/User.jsx";
+import Users from "./pages/Admin/AdminUser.jsx";
 import AdminLayout from "./layouts/AdminLayout.jsx";
 
 function App() {

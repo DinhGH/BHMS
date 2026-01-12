@@ -41,6 +41,7 @@ export default function AdminUsers() {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelected([]);
   }, [filter, search, currentPage]);
 
@@ -135,6 +136,7 @@ export default function AdminUsers() {
       });
 
       fetchUsers(); // reload list
+      // eslint-disable-next-line no-unused-vars
     } catch (err) {
       alert("Save failed");
     }
@@ -256,7 +258,7 @@ export default function AdminUsers() {
         {/* Bottom actions */}
         <div className="flex justify-between items-center mt-6">
           <button
-            className="bg-blue-600 text-white px-6 py-2 rounded"
+            className="bg-gray-300 hover:bg-blue-600 text-white px-6 py-2 rounded"
             onClick={() => {
               setForm(defaultForm);
               setOpen(true);
