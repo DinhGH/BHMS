@@ -2,7 +2,8 @@
 // Context để quản lý authentication state
 
 import React, { createContext, useState, useEffect } from 'react';
-import { getToken, getCurrentUser, isAuthenticated } from '../utils/authService';
+import { useNavigate } from 'react-router-dom';
+import { getToken, getCurrentUser, isAuthenticated, logout as logoutService } from '../utils/authService';
 
 export const AuthContext = createContext();
 
@@ -11,6 +12,7 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const navigate = useNavigate();
 
   // Load user data từ localStorage khi component mount
   useEffect(() => {
@@ -41,11 +43,21 @@ export const AuthProvider = ({ children }) => {
     setIsLoggedIn(true);
   };
 
-  // Logout function
-  const logout = () => {
+  // Logout function - cấp thấp, chỉ reset state
+  const contextLogout = () => {
+    // Clear localStorage
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    
+    // Reset state
     setUser(null);
     setToken(null);
     setIsLoggedIn(false);
+  };
+
+  // Logout function - cấp cao, gọi API server
+  const logout = async () => {
+    await logoutService(navigate, contextLogout);
   };
 
   // Update user function

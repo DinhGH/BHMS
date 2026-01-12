@@ -23,6 +23,17 @@ const authenticateToken = async (req, res, next) => {
       );
     }
 
+    // Kiểm tra token có trong blacklist không
+    const blacklistedToken = await prisma.tokenBlacklist.findUnique({
+      where: { token }
+    });
+
+    if (blacklistedToken) {
+      return res.status(401).json(
+        errorResponse('Token đã bị vô hiệu hoá. Vui lòng đăng nhập lại')
+      );
+    }
+
     // Verify token
     const decoded = verifyToken(token);
 
@@ -36,7 +47,7 @@ const authenticateToken = async (req, res, next) => {
         lastName: true,
         avatar: true,
         phone: true,
-        isActive: true
+        active: true
       }
     });
 

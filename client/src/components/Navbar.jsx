@@ -1,12 +1,7 @@
-import { useNavigate } from 'react-router-dom';
-import { logout } from '../utils/authService';
+import { useLogout } from '../hooks/useLogout';
 
 const Navbar = () => {
-  const navigate = useNavigate();
-
-  const handleLogout = async () => {
-    await logout(navigate);
-  };
+  const handleLogout = useLogout();
 
   return (
     <nav className="navbar">

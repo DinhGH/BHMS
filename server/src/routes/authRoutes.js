@@ -180,14 +180,47 @@ router.get('/profile', authenticateToken, async (req, res) => {
 
 /**
  * POST /api/auth/logout
- * Logout (client side xoá token)
+ * Logout - blacklist token and invalidate session
  */
-router.post('/logout', authenticateToken, (req, res) => {
-  // JWT không cần server-side logout, nhưng có thể thêm logic ở đây
-  // ví dụ: invalidate token, clear cookies, etc.
-  return res.status(200).json(
-    successResponse('Đăng xuất thành công')
-  );
+router.post('/logout', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const token = req.headers.authorization?.split(' ')[1];
+
+    if (!token) {
+      return res.status(400).json(
+        errorResponse('Token không tìm thấy')
+      );
+    }
+
+    // Decode token để lấy expiration time
+    const jwtDecode = require('jsonwebtoken').decode;
+    const decoded = jwtDecode(token);
+    const expiresAt = new Date(decoded.exp * 1000);
+
+    // Add token to blacklist
+    const { PrismaClient } = require('@prisma/client');
+    const prisma = new PrismaClient();
+
+    await prisma.tokenBlacklist.create({
+      data: {
+        token,
+        userId,
+        expiresAt
+      }
+    });
+
+    await prisma.$disconnect();
+
+    return res.status(200).json(
+      successResponse('Đăng xuất thành công')
+    );
+  } catch (error) {
+    console.error('Lỗi trong POST /logout:', error);
+    return res.status(500).json(
+      errorResponse('Lỗi server: ' + error.message)
+    );
+  }
 });
 
 module.exports = router;

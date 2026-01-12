@@ -131,8 +131,21 @@ model User {
   Owner        Owner?
   Report       Report[]
   Tenant       Tenant?
+  TokenBlacklist TokenBlacklist[]
 
   @@index([email])
+}
+
+model TokenBlacklist {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique
+  userId    Int
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  User      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 enum Payment_method {

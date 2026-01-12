@@ -135,12 +135,16 @@ export const getUserProfile = async () => {
 };
 
 /**
- * Logout user
+ * Logout user - gọi API server để invalidate token
+ * @param {function} navigate - React Router navigate function (optional)
+ * @param {function} contextLogout - Context logout function (optional) 
+ * @returns {Promise<object>} Response object
  */
-export const logout = async (navigate) => {
+export const logout = async (navigate = null, contextLogout = null) => {
   try {
     const token = localStorage.getItem('token');
 
+    // Call server logout endpoint
     if (token) {
       await fetch(`${API_URL}/auth/logout`, {
         method: 'POST',
@@ -151,10 +155,17 @@ export const logout = async (navigate) => {
       });
     }
 
+    // Clear localStorage
     localStorage.removeItem('token');
     localStorage.removeItem('user');
 
-    if (navigate) {
+    // Call context logout if provided
+    if (contextLogout && typeof contextLogout === 'function') {
+      contextLogout();
+    }
+
+    // Navigate to login if function provided
+    if (navigate && typeof navigate === 'function') {
       navigate('/login');
     }
 
@@ -164,16 +175,24 @@ export const logout = async (navigate) => {
     };
   } catch (error) {
     console.error('Lỗi khi đăng xuất:', error);
+    
+    // Always clear local data even if API call fails
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+
+    // Call context logout if provided
+    if (contextLogout && typeof contextLogout === 'function') {
+      contextLogout();
+    }
     
-    if (navigate) {
+    // Navigate to login if function provided
+    if (navigate && typeof navigate === 'function') {
       navigate('/login');
     }
 
     return {
-      success: false,
-      message: 'Lỗi kết nối server'
+      success: true,
+      message: 'Đăng xuất thành công (local)'
     };
   }
 };
