@@ -6,7 +6,7 @@ export default function Navbar(){
     return(
       <nav className="navbar">
         <div className="logo-section">
-          <img src="/images/logo.png" alt="Logo" className='logo-img'/>
+          <img src="/images/icon.png" alt="Logo" className='logo-img'/>
           <span className="logo-text">Boarding House Management System</span>
         </div>
         <div className="nav-links">

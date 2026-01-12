@@ -72,13 +72,13 @@
 }
 .btn-reg {
   background: transparent;
-  color: var(--primary);
-  border: 2px solid var(--primary);
+  color: var(--secondary);
+  border: 2px solid var(--secondary);
 }
 
 .btn-login {
-  background: var(--primary);
-  color: var(--white);
+  background: var(--xam-btn);
+  color: var(--secondary);
   box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);
 }
 
@@ -87,7 +87,6 @@
 }
 
 .btn-login:hover {
-  background: #1d4ed8;
   transform: translateY(-2px);
 }
 
@@ -127,7 +126,7 @@
 
 .btn-getstart {
   padding: 14px 32px;
-  background: var(--accent);
+  background: var(--xam-btn);
   color: var(--white);
   border: none;
   border-radius: 8px;
@@ -225,151 +224,136 @@
 
 /* 6. PRICING SECTION */
 .pricing {
-  padding: 100px 10%;
-  background: var(--light-bg);
-  min-height: 100vh;
-  text-align: center;
+    padding: 60px 20px;
+    text-align: center;
+    color: var(--secondary);
+    background-color: var(--light-bg);
+}
+
+.pricing h2 {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+}
+
+.pricing > p {
+    margin-bottom: 40px;
 }
 
 .pricing-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 30px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 30px;
+    max-width: 1200px;
+    margin: 0 auto;
 }
 
 .pricing-card {
-  background: var(--white);
-  padding: 40px;
-  border-radius: 16px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s ease;
+    background: var(--white);
+    border-radius: 12px;
+    padding: 30px;
+    text-align: left;
+    position: relative;
+    border: 1px solid #333;
+    transition: transform 0.3s ease;
 }
-.pricing-grid:has(.pricing-card:hover) .pricing-card:not(:hover) {
-  opacity: 0.4;
-  filter: blur(2px);
-  transform: scale(0.98);
+
+.pricing-card.featured {
+    background: var(--white);
+    border: 2px solid #333;
 }
 
 .pricing-card:hover {
-  transform: scale(1.05);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-  z-index: 10;
-}
-.pricing-card img {
-    width: 100%;
-    object-fit: cover;
-    margin: 20px 0;
-    border-radius: 8px;
+    transform: translateY(-20px);
 }
 
-.pricing-card button {
-    width: 100%;
-    padding: 12px;
-    margin-top: 20px;
-    background: var(--secondary);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-}
-
-.pricing-card button:hover {
-    background: #334155;
-}
-
-.popup-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.7);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-}
-
-.popup-content {
-    min-height: 90vh;
-    background: white;
-    padding: 30px;
-    border-radius: 15px;
-    max-width: 500px;
-    width: 90%;
-    max-height: 80vh;
-    overflow-y: auto;
-    position: relative;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-}
-
-.popup-close {
+.pricing-badge {
     position: absolute;
-    top: -5px;
-    right: 15px;
-    background: transparent;
-    border: none;
-    font-size: 50px;
-    cursor: pointer;
-    color: #666;
-}
-
-.popup-close:hover {
-    color: #000;
-}
-
-.popup-content img {
-    width: 100%;
-    height: 323px;
-    object-fit: cover;
-    border-radius: 10px;
-    margin-bottom: 20px;
-}
-
-.popup-content h3 {
-    font-size: 28px;
-    margin-bottom: 10px;
-    color: var(--secondary);
-}
-
-/* Giá */
-.popup-price {
-    font-size: 24px;
+    top: 20px;
+    right: 20px;
+    background: var(--xam-btn);
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-size: 0.75rem;
     font-weight: bold;
-    color: #007bff;
+}
+
+.pricing-card h3 {
+    font-size: 1.8rem;
     margin-bottom: 15px;
 }
 
-/* Mô tả */
-.popup-description {
-    font-size: 16px;
-    color: #666;
+.pricing-price {
     margin-bottom: 20px;
-    line-height: 1.6;
 }
 
-/* Danh sách tính năng */
-.popup-features {
+.price-amount {
+    font-size: 3rem;
+    font-weight: bold;
+    display: block;
+}
+
+.price-currency {
+    font-size: 0.9rem;
+    color: #999;
+}
+
+.pricing-description {
+    margin-bottom: 20px;
+    font-size: 1rem;
+}
+
+.pricing-button {
+    
+    width: 100%;
+    padding: 15px;
+    border: 1px solid var(--secondary);
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    margin-bottom: 25px;
+    transition: all 0.3s ease;
+}
+
+.pricing-button.primary {
+    background: var(--white);
+}
+
+.pricing-button.primary:hover {
+    background: var(--xam-btn);
+}
+
+.pricing-button.secondary {
+    background: white;
+    color: #1a1a2e;
+}
+
+.pricing-button.secondary:hover {
+    background: #f0f0f0;
+}
+
+.pricing-features {
     list-style: none;
     padding: 0;
+    margin: 0;
 }
 
-.popup-features li {
-    padding: 10px 0;
-    border-bottom: 1px solid #eee;
-    font-size: 15px;
-    color: #555;
+.pricing-features li {
+    padding: 12px 0;
+    border-bottom: 1px solid #333;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
 }
 
-.popup-features li:before {
-    content: "✓ ";
-    color: #28a745;
-    font-weight: bold;
-    margin-right: 10px;
-}
-
-.popup-features li:last-child {
+.pricing-features li:last-child {
     border-bottom: none;
+}
+
+.feature-icon {
+    color: #5b5bff;
+    font-weight: bold;
+    flex-shrink: 0;
 }
 
 /* 8. ABOUT SECTION */

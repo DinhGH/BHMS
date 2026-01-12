@@ -3,7 +3,7 @@ export default function Footer(){
         <footer className="footer">
         <div className="up-footer">
           <div className="logo-block">
-          <img src="/images/logo.png" alt="Logo" />
+          <img src="/images/icon.png" alt="Logo" />
           <span>Boarding House Management System</span>
           <div className="logo-links">
   {/* Facebook */}

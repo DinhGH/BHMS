@@ -222,6 +222,310 @@ input {
     border: 1px solid #f1a6a6;
     color: #c0392b;
 }
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    width: 100%;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    margin-bottom: 0.3125rem;
+}
+
+.form-group .inp {
+    margin-bottom: 0;
+}
+
+.form-group .error-message {
+    margin-top: 0.3125rem;
+}
+
+/* Custom Select Styling */
+.custom-select-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.custom-select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-color: var(--white);
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23666666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.875rem center;
+    background-size: 1.25rem;
+    padding-right: 3rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.custom-select:hover {
+    border-color: #999;
+}
+
+.custom-select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.custom-select option {
+    padding: 0.75rem;
+    background-color: var(--white);
+    color: var(--secondary);
+}
+
+.custom-select option:hover {
+    background-color: #f0f0f0;
+}
+
+.custom-select option:checked {
+    background-color: var(--primary);
+    color: var(--white);
+}
+
+/* Avatar Upload Styles */
+.avatar-upload-section {
+    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.avatar-upload-container {
+    margin-top: 0.625rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.avatar-upload-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.625rem;
+    width: 150px;
+    height: 150px;
+    border: 2px dashed var(--grey-border);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background-color: #f9f9f9;
+}
+
+.avatar-upload-label:hover {
+    border-color: var(--primary);
+    background-color: #f0f0f0;
+    transform: scale(1.05);
+}
+
+.avatar-upload-label svg {
+    color: var(--grey-text);
+    transition: color 0.3s ease;
+}
+
+.avatar-upload-label:hover svg {
+    color: var(--primary);
+}
+
+.avatar-upload-label span {
+    font-size: 0.875rem;
+    color: var(--grey-text);
+    font-weight: 500;
+}
+
+.avatar-preview {
+    position: relative;
+    width: 150px;
+    height: 150px;
+}
+
+.avatar-preview img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--grey-border);
+    transition: border-color 0.3s ease;
+}
+
+.avatar-preview:hover img {
+    border-color: var(--primary);
+}
+
+.remove-avatar-btn {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: #e74c3c;
+    color: white;
+    border: 2px solid white;
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.remove-avatar-btn:hover {
+    background-color: #c0392b;
+    transform: scale(1.1);
+}
+
+/* Required asterisk */
+.required {
+    color: #e74c3c;
+    margin-left: 0.25rem;
+    font-weight: bold;
+}
+
+/* Hint text adjustments */
+.hint-text {
+    font-size: 0.875rem;
+    color: var(--grey-text);
+    margin-top: 0.3125rem;
+    margin-bottom: 0.5rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+    
+    .form-group .inp {
+        margin-bottom: 1.5rem;
+    }
+}
+
+@media (max-width: 30rem) {
+    .avatar-upload-label,
+    .avatar-preview {
+        width: 120px;
+        height: 120px;
+    }
+    
+    .avatar-upload-label span {
+        font-size: 0.75rem;
+    }
+    
+    .remove-avatar-btn {
+        width: 28px;
+        height: 28px;
+        font-size: 1.25rem;
+    }
+}
+
+.custom-select-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.custom-select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    width: 100%;
+    margin-top: 0.3125rem;
+    padding: 0.9375rem;
+    padding-right: 3rem;
+    border: 1.5px solid var(--grey-border);
+    border-radius: 0.75rem;
+    font-size: 1rem;
+    font-family: "Poppins", sans-serif;
+    color: var(--secondary);
+    background-color: var(--white);
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23666666' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.875rem center;
+    background-size: 1.125rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+/* Placeholder style for select */
+.custom-select option[value=""] {
+    color: #999;
+}
+
+.custom-select:focus {
+    outline: none;
+    border-color: var(--secondary);
+}
+
+.custom-select:hover {
+    border-color: #999;
+}
+
+/* When select has a value (not placeholder) */
+.custom-select:not([value=""]) {
+    color: var(--secondary);
+}
+
+/* Option styling */
+.custom-select option {
+    padding: 0.75rem;
+    background-color: var(--white);
+    color: var(--secondary);
+    font-size: 1rem;
+}
+
+.custom-select option:first-child {
+    color: #999;
+}
+
+/* Error state for select */
+.custom-select.input-error {
+    border: 1.5px solid #e74c3c !important;
+    background-color: #fceae9;
+}
+
+/* Form Row - Phone and Gender */
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    width: 100%;
+    margin-bottom: 1.5rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    margin-bottom: 0;
+    color: var(--grey-text);
+}
+
+.form-group .inp {
+    margin-bottom: 0;
+}
+
+.form-group .error-message {
+    margin-top: 0.3125rem;
+    margin-bottom: 0;
+}
+
+/* Remove margin from Phone input to align with Gender */
+.form-group input.inp {
+    margin-bottom: 0;
+}
+
 
 @keyframes slideDown {
     from { transform: translateY(-8px); opacity: 0 }
