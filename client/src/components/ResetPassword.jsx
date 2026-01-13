@@ -11,15 +11,26 @@ export default function ResetPassword({ onBackToLogin, onResetComplete }) {
   const [errors, setErrors] = useState({})
   const [loading, setLoading] = useState(false)
 
-  const validate = () => {
-    const e = {}
-    if (!otp.trim()) e.otp = 'OTP code is required'
-    if (!password) e.password = 'Password is required'
-    else if (password.length < 8) e.password = 'Password must be at least 8 characters'
-    if (confirm !== password) e.confirm = "Passwords don't match"
-    setErrors(e)
-    return Object.keys(e).length === 0
+  const validatePassword = (value) => {
+  return /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(value)
+}
+
+const validate = () => {
+  const e = {}
+  if (!otp.trim()) e.otp = 'OTP code is required'
+
+  if (!password) {
+    e.password = 'Password is required'
+  } else if (!validatePassword(password)) {
+    e.password = 'Password must be at least 8 characters and include 1 uppercase letter, 1 number, and 1 special character'
   }
+
+  if (confirm !== password) e.confirm = "Passwords don't match"
+
+  setErrors(e)
+  return Object.keys(e).length === 0
+}
+
 
   const handleSubmit = async (e) => {
     e.preventDefault()
