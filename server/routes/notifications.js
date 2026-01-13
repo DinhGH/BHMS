@@ -1,8 +1,15 @@
 import { Router } from "express";
-import { getNotifications } from "../controllers/notificationsController.js";
+import {
+  getNotifications,
+  markAsRead,
+} from "../controllers/notificationsController.js";
 
 const router = Router();
 
-router.get("/", getNotifications);
+// Get all notifications for a user
+router.get("/:userId", getNotifications);
+
+// Mark notification as read
+router.patch("/:notificationId/read", markAsRead);
 
 export default router;

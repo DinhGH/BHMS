@@ -6,20 +6,20 @@ import {
   FaExclamationCircle,
   FaUser,
   FaBell,
-  FaSignOutAlt,
 } from "react-icons/fa";
-import Header from "../components/Header";
-import NotificationsPanel from "../components/NotificationsPanel";
+import Header from "../../components/Header";
+import NotificationsPanel from "../../components/NotificationsPanel";
+import ProfilePanel from "../../components/ProfilePanel";
+import { useAuth } from "../../hooks/useAuth";
 
 export default function TenantHome() {
-  const user = {
-    id: 1,
-    name: "User Name",
-    email: "user@example.com",
-    phone: "+84 912 345 678",
-  }; // TODO: replace with real auth
+  const { user, logout } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+
+  if (!user) {
+    return <div>Loading...</div>;
+  }
 
   const toggleNotifications = () => {
     setShowNotifications((prev) => {
@@ -35,6 +35,42 @@ export default function TenantHome() {
       if (next) setShowNotifications(false);
       return next;
     });
+  };
+
+  const handleLogout = () => {
+    console.log("User logged out");
+    logout();
+    // TODO: Redirect to login page
+  };
+
+  const handleViewProfile = () => {
+    console.log("View profile clicked");
+    toggleProfile();
+  };
+
+  const handleSettings = () => {
+    console.log("Settings clicked");
+    // TODO: Navigate to settings page
+  };
+
+  const handleViewRoomDetail = () => {
+    console.log("View room detail clicked");
+    // TODO: Navigate to room detail page
+  };
+
+  const handleViewInvoice = () => {
+    console.log("View invoice clicked");
+    // TODO: Navigate to invoice page
+  };
+
+  const handlePaymentHistory = () => {
+    console.log("Payment history clicked");
+    // TODO: Navigate to payment history page
+  };
+
+  const handleReportIssue = () => {
+    console.log("Report issue clicked");
+    // TODO: Open report issue modal or navigate to page
   };
 
   return (
@@ -57,7 +93,10 @@ export default function TenantHome() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
           {/* View Room Detail */}
-          <div className="rounded-lg bg-white border border-slate-200 p-4 sm:p-5 md:p-6 hover:shadow-lg hover:border-slate-400 transition-all duration-200 cursor-pointer">
+          <div
+            onClick={handleViewRoomDetail}
+            className="rounded-lg bg-white border border-slate-200 p-4 sm:p-5 md:p-6 hover:shadow-lg hover:border-slate-400 transition-all duration-200 cursor-pointer"
+          >
             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-black flex items-center justify-center text-white mb-3 sm:mb-4">
               <MdHomeRepairService size={20} className="sm:w-6 sm:h-6" />
             </div>
@@ -70,7 +109,10 @@ export default function TenantHome() {
           </div>
 
           {/* View Invoice */}
-          <div className="rounded-lg bg-white border border-slate-200 p-4 sm:p-5 md:p-6 hover:shadow-lg hover:border-slate-400 transition-all duration-200 cursor-pointer">
+          <div
+            onClick={handleViewInvoice}
+            className="rounded-lg bg-white border border-slate-200 p-4 sm:p-5 md:p-6 hover:shadow-lg hover:border-slate-400 transition-all duration-200 cursor-pointer"
+          >
             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-slate-800 flex items-center justify-center text-white mb-3 sm:mb-4">
               <FaReceipt size={20} className="sm:w-6 sm:h-6" />
             </div>
@@ -83,7 +125,10 @@ export default function TenantHome() {
           </div>
 
           {/* Payment History */}
-          <div className="rounded-lg bg-white border border-slate-200 p-4 sm:p-5 md:p-6 hover:shadow-lg hover:border-slate-400 transition-all duration-200 cursor-pointer">
+          <div
+            onClick={handlePaymentHistory}
+            className="rounded-lg bg-white border border-slate-200 p-4 sm:p-5 md:p-6 hover:shadow-lg hover:border-slate-400 transition-all duration-200 cursor-pointer"
+          >
             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-slate-700 flex items-center justify-center text-white mb-3 sm:mb-4">
               <FaHistory size={20} className="sm:w-6 sm:h-6" />
             </div>
@@ -96,7 +141,10 @@ export default function TenantHome() {
           </div>
 
           {/* Report Issue */}
-          <div className="rounded-lg bg-white border border-slate-200 p-4 sm:p-5 md:p-6 hover:shadow-lg hover:border-slate-400 transition-all duration-200 cursor-pointer">
+          <div
+            onClick={handleReportIssue}
+            className="rounded-lg bg-white border border-slate-200 p-4 sm:p-5 md:p-6 hover:shadow-lg hover:border-slate-400 transition-all duration-200 cursor-pointer"
+          >
             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-black flex items-center justify-center text-white mb-3 sm:mb-4">
               <FaExclamationCircle size={20} className="sm:w-6 sm:h-6" />
             </div>
@@ -109,7 +157,10 @@ export default function TenantHome() {
           </div>
 
           {/* Profile */}
-          <div className="rounded-lg bg-white border border-slate-200 p-4 sm:p-5 md:p-6 hover:shadow-lg hover:border-slate-400 transition-all duration-200 cursor-pointer">
+          <div
+            onClick={handleViewProfile}
+            className="rounded-lg bg-white border border-slate-200 p-4 sm:p-5 md:p-6 hover:shadow-lg hover:border-slate-400 transition-all duration-200 cursor-pointer"
+          >
             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-slate-900 flex items-center justify-center text-white mb-3 sm:mb-4">
               <FaUser size={20} className="sm:w-6 sm:h-6" />
             </div>
@@ -156,37 +207,21 @@ export default function TenantHome() {
           showProfile ? "translate-x-0" : "translate-x-full"
         }`}
       >
-        <div className="h-full flex flex-col bg-white">
-          <div className="h-12 flex items-center px-4 border-b border-slate-200 font-semibold text-sm sm:text-base text-slate-900">
-            Your Profile
-          </div>
-          <div className="p-4 space-y-4 flex-1 overflow-y-auto bg-slate-50">
-            <div className="rounded-lg border border-slate-200 p-4 bg-white space-y-1">
-              <div className="text-xs text-slate-500">Full Name</div>
-              <div className="text-sm font-semibold text-slate-900">
-                {user.name}
-              </div>
-              <div className="text-xs text-slate-500">Email</div>
-              <div className="text-sm text-slate-800">{user.email}</div>
-              <div className="text-xs text-slate-500">Phone</div>
-              <div className="text-sm text-slate-800">{user.phone}</div>
-            </div>
+        <ProfilePanel
+          user={user}
+          onLogout={handleLogout}
+          onViewProfile={handleViewProfile}
+          onSettings={handleSettings}
+        />
+      </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <button className="w-full flex items-center justify-center gap-2 border border-slate-300 text-slate-900 font-semibold py-2 rounded-lg hover:bg-slate-100 transition">
-                View Profile
-              </button>
-              <button className="w-full flex items-center justify-center gap-2 border border-slate-300 text-slate-900 font-semibold py-2 rounded-lg hover:bg-slate-100 transition">
-                Settings
-              </button>
-            </div>
-
-            <button className="w-full flex items-center justify-center gap-2 bg-slate-900 hover:bg-black text-white font-semibold py-2 rounded-lg transition">
-              <FaSignOutAlt size={16} />
-              Logout
-            </button>
-          </div>
-        </div>
+      {/* Sliding Notifications Panel (right) */}
+      <div
+        className={`fixed top-12 right-0 bottom-0 w-screen sm:w-80 md:w-96 bg-white border-l border-t border-slate-300 z-40 transform transition-transform duration-300 ease-in-out ${
+          showNotifications ? "translate-x-0" : "translate-x-full"
+        }`}
+      >
+        <NotificationsPanel userId={user.id} />
       </div>
 
       {/* Footer */}
@@ -218,15 +253,6 @@ export default function TenantHome() {
           </div>
         </div>
       </footer>
-
-      {/* Sliding Notifications Panel (right) */}
-      <div
-        className={`fixed top-12 right-0 bottom-0 w-screen sm:w-80 md:w-96 bg-white border-l border-t border-slate-300 z-40 transform transition-transform duration-300 ease-in-out ${
-          showNotifications ? "translate-x-0" : "translate-x-full"
-        }`}
-      >
-        <NotificationsPanel userId={user.id} />
-      </div>
     </div>
   );
 }

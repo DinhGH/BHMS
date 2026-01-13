@@ -24,3 +24,16 @@ export async function listNotifications({ userId, query }) {
     orderBy: { createdAt: "desc" },
   });
 }
+
+export async function markNotificationAsRead(notificationId) {
+  if (!notificationId || Number.isNaN(Number(notificationId))) {
+    const err = new Error("Missing or invalid notificationId");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  return prisma.notification.update({
+    where: { id: Number(notificationId) },
+    data: { isRead: true },
+  });
+}
