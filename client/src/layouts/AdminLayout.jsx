@@ -1,8 +1,7 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Outlet } from "react-router-dom";
 import AdminSidebar from "../components/Admin/AdminSidebar.jsx";
-import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../utils/axios.js";
 
 export default function AdminLayout() {
   const [user, setUser] = useState(null);
@@ -10,20 +9,15 @@ export default function AdminLayout() {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const token = localStorage.getItem("token"); // nếu bạn dùng JWT
-        const res = await axios.get(
-          import.meta.env.VITE_API_URL + "/users/me",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        // dùng api instance → interceptor tự gắn token
+        const res = await api.get("/api/users/me");
         setUser(res.data);
       } catch (error) {
         console.log("Failed to fetch user", error);
+        console.log("Error response:", error.response?.data);
       }
     };
+
     fetchUser();
   }, []);
 

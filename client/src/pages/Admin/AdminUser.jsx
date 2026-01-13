@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { Search, MoreHorizontal } from "lucide-react";
-import axios from "axios";
 import UserFormModal from "../../components/Admin/UserFormModal.jsx";
 import Pagination from "../../components/Admin/Pagination.jsx";
 import SearchInput from "../../components/Admin/SearchInput.jsx";
+import api from "../../utils/axios.js";
 
 export default function AdminUsers() {
   const API = import.meta.env.VITE_API_URL;
@@ -28,15 +28,16 @@ export default function AdminUsers() {
   const defaultForm = { ...form };
 
   const fetchUsers = async () => {
-    axios
-      .get(`${API}/api/users`, {
-        withCredentials: true,
-      })
-      .then((res) => setUsers(res.data))
-      .catch(() => alert("Load users failed"));
+    try {
+      const res = await api.get("/api/users");
+      setUsers(res.data);
+    } catch {
+      alert("Load users failed");
+    }
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchUsers();
   }, []);
 
@@ -82,9 +83,8 @@ export default function AdminUsers() {
     if (!window.confirm(`Delete ${selected.length} user(s)?`)) return;
 
     try {
-      await axios.delete(`${API}/api/users`, {
+      await api.delete("/api/users", {
         data: { ids: selected },
-        withCredentials: true,
       });
 
       setUsers((prev) => prev.filter((u) => !selected.includes(u.id)));
@@ -118,10 +118,7 @@ export default function AdminUsers() {
     }
 
     try {
-      await axios.post(`${API}/api/users/add`, form, {
-        withCredentials: true,
-      });
-
+      await api.post("/api/users/add", form);
       alert("Saved successfully");
 
       setOpen(false);
@@ -139,6 +136,7 @@ export default function AdminUsers() {
       // eslint-disable-next-line no-unused-vars
     } catch (err) {
       alert("Save failed");
+      console.log(err);
     }
   };
 

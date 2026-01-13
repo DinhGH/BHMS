@@ -1,6 +1,7 @@
 import { prisma } from "../lib/prisma.js";
 import bcrypt from "bcryptjs";
 import pkg from "@prisma/client";
+import jwt from "jsonwebtoken";
 
 const { Role, User_status, User_active } = pkg;
 /**
@@ -24,24 +25,24 @@ export const getUsers = async (req, res) => {
  */
 export const getCurrentUser = async (req, res) => {
   try {
-    // Lấy token từ header Authorization
     const authHeader = req.headers.authorization;
-    if (!authHeader) {
-      return res.status(401).json({ message: "Token không được gửi" });
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res
+        .status(401)
+        .json({ message: "Authorization header không hợp lệ" });
     }
 
-    const token = authHeader.split(" ")[1]; // Bearer <token>
-    if (!token) {
+    const token = authHeader.split(" ")[1];
+
+    if (!token || token === "null" || token === "undefined") {
       return res.status(401).json({ message: "Token không hợp lệ" });
     }
 
-    // Giải mã token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET); // JWT_SECRET bạn dùng
-    const userId = decoded.id;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // Lấy user từ database, KHÔNG lấy passwordHash
     const user = await prisma.user.findUnique({
-      where: { id: userId },
+      where: { id: decoded.id },
       select: {
         id: true,
         email: true,
@@ -57,9 +58,9 @@ export const getCurrentUser = async (req, res) => {
       return res.status(404).json({ message: "User không tồn tại" });
     }
 
-    res.status(200).json(user);
+    return res.status(200).json(user);
   } catch (err) {
-    console.error("getCurrentUser error:", err);
+    console.error("getCurrentUser error:", err.message);
     return res.status(401).json({ message: "Token không hợp lệ hoặc hết hạn" });
   }
 };
@@ -112,7 +113,7 @@ export const updateUserStatus = async (req, res) => {
 };
 
 /**
- * DELETE /api/admin/users
+ * DELETE /api/users
  */
 export const deleteUsers = async (req, res) => {
   const { ids } = req.body;
@@ -135,7 +136,7 @@ export const deleteUsers = async (req, res) => {
 };
 
 /**
- * POST /api/admin/users/add
+ * POST /api/users/add
  */
 export const addUser = async (req, res) => {
   try {
