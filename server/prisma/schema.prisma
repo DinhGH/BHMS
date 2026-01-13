@@ -6,29 +6,28 @@ datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
 }
-enum User_status {
-  RENTING
-  NO_RENTING
-}
-enum User_active{
-  YES @map("YES")
-  NO  @map("NO")
-}
+
 model User {
-  id            Int            @id @default(autoincrement())
-  email         String         @unique
-  passwordHash  String?
-  fullName      String?
-  provider      String?
-  role          Role
-  status        User_status    @default(RENTING)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  active        User_active    @default(YES)
-  notifications Notification[]
-  owner         Owner?
-  reports       Report[]
-  tenant        Tenant?
+  id           Int            @id @default(autoincrement())
+  email        String         @unique
+  passwordHash String?
+  fullName     String?
+  provider     String?
+  role         Role
+  status       User_status    @default(NO_RENTING)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  active       User_active    @default(YES)
+  avatar       String?
+  gender       String
+  hometown     String?
+  otp          String?        @db.VarChar(6)
+  otpExpire    DateTime?
+  phone        String
+  Notification Notification[]
+  Owner        Owner?
+  Report       Report[]
+  Tenant       Tenant?
 
   @@index([email])
 }
@@ -136,6 +135,16 @@ model Report {
   @@index([senderId], map: "Report_senderId_fkey")
 }
 
+enum User_status {
+  RENTING
+  NO_RENTING
+}
+
+enum User_active {
+  YES @map("YES")
+  NO  @map("NO")
+}
+
 enum Role {
   ADMIN
   OWNER
@@ -158,5 +167,3 @@ enum PaymentMethod {
   GATEWAY
   QR_TRANSFER
 }
-
-

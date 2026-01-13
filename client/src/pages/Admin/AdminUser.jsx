@@ -3,22 +3,25 @@ import { Search, MoreHorizontal } from "lucide-react";
 import UserFormModal from "../../components/Admin/UserFormModal.jsx";
 import Pagination from "../../components/Admin/Pagination.jsx";
 import SearchInput from "../../components/Admin/SearchInput.jsx";
-import api from "../../utils/axios.js";
+import api from "../../services/api.js";
 
 export default function AdminUsers() {
-  const API = import.meta.env.VITE_API_URL;
   const [users, setUsers] = useState([]);
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState([]);
   const [open, setOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [errors, setErrors] = useState({});
+
   const pageSize = 10;
 
   const [form, setForm] = useState({
     email: "",
     password: "",
     fullName: "",
+    gender: "MALE",
+    phone: "",
     provider: "LOCAL",
     role: "TENANT",
     status: "NO_RENTING",
@@ -30,7 +33,10 @@ export default function AdminUsers() {
   const fetchUsers = async () => {
     try {
       const res = await api.get("/api/users");
-      setUsers(res.data);
+
+      const usersData = Array.isArray(res) ? res : res?.data;
+
+      setUsers(usersData);
     } catch {
       alert("Load users failed");
     }
@@ -46,6 +52,7 @@ export default function AdminUsers() {
     setSelected([]);
   }, [filter, search, currentPage]);
 
+  // Pagination
   const filteredUsers = users
     .filter((u) => {
       if (filter === "renting") return u.status === "RENTING";
@@ -72,20 +79,17 @@ export default function AdminUsers() {
         : filteredUsers.map((u) => u.id)
     );
   };
-  // Pagination
   const totalPages = Math.ceil(filteredUsers.length / pageSize);
   const startIndex = (currentPage - 1) * pageSize;
   const paginatedUsers = filteredUsers.slice(startIndex, startIndex + pageSize);
-
+  // Pagination
   const handleDelete = async () => {
     if (selected.length === 0) return;
 
     if (!window.confirm(`Delete ${selected.length} user(s)?`)) return;
 
     try {
-      await api.delete("/api/users", {
-        data: { ids: selected },
-      });
+      await api.delete("/api/users", { ids: selected });
 
       setUsers((prev) => prev.filter((u) => !selected.includes(u.id)));
       alert("Deleted successfully");
@@ -94,48 +98,68 @@ export default function AdminUsers() {
       alert("Delete failed");
     }
   };
-
   const handleSubmit = async () => {
+    const newErrors = {};
+
+    // EMAIL
     if (!form.email) {
-      alert("Email is required");
+      newErrors.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      newErrors.email = "Invalid email format";
+    }
+
+    // PASSWORD
+    if (
+      !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9])[^\s]{8,}$/.test(
+        form.password
+      )
+    ) {
+      newErrors.password =
+        "Password ≥ 8 chars, include upper, lower, number & special char";
+    }
+    // FULL NAME
+    if (!form.fullName?.trim()) {
+      newErrors.fullName = "Full name is required";
+    } else if (form.fullName.trim().length < 2) {
+      newErrors.fullName = "Full name must be at least 2 characters";
+    } else if (!/^[\p{L} .'-]+$/u.test(form.fullName)) {
+      newErrors.fullName = "Full name contains invalid characters";
+    }
+
+    // PHONE
+    if (!form.phone?.trim()) {
+      newErrors.phone = "Phone number is required";
+    } else if (!/^\d{10}$/.test(form.phone)) {
+      newErrors.phone = "Phone number must be exactly 10 digits";
+    }
+
+    // Nếu có lỗi → dừng
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const passwordRegex =
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9])[^\s]{8,}$/;
-
-    if (!emailRegex.test(form.email)) {
-      alert("Invalid email format");
-      return;
-    }
-
-    if (!passwordRegex.test(form.password)) {
-      alert(
-        "Password must be ≥ 8 characters, include uppercase, lowercase, number, special character, and no spaces"
-      );
-      return;
-    }
+    // Clear lỗi
+    setErrors({});
 
     try {
       await api.post("/api/users/add", form);
-      alert("Saved successfully");
 
       setOpen(false);
       setForm({
         email: "",
         password: "",
         fullName: "",
+        gender: "MALE",
+        phone: "",
         provider: "LOCAL",
         role: "TENANT",
         status: "NO_RENTING",
         active: "YES",
       });
 
-      fetchUsers(); // reload list
-      // eslint-disable-next-line no-unused-vars
+      fetchUsers();
     } catch (err) {
-      alert("Save failed");
       console.log(err);
     }
   };
@@ -285,6 +309,7 @@ export default function AdminUsers() {
           onSubmit={handleSubmit}
           form={form}
           setForm={setForm}
+          errors={errors}
         />
 
         {/* Pagination */}

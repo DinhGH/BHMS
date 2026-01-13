@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Outlet } from "react-router-dom";
 import AdminSidebar from "../components/Admin/AdminSidebar.jsx";
-import api from "../utils/axios.js";
+import api from "../services/api.js";
 
 export default function AdminLayout() {
   const [user, setUser] = useState(null);
@@ -9,9 +9,8 @@ export default function AdminLayout() {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        // dùng api instance → interceptor tự gắn token
-        const res = await api.get("/api/users/me");
-        setUser(res.data);
+        const user = await api("/api/users/me");
+        setUser(user);
       } catch (error) {
         console.log("Failed to fetch user", error);
         console.log("Error response:", error.response?.data);
