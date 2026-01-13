@@ -1,20 +1,49 @@
-import { useState } from "react";
-import Navbar from "../components/Navbar";
-import Sidebar from "../components/Sidebar";
-import Dashboard from "../components/Dashboard";
-import BoardingHouseManagement from "../components/BoardingHouseManagement";
-import RoomManagement from "../components/RoomManagement";
-import TenantsManagement from "../components/TenantsManagement";
-import NotificationManagement from "../components/NotificationManagement";
-import ReportManagement from "../components/ReportManagement";
-import ReportIssue from "../components/ReportIssue";
-import PaymentManagement from "../components/PaymentManagement";
+/* eslint-disable react-hooks/set-state-in-effect */
+import { useState, useEffect } from "react";
+import Navbar from "../../components/Navbar";
+import Sidebar from "../../components/Sidebar";
+import Dashboard from "../../components/Dashboard";
+import BoardingHouseManagement from "../../components/BoardingHouseManagement";
+import RoomManagement from "../../components/RoomManagement";
+import TenantsManagement from "../../components/TenantsManagement";
+import NotificationManagement from "../../components/NotificationManagement";
+import ReportManagement from "../../components/ReportManagement";
+import ReportIssue from "../../components/ReportIssue";
+import PaymentManagement from "../../components/PaymentManagement";
+import { useAuth } from "../../hooks/useAuth";
+import { getNotifications } from "../../services/api";
 
 function HomePageOwner() {
+  const { user, logout } = useAuth();
   const [activeSection, setActiveSection] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Fetch notifications when user is available
+  useEffect(() => {
+    if (user?.id) {
+      setNotificationsLoading(true);
+      getNotifications(user.id, searchQuery)
+        .then((data) => setNotifications(data))
+        .catch((err) => {
+          console.error("Failed to fetch notifications:", err);
+          setNotifications([]);
+        })
+        .finally(() => setNotificationsLoading(false));
+    }
+  }, [user?.id, searchQuery]);
+
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        Loading...
+      </div>
+    );
+  }
 
   const renderContent = () => {
     switch (activeSection) {
@@ -104,24 +133,42 @@ function HomePageOwner() {
             <input
               type="text"
               placeholder="Search notifications..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50">
-            {[1, 2, 3].map((id) => (
-              <div
-                key={id}
-                className="rounded-md border border-slate-200 p-3 bg-white shadow-sm"
-              >
-                <div className="text-[11px] text-slate-500 mb-1">2h ago</div>
-                <div className="text-sm font-semibold text-slate-900">
-                  Notification title {id}
-                </div>
-                <div className="text-sm text-slate-700 line-clamp-2">
-                  This is a sample notification detail for preview purposes.
-                </div>
+            {notificationsLoading ? (
+              <div className="text-center text-sm text-slate-500 py-4">
+                Loading...
               </div>
-            ))}
+            ) : notifications.length > 0 ? (
+              notifications.map((notification) => (
+                <div
+                  key={notification.id}
+                  className={`rounded-md border p-3 shadow-sm ${
+                    notification.isRead
+                      ? "border-slate-200 bg-white"
+                      : "border-blue-200 bg-blue-50"
+                  }`}
+                >
+                  <div className="text-[11px] text-slate-500 mb-1">
+                    {new Date(notification.createdAt).toLocaleString()}
+                  </div>
+                  <div className="text-sm font-semibold text-slate-900">
+                    {notification.title}
+                  </div>
+                  <div className="text-sm text-slate-700 line-clamp-2">
+                    {notification.content}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center text-sm text-slate-500 py-4">
+                No notifications found
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -144,12 +191,16 @@ function HomePageOwner() {
             <div className="rounded-lg border border-slate-200 p-4 bg-white space-y-1">
               <div className="text-xs text-slate-500">Full Name</div>
               <div className="text-sm font-semibold text-slate-900">
-                Nguyễn Văn A
+                {user?.name || "Owner Name"}
               </div>
               <div className="text-xs text-slate-500">Email</div>
-              <div className="text-sm text-slate-800">owner@example.com</div>
+              <div className="text-sm text-slate-800">
+                {user?.email || "owner@example.com"}
+              </div>
               <div className="text-xs text-slate-500">Phone</div>
-              <div className="text-sm text-slate-800">+84 912 345 678</div>
+              <div className="text-sm text-slate-800">
+                {user?.phone || "+84 912 345 678"}
+              </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <button className="w-full flex items-center justify-center gap-2 border border-slate-300 text-slate-900 font-semibold py-2 rounded-lg hover:bg-slate-100 transition">
@@ -159,7 +210,13 @@ function HomePageOwner() {
                 Settings
               </button>
             </div>
-            <button className="w-full flex items-center justify-center gap-2 bg-slate-900 hover:bg-black text-white font-semibold py-2 rounded-lg transition">
+            <button
+              onClick={() => {
+                logout();
+                setShowProfile(false);
+              }}
+              className="w-full flex items-center justify-center gap-2 bg-slate-900 hover:bg-black text-white font-semibold py-2 rounded-lg transition"
+            >
               Logout
             </button>
           </div>
