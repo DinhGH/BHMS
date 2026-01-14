@@ -98,7 +98,8 @@ const registerWithEmail = async (email, password, fullName = '', phone = '') => 
         role: 'TENANT', // Mặc định role là TENANT
         status: 'NO_RENTING',
         active: 'YES',
-        gender: '' // Để trống nếu không có
+        gender: '', // Để trống nếu không có
+        updatedAt: new Date() // Thêm updatedAt
       }
     });
 
@@ -148,14 +149,18 @@ const findOrCreateOAuthUser = async (profile, provider) => {
           status: 'NO_RENTING',
           active: 'YES',
           phone: '',
-          gender: ''
+          gender: '',
+          updatedAt: new Date() // Thêm updatedAt
         }
       });
     } else if (!user.provider) {
       // Nếu user đã tồn tại nhưng chưa có provider, update provider
       user = await prisma.user.update({
         where: { email },
-        data: { provider }
+        data: { 
+          provider,
+          updatedAt: new Date() // Thêm updatedAt khi update
+        }
       });
     }
 

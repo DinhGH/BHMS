@@ -10,6 +10,7 @@ const { verifyPassword } = require('../utils/passwordUtils');
 
 const prisma = new PrismaClient();
 
+
 // ===== Local Strategy (Email + Password) =====
 passport.use(
   'local',
@@ -57,13 +58,21 @@ passport.use(
   'google',
   new GoogleStrategy(
     {
-      clientID: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: process.env.GOOGLE_CALLBACK_URL
+      clientID: '1022839150374-tqm24fj0n6crq711raq4ji8fcinmh8r6.apps.googleusercontent.com',
+      clientSecret: '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',
+      callbackURL: 'http://localhost:4000/api/auth/google/callback'
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
+        console.log('✅ Nhận được profile từ Google:', profile.id);
+        console.log('📧 Email:', profile.emails?.[0]?.value);
+        
         const email = profile.emails?.[0]?.value;
+
+        if (!email) {
+          console.error('❌ Không lấy được email từ Google profile');
+          return done(new Error('Không lấy được email từ Google'), null);
+        }
 
         // Find or create user by email
         let user = await prisma.user.findUnique({
@@ -71,6 +80,7 @@ passport.use(
         });
 
         if (!user) {
+          console.log('🆕 Tạo user mới với email:', email);
           // Tạo user mới
           user = await prisma.user.create({
             data: {
@@ -82,20 +92,30 @@ passport.use(
               status: 'NO_RENTING',
               active: 'YES',
               phone: '',
-              gender: ''
+              gender: '',
+              updatedAt: new Date()
             }
           });
-        } else if (!user.provider) {
-          // Update provider nếu user đã tồn tại
-          user = await prisma.user.update({
-            where: { email },
-            data: { provider: 'google' }
-          });
+          console.log('✅ Tạo user thành công, ID:', user.id);
+        } else {
+          console.log('👤 User đã tồn tại, ID:', user.id);
+          if (!user.provider) {
+            console.log('🔄 Update provider cho user:', email);
+            // Update provider nếu user đã tồn tại
+            user = await prisma.user.update({
+              where: { email },
+              data: { provider: 'google' }
+            });
+          }
         }
 
+        console.log('✅ Login Google thành công cho user:', user.email);
         return done(null, user);
       } catch (error) {
-        return done(error);
+        console.error('❌ Lỗi trong Google Strategy:', error);
+        console.error('❌ Error details:', error.message);
+        console.error('❌ Error stack:', error.stack);
+        return done(error, null);
       }
     }
   )
@@ -168,4 +188,4 @@ passport.deserializeUser(async (id, done) => {
   }
 });
 
-module.exports = passport;module.exports = passport;
+module.exports = passport;
