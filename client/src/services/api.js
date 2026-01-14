@@ -30,3 +30,29 @@ export async function markNotificationAsRead(notificationId) {
   if (!res.ok) throw new Error("Failed to mark notification as read");
   return await res.json();
 }
+
+export async function getTenantRoom(userId) {
+  const res = await fetch(`${BASE_URL}/api/tenant/${userId}/room`, {
+    credentials: "include",
+  });
+
+  if (!res.ok) throw new Error("Failed to fetch tenant room");
+  return await res.json();
+}
+
+export async function claimRoom(userId, roomCode) {
+  const res = await fetch(`${BASE_URL}/api/tenant/${userId}/claim-room`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify({ roomCode }),
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || "Failed to claim room");
+  }
+  return await res.json();
+}

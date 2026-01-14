@@ -16,6 +16,7 @@ export default function TenantHome() {
   const { user, logout } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const [roomCode, setRoomCode] = useState("");
 
   if (!user) {
     return <div>Loading...</div>;
@@ -73,6 +74,11 @@ export default function TenantHome() {
     // TODO: Open report issue modal or navigate to page
   };
 
+  const handleClaimRoom = () => {
+    console.log("Claim room with code:", roomCode);
+    // TODO: Call claim room API and refresh room info
+  };
+
   return (
     <div className="min-h-screen bg-white border-l border-slate-300">
       <Header
@@ -89,6 +95,47 @@ export default function TenantHome() {
           <p className="text-sm sm:text-base text-slate-600">
             Manage your room and billing information
           </p>
+        </div>
+
+        {/* Claim Room Section */}
+        <div className="mb-6 sm:mb-8">
+          <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-4 sm:p-6">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <div className="text-base sm:text-lg font-semibold text-slate-900">
+                  Claim Your Room
+                </div>
+                <p className="text-sm text-slate-600 mt-1">
+                  You haven’t claimed a room yet. Enter the room claim code
+                  provided by the property manager to link a room to your
+                  account.
+                </p>
+              </div>
+              <span className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 border border-blue-100">
+                New tenant
+              </span>
+            </div>
+
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+              <input
+                value={roomCode}
+                onChange={(e) => setRoomCode(e.target.value)}
+                placeholder="Enter room claim code (e.g. ROOM-123)"
+                className="w-full sm:flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <button
+                onClick={handleClaimRoom}
+                className="w-full sm:w-auto inline-flex items-center justify-center rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-black transition"
+              >
+                Claim Room
+              </button>
+            </div>
+
+            <p className="mt-3 text-xs text-slate-500">
+              After verification, the system will display your room details and
+              related bills.
+            </p>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
