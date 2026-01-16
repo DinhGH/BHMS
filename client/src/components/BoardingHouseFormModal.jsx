@@ -1,5 +1,5 @@
+import { FaHome } from "react-icons/fa";
 import { useState } from "react";
-import { X } from "lucide-react";
 import api from "../server/api.js";
 
 export default function BoardingHouseFormModal({ open, onClose, onSuccess }) {
@@ -20,33 +20,26 @@ export default function BoardingHouseFormModal({ open, onClose, onSuccess }) {
 
   const parseServices = (text) => {
     if (!text) return null;
-
     const services = {};
-
     text
       .split(/,|\n/)
       .map((s) => s.trim().toLowerCase())
       .filter(Boolean)
-      .forEach((service) => {
-        services[service] = true;
-      });
-
+      .forEach((s) => (services[s] = true));
     return Object.keys(services).length ? services : null;
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    const payload = {
-      name: form.name.trim(),
-      address: form.address,
-      electricFee: Number(form.electricFee),
-      waterFee: Number(form.waterFee),
-      services: parseServices(form.services),
-      image: form.image?.trim() || null,
-    };
-
+  const handleSubmit = async () => {
     try {
+      const payload = {
+        name: form.name.trim(),
+        address: form.address,
+        electricFee: Number(form.electricFee),
+        waterFee: Number(form.waterFee),
+        services: parseServices(form.services),
+        image: form.image?.trim() || null,
+      };
+
       const existed = await api.get(
         `/owner/boarding-houses/check?name=${encodeURIComponent(payload.name)}`
       );
@@ -60,119 +53,111 @@ export default function BoardingHouseFormModal({ open, onClose, onSuccess }) {
       onSuccess();
       onClose();
     } catch (err) {
-      console.error("Save boarding house error", err);
-      console.log(err.response?.data);
+      console.error(err);
       alert("Có lỗi xảy ra");
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white w-[480px] rounded-xl p-6 space-y-4"
-      >
-        <div className="flex justify-between items-center">
-          <h2 className="text-lg font-semibold">Thêm / Cập nhật nhà trọ</h2>
-          <X className="cursor-pointer" onClick={onClose} />
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+      <div className="bg-white w-full max-w-2xl max-h-screen p-6 overflow-y-auto relative">
+        <div
+          className="flex items-center mb-6 cursor-pointer"
+          onClick={onClose}
+        >
+          <FaHome className="text-xl mr-2" />
+          <span className="font-semibold text-lg">Back</span>
         </div>
 
-        <div className="space-y-8">
-          <label className="text-sm font-medium text-gray-600 rounded-md ">
-            Tên nhà trọ:
-          </label>
+        <h2 className="text-2xl font-semibold mb-6 text-center">
+          Add / Update Boarding House
+        </h2>
+
+        <div className="mb-4">
+          <label className="block mb-1 font-medium">Tên nhà trọ *</label>
           <input
             name="name"
             value={form.name}
             onChange={handleChange}
-            className="input"
+            className="w-full border p-2 rounded"
             placeholder="Nhập tên nhà trọ"
             required
           />
         </div>
 
-        <div className="space-y-1">
-          <label className="text-sm font-medium text-gray-600">Địa chỉ</label>
+        <div className="mb-4">
+          <label className="block mb-1 font-medium">Địa chỉ *</label>
           <input
             name="address"
             value={form.address}
             onChange={handleChange}
-            className="input"
+            className="w-full border p-2 rounded"
             placeholder="Nhập địa chỉ"
             required
           />
         </div>
 
-        <div className="space-y-1">
-          <label className="text-sm font-medium text-gray-600">
-            Giá điện (VNĐ/kWh)
-          </label>
+        <div className="mb-4">
+          <label className="block mb-1 font-medium">Giá điện (VNĐ/kWh)</label>
           <input
             type="number"
             name="electricFee"
             value={form.electricFee}
             onChange={handleChange}
-            className="input"
+            className="w-full border p-2 rounded"
             placeholder="Ví dụ: 3500"
-            required
           />
         </div>
 
-        <div className="space-y-1">
-          <label className="text-sm font-medium text-gray-600">
-            Giá nước (VNĐ/m³)
-          </label>
+        <div className="mb-4">
+          <label className="block mb-1 font-medium">Giá nước (VNĐ/m³)</label>
           <input
             type="number"
             name="waterFee"
             value={form.waterFee}
             onChange={handleChange}
-            className="input"
+            className="w-full border p-2 rounded"
             placeholder="Ví dụ: 15000"
-            required
           />
         </div>
 
-        <div className="space-y-1">
-          <label className="text-sm font-medium text-gray-600">
-            Hình ảnh (URL)
-          </label>
+        <div className="mb-4">
+          <label className="block mb-1 font-medium">Hình ảnh</label>
           <input
             name="image"
             value={form.image}
             onChange={handleChange}
-            className="input"
-            placeholder="https://..."
+            className="w-full border p-2 rounded"
+            placeholder="URL hình ảnh"
           />
         </div>
 
-        <div className="space-y-1">
-          <label className="text-sm font-medium text-gray-600">Dịch vụ</label>
+        <div className="mb-6">
+          <label className="block mb-1 font-medium">Dịch vụ</label>
           <textarea
             name="services"
             value={form.services}
             onChange={handleChange}
-            className="input min-h-[80px]"
+            className="w-full border p-2 rounded min-h-[90px]"
             placeholder="wifi, parking, camera..."
           />
         </div>
 
-        <div className="flex justify-end gap-2 pt-2">
+        <div className="flex gap-3">
           <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 border rounded-lg hover:bg-gray-100"
+            onClick={handleSubmit}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
           >
-            Hủy
+            Save
           </button>
           <button
-            type="submit"
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            onClick={onClose}
+            className="px-4 py-2 border rounded hover:bg-gray-100"
           >
-            Lưu
+            Cancel
           </button>
         </div>
-      </form>
+      </div>
     </div>
   );
 }
