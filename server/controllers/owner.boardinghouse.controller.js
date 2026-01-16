@@ -33,6 +33,7 @@ export const getAllBoardingHouses = async (req, res) => {
         totalRooms,
         occupied,
         available,
+        image: house.image,
       };
     });
 
@@ -44,8 +45,8 @@ export const getAllBoardingHouses = async (req, res) => {
 };
 export const createBoardingHouse = async (req, res) => {
   try {
-    const ownerId = req.ownerId;
-    const { name, address, electricFee, waterFee, services } = req.body;
+    const ownerId = 1;
+    const { name, address, electricFee, waterFee, services, image } = req.body;
 
     if (!name || !address) {
       return res.status(400).json({ message: "Invalid input data" });
@@ -72,6 +73,7 @@ export const createBoardingHouse = async (req, res) => {
         waterFee: Number(waterFee),
         services: services ?? null,
         ownerId,
+        image: image ?? null,
       },
     });
 
@@ -84,9 +86,9 @@ export const createBoardingHouse = async (req, res) => {
 
 export const updateBoardingHouse = async (req, res) => {
   try {
-    const ownerId = req.ownerId;
+    const ownerId = 1;
     const { id } = req.params;
-    const { name, address, electricFee, waterFee, services } = req.body;
+    const { name, address, electricFee, waterFee, services, image } = req.body;
 
     const house = await prisma.boardingHouse.findFirst({
       where: { id: Number(id), ownerId },
@@ -122,6 +124,7 @@ export const updateBoardingHouse = async (req, res) => {
         electricFee: Number(electricFee),
         waterFee: Number(waterFee),
         services,
+        image: image ?? null,
       },
     });
 
@@ -134,9 +137,8 @@ export const updateBoardingHouse = async (req, res) => {
 
 export const checkBoardingHouseByName = async (req, res) => {
   try {
-    const ownerId = req.ownerId;
+    const ownerId = 1;
     const { name } = req.query;
-
     if (!name) return res.json(null);
 
     const house = await prisma.boardingHouse.findFirst({

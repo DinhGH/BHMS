@@ -4,6 +4,7 @@ import Pagination from "../components/Pagination.jsx";
 import api from "../server/api.js";
 import BoardingHouseFormModal from "./BoardingHouseFormModal.jsx";
 import RoomManagement from "./ViewDetailBoardingHouse.jsx";
+import "../index.css";
 
 export default function BoardingHouseManagement({ ownerId }) {
   const [houses, setHouses] = useState([]);
@@ -96,13 +97,32 @@ export default function BoardingHouseManagement({ ownerId }) {
                     key={house.id}
                     className="bg-white rounded-lg border shadow-sm overflow-hidden"
                   >
-                    <div className="h-36 bg-slate-200 flex items-center justify-center">
-                      Picture
+                    <div
+                      className="apple-card"
+                      onMouseMove={(e) => {
+                        const card = e.currentTarget;
+                        const rect = card.getBoundingClientRect();
+                        const x = e.clientX - rect.left;
+                        const y = e.clientY - rect.top;
+                        const centerX = rect.width / 2;
+                        const centerY = rect.height / 2;
+                        const rotateX = -(y - centerY) / 14;
+                        const rotateY = (x - centerX) / 14;
+                        card.style.transform = `perspective(1200px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.05)`;
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = `perspective(1200px) rotateX(0deg) rotateY(0deg) scale(1)`;
+                      }}
+                    >
+                      <img
+                        src={house.image || "/no-image.png"}
+                        alt={house.name}
+                        className="apple-card-image"
+                      />
                     </div>
 
                     <div className="p-4 space-y-2">
                       <h3 className="font-semibold">{house.name}</h3>
-
                       <div className="text-sm text-slate-600 space-y-1">
                         <div>Total Rooms: {house.totalRooms}</div>
                         <div>Occupied: {house.occupied}</div>
