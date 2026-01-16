@@ -97,6 +97,7 @@ model BoardingHouse {
   electricFee Float
   waterFee    Float
   services    Json?
+  picture     String?
 
   owner       Owner    @relation(fields: [ownerId], references: [id])
   rooms       Room[]
@@ -113,6 +114,7 @@ model Room {
 
   electricMeter Float    @default(0)
   waterMeter    Float    @default(0)
+   picture     String?
 
   house         BoardingHouse @relation(fields: [houseId], references: [id])
   invoices      Invoice[]

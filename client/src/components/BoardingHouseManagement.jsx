@@ -1,16 +1,25 @@
 import { useEffect, useState } from "react";
-import { Plus } from "lucide-react";
-import SearchInput from "../components/SearchInput";
-import api from "../server/api";
+import SearchInput from "../components/SearchInput.jsx";
+import Pagination from "../components/Pagination.jsx";
+import api from "../server/api.js";
+import BoardingHouseFormModal from "./BoardingHouseFormModal.jsx";
+import RoomManagement from "./ViewDetailBoardingHouse.jsx";
 
-export default function BoardingHouseManagement() {
+export default function BoardingHouseManagement({ ownerId }) {
   const [houses, setHouses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedHouse, setSelectedHouse] = useState(null);
+
+  const [openModal, setOpenModal] = useState(false);
+
+  const pageSize = 8;
 
   useEffect(() => {
     const timer = setTimeout(() => {
       fetchHouses();
+      setCurrentPage(1);
     }, 400);
 
     return () => clearTimeout(timer);
@@ -29,62 +38,98 @@ export default function BoardingHouseManagement() {
     }
   };
 
+  // Pagination logic
+  const totalPages = Math.ceil(houses.length / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const paginatedHouses = houses.slice(startIndex, startIndex + pageSize);
+
   return (
     <div className="space-y-4">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <SearchInput
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search boarding house..."
-          className="sm:max-w-sm"
+      {/* Nếu đang xem Room */}
+      {selectedHouse ? (
+        <RoomManagement
+          house={selectedHouse}
+          onBack={() => setSelectedHouse(null)}
         />
-
-        <div className="flex  justify-between gap-2">
-          <button className="px-4 py-2 text-sm border rounded-md">
-            Filter
-          </button>
-          <button className="flex items-center gap-2 px-4 py-2 text-sm bg-slate-900 text-white rounded-md">
-            <Plus className="w-4 h-4" />
-            Add New
-          </button>
-        </div>
-      </div>
-
-      {/* Content */}
-      {loading ? (
-        <div className="text-center py-10 text-slate-500">Loading...</div>
-      ) : houses.length === 0 ? (
-        <div className="text-center py-10 text-slate-500">
-          No boarding houses found
-        </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {houses.map((house) => (
-            <div
-              key={house.id}
-              className="bg-white rounded-lg border shadow-sm overflow-hidden"
-            >
-              <div className="h-36 bg-slate-200 flex items-center justify-center">
-                <div className="w-14 h-14 border-2 border-slate-300" />
-              </div>
-
-              <div className="p-4 space-y-2">
-                <h3 className="font-semibold">{house.name}</h3>
-
-                <div className="text-sm text-slate-600 space-y-1">
-                  <div>Total Rooms : {house.totalRooms}</div>
-                  <div>Occupied : {house.occupied}</div>
-                  <div>Available : {house.available}</div>
-                </div>
-
-                <button className="text-sm font-medium hover:underline">
-                  View Detail →
-                </button>
-              </div>
+        <>
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <SearchInput
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search boarding house..."
+              className="sm:max-w-sm"
+            />
+            <div className="flex gap-6">
+              <button className="px-4 py-2 text-sm border rounded-md">
+                Filter
+              </button>
+              <button
+                className="flex items-center gap-2 px-4 py-2 text-sm bg-gray-300 hover:bg-blue-500 text-white rounded-md"
+                onClick={() => setOpenModal(true)}
+              >
+                Add New
+              </button>
             </div>
-          ))}
-        </div>
+          </div>
+
+          <BoardingHouseFormModal
+            open={openModal}
+            ownerId={ownerId}
+            onClose={() => setOpenModal(false)}
+            onSuccess={fetchHouses}
+          />
+
+          {/* Content */}
+          {loading ? (
+            <div className="text-center py-10 text-slate-500">Loading...</div>
+          ) : houses.length === 0 ? (
+            <div className="text-center py-10 text-slate-500">
+              No boarding houses found
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {paginatedHouses.map((house) => (
+                  <div
+                    key={house.id}
+                    className="bg-white rounded-lg border shadow-sm overflow-hidden"
+                  >
+                    <div className="h-36 bg-slate-200 flex items-center justify-center">
+                      Picture
+                    </div>
+
+                    <div className="p-4 space-y-2">
+                      <h3 className="font-semibold">{house.name}</h3>
+
+                      <div className="text-sm text-slate-600 space-y-1">
+                        <div>Total Rooms: {house.totalRooms}</div>
+                        <div>Occupied: {house.occupied}</div>
+                        <div>Available: {house.available}</div>
+                      </div>
+
+                      <button
+                        className="text-sm font-medium hover:underline"
+                        onClick={() => setSelectedHouse(house)}
+                      >
+                        View Detail →
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={setCurrentPage}
+                />
+              )}
+            </>
+          )}
+        </>
       )}
     </div>
   );
