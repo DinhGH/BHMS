@@ -40,10 +40,11 @@ model Owner {
 }
 
 model Tenant {
-  id       Int       @id @default(autoincrement())
-  userId   Int       @unique
-  invoices Invoice[]
-  user     User      @relation(fields: [userId], references: [id])
+  id        Int              @id @default(autoincrement())
+  userId    Int              @unique
+  invoices  Invoice[]
+  contracts RentalContract[]
+  user      User             @relation(fields: [userId], references: [id])
 }
 
 model BoardingHouse {
@@ -54,8 +55,8 @@ model BoardingHouse {
   electricFee Float
   waterFee    Float
   services    Json?
-  image       String?
   createdAt   DateTime @default(now())
+  image       String?
   owner       Owner    @relation(fields: [ownerId], references: [id])
   rooms       Room[]
 
@@ -63,17 +64,18 @@ model BoardingHouse {
 }
 
 model Room {
-  id            Int           @id @default(autoincrement())
+  id            Int              @id @default(autoincrement())
   houseId       Int
   name          String
   price         Float
-  isLocked      Boolean       @default(false)
-  electricMeter Float         @default(0)
-  waterMeter    Float         @default(0)
-  createdAt     DateTime      @default(now())
+  isLocked      Boolean          @default(false)
+  electricMeter Float            @default(0)
+  waterMeter    Float            @default(0)
+  createdAt     DateTime         @default(now())
   image         String?
   invoices      Invoice[]
-  house         BoardingHouse @relation(fields: [houseId], references: [id])
+  contracts     RentalContract[]
+  house         BoardingHouse    @relation(fields: [houseId], references: [id])
 
   @@index([houseId], map: "Room_houseId_fkey")
 }
@@ -135,6 +137,21 @@ model Report {
   sender    User         @relation(fields: [senderId], references: [id])
 
   @@index([senderId], map: "Report_senderId_fkey")
+}
+
+model RentalContract {
+  id          Int      @id @default(autoincrement())
+  roomId      Int
+  tenantId    Int
+  moveInDate  DateTime
+  contractEnd DateTime
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  room        Room     @relation(fields: [roomId], references: [id])
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+
+  @@index([roomId])
+  @@index([tenantId])
 }
 
 enum Role {

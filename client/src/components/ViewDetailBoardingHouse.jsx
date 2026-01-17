@@ -2,12 +2,14 @@ import { useEffect, useState, useMemo } from "react";
 import api from "../server/api.js";
 import SearchInput from "../components/SearchInput.jsx";
 import Pagination from "../components/Pagination.jsx";
+import ViewDetailRoom from "./ViewDetailRoom.jsx";
 
 export default function ViewDetailBoardingHouse({ house, onBack }) {
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedRoomId, setSelectedRoomId] = useState(null);
 
   const pageSize = 12;
 
@@ -28,28 +30,30 @@ export default function ViewDetailBoardingHouse({ house, onBack }) {
     }
   };
 
-  /* ======================
-     SEARCH LOGIC
-  ====================== */
   const filteredRooms = useMemo(() => {
     if (!search.trim()) return rooms;
 
     return rooms.filter((room) =>
-      room.name.toLowerCase().includes(search.toLowerCase())
+      room.name.toLowerCase().includes(search.toLowerCase()),
     );
   }, [rooms, search]);
 
-  /* ======================
-     PAGINATION LOGIC
-  ====================== */
   const totalPages = Math.ceil(filteredRooms.length / pageSize);
   const startIndex = (currentPage - 1) * pageSize;
   const paginatedRooms = filteredRooms.slice(startIndex, startIndex + pageSize);
 
-  /* reset page when search */
   useEffect(() => {
     setCurrentPage(1);
   }, [search]);
+
+  if (selectedRoomId) {
+    return (
+      <ViewDetailRoom
+        roomId={selectedRoomId}
+        onBack={() => setSelectedRoomId(null)}
+      />
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -67,7 +71,6 @@ export default function ViewDetailBoardingHouse({ house, onBack }) {
         </h2>
       </div>
 
-      {/* Search + Action */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-8">
         <SearchInput
           value={search}
@@ -86,7 +89,6 @@ export default function ViewDetailBoardingHouse({ house, onBack }) {
         </div>
       </div>
 
-      {/* Content */}
       {loading ? (
         <div className="text-center py-10">Loading...</div>
       ) : filteredRooms.length === 0 ? (
@@ -97,12 +99,31 @@ export default function ViewDetailBoardingHouse({ house, onBack }) {
             {paginatedRooms.map((room) => (
               <div
                 key={room.id}
-                className="bg-white border rounded-lg shadow-sm overflow-hidden"
+                className="bg-white border rounded-lg shadow-sm overflow-hidden hover:shadow-2xl"
               >
-                <div className="h-32 bg-slate-200 flex items-center justify-center">
-                  Picture
+                <div
+                  className="apple-card"
+                  onMouseMove={(e) => {
+                    const card = e.currentTarget;
+                    const rect = card.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    const centerX = rect.width / 2;
+                    const centerY = rect.height / 2;
+                    const rotateX = -(y - centerY) / 14;
+                    const rotateY = (x - centerX) / 14;
+                    card.style.transform = `perspective(1200px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.05)`;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = `perspective(1200px) rotateX(0deg) rotateY(0deg) scale(1)`;
+                  }}
+                >
+                  <img
+                    src={room.image || "/no-image.png"}
+                    alt={room.name}
+                    className="apple-card-image"
+                  />
                 </div>
-
                 <div className="p-4 space-y-2">
                   <h3 className="font-semibold">{room.name}</h3>
 
@@ -123,7 +144,10 @@ export default function ViewDetailBoardingHouse({ house, onBack }) {
                     <div>Contract Ends: {room.contractEnd}</div>
                   </div>
 
-                  <button className="text-sm font-medium hover:underline">
+                  <button
+                    className="text-sm font-medium hover:underline"
+                    onClick={() => setSelectedRoomId(room.id)}
+                  >
                     View Detail →
                   </button>
                 </div>
