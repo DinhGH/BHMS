@@ -353,7 +353,11 @@ function ReportManagement() {
               currentReports.map((report) => (
                 <div key={report.id} className="border-b border-gray-200">
                   <div 
-                    className="flex items-center justify-between px-6 py-4 hover:bg-gray-50 cursor-pointer"
+                    className={`flex items-center justify-between px-6 py-4 cursor-pointer transition-colors ${
+                      report.status === 'unread'
+                        ? 'bg-gray-100 hover:bg-gray-200'
+                        : 'bg-white hover:bg-gray-50'
+                    }`}
                     onClick={() => toggleReport(report.id)}
                   >
                     <div className="flex items-center gap-4">
@@ -406,16 +410,20 @@ function ReportManagement() {
                           <div className="text-base font-medium text-gray-900">{report.target}</div>
                         </div>
 
-                        <div className="min-w-35">
+                        <div className="min-w-40">
                           <div className="text-base text-gray-500 mb-2">Status</div>
-                          <div className={`text-base font-medium ${
-                            report.status === 'unread' ? 'text-red-600' : 'text-green-600'
-                          }`}>
+                          <div
+                            className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold ${
+                              report.status === 'unread'
+                                ? 'bg-rose-100 text-rose-700'
+                                : 'bg-emerald-100 text-emerald-700'
+                            }`}
+                          >
                             {statusLabel(report.status)}
                           </div>
-                          <div className="flex flex-col gap-2 mt-4">
+                          <div className="mt-4 flex flex-col gap-2">
                             <button
-                              className="text-sm text-blue-600 text-left transition-all duration-200 hover:underline hover:-translate-y-0.5 active:translate-y-0"
+                              className="w-full rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 transition-all duration-200 hover:bg-blue-100"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 markStatus(report.id, 'unread');
@@ -424,7 +432,7 @@ function ReportManagement() {
                               Mark it Unread
                             </button>
                             <button
-                              className="text-sm text-blue-600 text-left transition-all duration-200 hover:underline hover:-translate-y-0.5 active:translate-y-0"
+                              className="w-full rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700 transition-all duration-200 hover:bg-emerald-100"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 markStatus(report.id, 'processed');
