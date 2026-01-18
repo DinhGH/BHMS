@@ -4,6 +4,8 @@ dotenv.config();
 import express from "express";
 import cors from "cors";
 import { prisma } from "./lib/prisma.js";
+import reportRoutes from "./routes/reportRoutes.js";
+import reportAdminRoutes from "./routes/reportAdminRoutes.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -15,12 +17,10 @@ app.use(
 );
 app.use(express.json());
 
-// Sample route
-// app.get("/", (req, res) => {
-//   res.send("Welcome to the BHMS server!");
-// });
+app.use("/api/reports", reportRoutes);
+app.use("/api/report-admins", reportAdminRoutes);
 
-// Start server
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

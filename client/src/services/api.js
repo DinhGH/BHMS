@@ -30,3 +30,43 @@ export async function markNotificationAsRead(notificationId) {
   if (!res.ok) throw new Error("Failed to mark notification as read");
   return await res.json();
 }
+
+export async function getReports({ page = 1, limit = 10, status, search, target, orderBy, order }) {
+  const params = new URLSearchParams();
+  params.set("page", String(page));
+  params.set("limit", String(limit));
+  if (status) params.set("status", status);
+  if (search) params.set("search", search);
+  if (target) params.set("target", target);
+  if (orderBy) params.set("orderBy", orderBy);
+  if (order) params.set("order", order);
+
+  const url = `${BASE_URL}/api/reports?${params.toString()}`;
+  const res = await fetch(url, { credentials: "include" });
+  if (!res.ok) throw new Error("Failed to fetch reports");
+  return await res.json();
+}
+
+export async function updateReportStatus(reportId, status) {
+  const res = await fetch(`${BASE_URL}/api/reports/${reportId}/status`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ status }),
+  });
+
+  if (!res.ok) throw new Error("Failed to update report status");
+  return await res.json();
+}
+
+export async function createReportAdmin(payload) {
+  const res = await fetch(`${BASE_URL}/api/report-admins`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) throw new Error("Failed to create report");
+  return await res.json();
+}

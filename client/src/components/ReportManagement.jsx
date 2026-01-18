@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { getReports, updateReportStatus } from '../services/api';
 
 // Icon components
 const Plus = () => (
@@ -26,50 +27,58 @@ function ReportManagement() {
   const [activeTab, setActiveTab] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
-
-  // Tạo data mẫu với nhiều thông tin hơn
-  const allReports = Array.from({ length: 50 }, (_, i) => ({
-    id: i + 1,
-    user: `User name ${i + 1}`,
-    userHouse: `User House ${String.fromCharCode(65 + (i % 26))}`,
-    status: i % 3 === 0 ? 'Processed' : 'Unread',
-    room: `Room ${String.fromCharCode(65 + (i % 5))} - Block ${String.fromCharCode(65 + (i % 3))}`,
-    date: `${10 + (i % 12)}:${(i % 60).toString().padStart(2, '0')} ${i % 2 === 0 ? 'AM' : 'PM'}\n${(i % 28) + 1}/${(i % 12) + 1}/2024`,
-    detail: `Lorem ipsum dolor sit amet, consectetur adipisicing elit. Report #${i + 1} - Id rerum eum odit, pariatur pellentesque. Nunc condimentum ex sed facilisis ultricies. Issue details for report ${i + 1}.`
-  }));
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [targetFilter, setTargetFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('createdAt');
+  const [sortOrder, setSortOrder] = useState('desc');
+  const [reports, setReports] = useState([]);
+  const [totalPages, setTotalPages] = useState(1);
+  const [counts, setCounts] = useState({ unread: 0, processed: 0 });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const reportsPerPage = 10;
+  const currentReports = reports;
 
-  // Lọc reports theo search query
-  const filteredReports = allReports.filter(report => {
-    const query = searchQuery.toLowerCase();
-    return (
-      report.id.toString().includes(query) ||
-      report.user.toLowerCase().includes(query) ||
-      report.userHouse.toLowerCase().includes(query) ||
-      report.room.toLowerCase().includes(query) ||
-      report.status.toLowerCase().includes(query) ||
-      report.detail.toLowerCase().includes(query)
-    );
-  });
+  const unreadCount = counts.unread || 0;
+  const processedCount = counts.processed || 0;
 
-  // Lọc theo tab
-  const tabFilteredReports = filteredReports.filter(report => {
-    if (activeTab === 'unread') return report.status === 'Unread';
-    if (activeTab === 'processed') return report.status === 'Processed';
-    return true; // all reports
-  });
+  const tabToStatus = (tab) => {
+    if (tab === 'unread') return 'unread';
+    if (tab === 'processed') return 'processed';
+    return undefined;
+  };
 
-  const totalPages = Math.ceil(tabFilteredReports.length / reportsPerPage);
+  useEffect(() => {
+    const fetchReports = async () => {
+      try {
+        setLoading(true);
+        setError('');
+        const res = await getReports({
+          page: currentPage,
+          limit: reportsPerPage,
+          status: tabToStatus(activeTab),
+          search: searchQuery,
+          target: targetFilter === 'all' ? undefined : targetFilter,
+          orderBy: sortBy,
+          order: sortOrder,
+        });
+        setReports(res.data || []);
+        setTotalPages(res.pagination?.totalPages || 1);
+        setCounts(res.counts || { unread: 0, processed: 0 });
+        setExpandedReport(null);
+      } catch (err) {
+        console.error(err);
+        setError('Failed to load reports');
+        setReports([]);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  // Lấy reports của trang hiện tại
-  const indexOfLastReport = currentPage * reportsPerPage;
-  const indexOfFirstReport = indexOfLastReport - reportsPerPage;
-  const currentReports = tabFilteredReports.slice(indexOfFirstReport, indexOfLastReport);
-
-  // Đếm số lượng theo status
-  const unreadCount = allReports.filter(r => r.status === 'Unread').length;
-  const processedCount = allReports.filter(r => r.status === 'Processed').length;
+    fetchReports();
+  }, [activeTab, currentPage, searchQuery, targetFilter, sortBy, sortOrder, refreshKey]);
 
   const toggleReport = (id) => {
     setExpandedReport(expandedReport === id ? null : id);
@@ -104,6 +113,53 @@ function ReportManagement() {
     setActiveTab(tab);
     setCurrentPage(1); // Reset về trang 1 khi đổi tab
     setExpandedReport(null);
+  };
+
+  const handleRefresh = () => {
+    setSearchQuery('');
+    setTargetFilter('all');
+    setActiveTab('all');
+    setCurrentPage(1);
+    setExpandedReport(null);
+    setSortBy('createdAt');
+    setSortOrder('desc');
+    setRefreshKey((prev) => prev + 1);
+  };
+
+  const markStatus = async (id, status) => {
+    try {
+      await updateReportStatus(id, status);
+      setExpandedReport(null);
+      const res = await getReports({
+        page: currentPage,
+        limit: reportsPerPage,
+        status: tabToStatus(activeTab),
+        search: searchQuery,
+        target: targetFilter === 'all' ? undefined : targetFilter,
+        orderBy: sortBy,
+        order: sortOrder,
+      });
+      setReports(res.data || []);
+      setTotalPages(res.pagination?.totalPages || 1);
+      setCounts(res.counts || { unread: 0, processed: 0 });
+    } catch (err) {
+      console.error(err);
+      setError('Failed to update report');
+    }
+  };
+
+  const targets = ['OWNER', 'ADMIN'];
+
+  const formatDate = (iso) => {
+    if (!iso) return '';
+    const d = new Date(iso);
+    return d.toLocaleString();
+  };
+
+  const statusLabel = (status) => {
+    if (status === 'unread') return 'Unread';
+    if (status === 'processed') return 'Processed';
+    return status;
   };
 
   // Tạo array các số trang để hiển thị
@@ -143,16 +199,16 @@ function ReportManagement() {
   };
 
   return (
-    <div className="w-full h-full bg-gray-50 p-8">
-      <div className="w-full h-full">
+    <div className="w-full h-full bg-gray-50">
+      <div className="w-full h-full flex flex-col">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Report</h1>
+        <div className="px-6 pt-6 pb-4">
+          <h1 className="text-4xl font-bold text-gray-900">Report</h1>
         </div>
 
         {/* Tabs and Actions */}
-        <div className="bg-white rounded-lg shadow-sm mb-6 h-auto">
-          <div className="flex items-center justify-between px-8 py-5 border-b border-gray-200">
+        <div className="bg-white rounded-none shadow-sm flex-1 flex flex-col w-full">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
             <div className="flex gap-8">
               <button 
                 className={`pb-3 font-medium transition-colors relative text-base ${
@@ -193,11 +249,17 @@ function ReportManagement() {
               <button className="pb-3 text-gray-400 font-medium text-base">...</button>
             </div>
 
-            <div className="flex items-center gap-4">
-              <button className="px-5 py-2.5 text-base font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+            <div className="flex items-center gap-3">
+              <button
+                className="px-5 py-2.5 text-base font-medium text-gray-700 bg-white border border-gray-300 rounded-md transition-all duration-200 hover:bg-gray-50 hover:-translate-y-0.5 active:translate-y-0"
+                onClick={() => setIsFilterOpen(!isFilterOpen)}
+              >
                 Filter
               </button>
-              <button className="px-5 py-2.5 text-base font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+              <button
+                className="px-5 py-2.5 text-base font-medium text-gray-700 bg-white border border-gray-300 rounded-md transition-all duration-200 hover:bg-gray-50 hover:-translate-y-0.5 active:translate-y-0"
+                onClick={handleRefresh}
+              >
                 Refresh
               </button>
               <div className="relative">
@@ -215,13 +277,83 @@ function ReportManagement() {
             </div>
           </div>
 
+          {/* Filter Panel */}
+          {isFilterOpen && (
+            <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+              <div className="flex flex-wrap items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <label className="text-sm text-gray-600">Target</label>
+                  <select
+                    value={targetFilter}
+                    onChange={(e) => {
+                      setTargetFilter(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="px-3 py-2 border border-gray-300 rounded-md text-sm"
+                  >
+                    <option value="all">All</option>
+                    {targets.map(target => (
+                      <option key={target} value={target}>{target}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="text-sm text-gray-600">Order By</label>
+                  <select
+                    value={sortBy}
+                    onChange={(e) => {
+                      setSortBy(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="px-3 py-2 border border-gray-300 rounded-md text-sm"
+                  >
+                    <option value="id">ID</option>
+                    <option value="createdAt">Date</option>
+                  </select>
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="text-sm text-gray-600">Order</label>
+                  <select
+                    value={sortOrder}
+                    onChange={(e) => {
+                      setSortOrder(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="px-3 py-2 border border-gray-300 rounded-md text-sm"
+                  >
+                    <option value="asc">Asc</option>
+                    <option value="desc">Desc</option>
+                  </select>
+                </div>
+                <button
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md transition-all duration-200 hover:bg-gray-50 hover:-translate-y-0.5 active:translate-y-0"
+                  onClick={() => {
+                    setTargetFilter('all');
+                    setSortBy('createdAt');
+                    setSortOrder('desc');
+                  }}
+                >
+                  Clear Filters
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Report List */}
-          <div className="divide-y divide-gray-200">
-            {currentReports.length > 0 ? (
+          <div className="divide-y divide-gray-200 flex-1 overflow-y-auto">
+            {loading ? (
+              <div className="px-6 py-12 text-center text-gray-500">
+                <p className="text-lg">Loading...</p>
+              </div>
+            ) : error ? (
+              <div className="px-6 py-12 text-center text-red-600">
+                <p className="text-lg">{error}</p>
+              </div>
+            ) : currentReports.length > 0 ? (
               currentReports.map((report) => (
                 <div key={report.id} className="border-b border-gray-200">
                   <div 
-                    className="flex items-center justify-between px-8 py-5 hover:bg-gray-50 cursor-pointer"
+                    className="flex items-center justify-between px-6 py-4 hover:bg-gray-50 cursor-pointer"
                     onClick={() => toggleReport(report.id)}
                   >
                     <div className="flex items-center gap-4">
@@ -229,7 +361,7 @@ function ReportManagement() {
                         {report.id < 10 ? `0${report.id}` : report.id}
                       </span>
                       <span className="text-base font-medium text-gray-900">
-                        Report ID #{report.id} By {report.user}
+                        Report ID #{report.id} By {report.sender?.fullName || report.sender?.email || 'Unknown'}
                       </span>
                     </div>
                     <button className="text-gray-400 hover:text-gray-600">
@@ -238,8 +370,8 @@ function ReportManagement() {
                   </div>
 
                   {expandedReport === report.id && (
-                    <div className="px-8 py-6 bg-gray-50 border-t border-gray-200">
-                      <div className="flex gap-10">
+                    <div className="px-6 py-5 bg-gray-50 border-t border-gray-200">
+                      <div className="flex flex-wrap gap-8">
                         <div className="flex items-start gap-4">
                           <span className="text-base text-gray-500 whitespace-nowrap">Reported By</span>
                           <div className="flex items-center gap-3">
@@ -247,41 +379,57 @@ function ReportManagement() {
                               <span className="text-gray-500 text-sm">👤</span>
                             </div>
                             <div>
-                              <div className="text-base font-medium text-gray-900">{report.user}</div>
-                              <div className="text-sm text-gray-500">{report.userHouse}</div>
+                              <div className="text-base font-medium text-gray-900">
+                                {report.sender?.fullName || 'Unknown'}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {report.sender?.email || ''}
+                              </div>
                             </div>
                           </div>
                         </div>
 
                         <div className="flex-1">
                           <div className="text-base text-gray-500 mb-2">Detail Report</div>
-                          <div className="text-base text-gray-700 leading-relaxed">{report.detail}</div>
+                          <div className="text-base text-gray-700 leading-relaxed">{report.content}</div>
                         </div>
 
-                        <div className="min-w-[120px]">
+                        <div className="min-w-30">
                           <div className="text-base text-gray-500 mb-2">Date</div>
                           <div className="text-base font-medium text-gray-900 whitespace-pre-line">
-                            {report.date}
+                            {formatDate(report.createdAt)}
                           </div>
                         </div>
 
-                        <div className="min-w-[150px]">
-                          <div className="text-base text-gray-500 mb-2">Room</div>
-                          <div className="text-base font-medium text-gray-900">{report.room}</div>
+                        <div className="min-w-37.5">
+                          <div className="text-base text-gray-500 mb-2">Target</div>
+                          <div className="text-base font-medium text-gray-900">{report.target}</div>
                         </div>
 
-                        <div className="min-w-[140px]">
+                        <div className="min-w-35">
                           <div className="text-base text-gray-500 mb-2">Status</div>
                           <div className={`text-base font-medium ${
-                            report.status === 'Unread' ? 'text-red-600' : 'text-green-600'
+                            report.status === 'unread' ? 'text-red-600' : 'text-green-600'
                           }`}>
-                            {report.status}
+                            {statusLabel(report.status)}
                           </div>
                           <div className="flex flex-col gap-2 mt-4">
-                            <button className="text-sm text-blue-600 hover:underline text-left">
+                            <button
+                              className="text-sm text-blue-600 text-left transition-all duration-200 hover:underline hover:-translate-y-0.5 active:translate-y-0"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                markStatus(report.id, 'unread');
+                              }}
+                            >
                               Mark it Unread
                             </button>
-                            <button className="text-sm text-blue-600 hover:underline text-left">
+                            <button
+                              className="text-sm text-blue-600 text-left transition-all duration-200 hover:underline hover:-translate-y-0.5 active:translate-y-0"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                markStatus(report.id, 'processed');
+                              }}
+                            >
                               Mark it Processed
                             </button>
                           </div>
@@ -292,7 +440,7 @@ function ReportManagement() {
                 </div>
               ))
             ) : (
-              <div className="px-8 py-12 text-center text-gray-500">
+              <div className="px-6 py-12 text-center text-gray-500">
                 <p className="text-lg">No reports found</p>
                 <p className="text-sm mt-2">Try adjusting your search or filter criteria</p>
               </div>
@@ -301,14 +449,14 @@ function ReportManagement() {
 
           {/* Pagination */}
           {totalPages > 0 && (
-            <div className="flex items-center justify-center gap-2 px-8 py-5 border-t border-gray-200">
+            <div className="flex items-center justify-center gap-2 px-6 py-4 border-t border-gray-200">
               <button 
                 onClick={goToPreviousPage}
                 disabled={currentPage === 1}
-                className={`px-4 py-2 text-base rounded ${
+                className={`px-4 py-2 text-base rounded transition-all duration-200 ${
                   currentPage === 1 
                     ? 'text-gray-400 cursor-not-allowed' 
-                    : 'text-gray-600 hover:bg-gray-100'
+                    : 'text-gray-600 hover:bg-gray-100 hover:-translate-y-0.5 active:translate-y-0'
                 }`}
               >
                 Previous
@@ -321,10 +469,10 @@ function ReportManagement() {
                   <button
                     key={page}
                     onClick={() => goToPage(page)}
-                    className={`px-4 py-2 text-base rounded min-w-[40px] ${
+                    className={`px-4 py-2 text-base rounded min-w-10 transition-all duration-200 ${
                       currentPage === page
                         ? 'bg-blue-600 text-white font-medium'
-                        : 'text-gray-600 hover:bg-gray-100'
+                        : 'text-gray-600 hover:bg-gray-100 hover:-translate-y-0.5 active:translate-y-0'
                     }`}
                   >
                     {page}
@@ -335,10 +483,10 @@ function ReportManagement() {
               <button 
                 onClick={goToNextPage}
                 disabled={currentPage === totalPages}
-                className={`px-4 py-2 text-base rounded ${
+                className={`px-4 py-2 text-base rounded transition-all duration-200 ${
                   currentPage === totalPages 
                     ? 'text-gray-400 cursor-not-allowed' 
-                    : 'text-gray-600 hover:bg-gray-100'
+                    : 'text-gray-600 hover:bg-gray-100 hover:-translate-y-0.5 active:translate-y-0'
                 }`}
               >
                 Next
