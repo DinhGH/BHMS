@@ -1,4 +1,5 @@
 import { prisma } from "../lib/prisma.js";
+import { sendTenantStatusEmail } from "../lib/mailer.js";
 
 const parsePagination = (req) => {
   const page = Math.max(parseInt(req.query.page || "1", 10), 1);
@@ -43,7 +44,7 @@ export const listReports = async (req, res) => {
     const safeOrderBy = allowedOrderBy.includes(orderBy) ? orderBy : "createdAt";
     const safeOrder = order === "asc" ? "asc" : "desc";
 
-    const [total, reports, unreadCount, processedCount] =
+    const [total, reports, reviewingCount, fixingCount, fixedCount] =
       await Promise.all([
         prisma.report.count({ where }),
         prisma.report.findMany({
@@ -52,8 +53,9 @@ export const listReports = async (req, res) => {
           take: limit,
           orderBy: { [safeOrderBy]: safeOrder },
         }),
-        prisma.report.count({ where: { status: "unread" } }),
-        prisma.report.count({ where: { status: "processed" } }),
+        prisma.report.count({ where: { status: "REVIEWING" } }),
+        prisma.report.count({ where: { status: "FIXING" } }),
+        prisma.report.count({ where: { status: "FIXED" } }),
       ]);
 
     const senderIds = [...new Set(reports.map((r) => r.senderId))];
@@ -83,8 +85,9 @@ export const listReports = async (req, res) => {
         totalPages: Math.ceil(total / limit),
       },
       counts: {
-        unread: unreadCount,
-        processed: processedCount,
+        reviewing: reviewingCount,
+        fixing: fixingCount,
+        fixed: fixedCount,
       },
     });
   } catch (error) {
@@ -127,7 +130,7 @@ export const updateReportStatus = async (req, res) => {
     const { status } = req.body;
 
     if (!id) return res.status(400).json({ message: "Invalid report id" });
-    if (!status || !["unread", "processed"].includes(status)) {
+    if (!status || !["REVIEWING", "FIXING", "FIXED"].includes(status)) {
       return res.status(400).json({ message: "Invalid status" });
     }
 
@@ -141,11 +144,26 @@ export const updateReportStatus = async (req, res) => {
       select: { id: true, fullName: true, email: true },
     });
 
+    let emailResult = null;
+    if (tenant?.email && ["FIXING", "FIXED"].includes(status)) {
+      try {
+        emailResult = await sendTenantStatusEmail({
+          to: tenant.email,
+          reportId: report.id,
+          status,
+        });
+      } catch (emailError) {
+        console.error("sendTenantStatusEmail error:", emailError);
+        emailResult = { sent: false, error: "Email failed" };
+      }
+    }
+
     res.json({
       ...report,
       sender: tenant
         ? { id: tenant.id, fullName: tenant.fullName, email: tenant.email }
         : null,
+      email: emailResult,
     });
   } catch (error) {
     console.error("updateReportStatus error:", error);

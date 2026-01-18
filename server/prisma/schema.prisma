@@ -123,7 +123,7 @@ model Report {
   target    String
   content   String
   images    Json?
-  status    ReportStatus @default(unread)
+  status    ReportStatus @default(REVIEWING)
   createdAt DateTime     @default(now())
   sender    User         @relation(fields: [senderId], references: [id])
 
@@ -136,7 +136,7 @@ model ReportAdmin {
   target    String
   content   String
   images    Json?
-  status    ReportStatus @default(unread)
+  status    ReportStatus @default(REVIEWING)
   createdAt DateTime     @default(now())
   sender    Owner        @relation(fields: [senderId], references: [id])
 
@@ -184,8 +184,9 @@ enum InvoiceStatus {
 }
 
 enum ReportStatus {
-  unread
-  processed
+  FIXED
+  REVIEWING
+  FIXING
 }
 
 enum Payment_method {

@@ -130,9 +130,9 @@ function ReportIssue() {
   }, [popup.open]);
 
   return (
-    <div className="h-full w-full bg-slate-50 px-5 py-5">
+    <div className="h-full w-full bg-slate-50 px-3 py-4 sm:px-5 sm:py-5">
       {popup.open && (
-        <div className="fixed right-6 top-6 z-50">
+        <div className="fixed right-4 top-4 z-50 sm:right-6 sm:top-6">
           <div
             className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold shadow-lg transition ${
               popup.type === "success"
@@ -145,12 +145,14 @@ function ReportIssue() {
         </div>
       )}
       <div className="mx-auto w-full max-w-none">
-        <div className="mb-8 flex flex-col gap-3">
+        <div className="mb-6 flex flex-col gap-2 sm:mb-8 sm:gap-3">
           <p className="text-sm font-semibold uppercase tracking-[0.25em] text-slate-500">
             Issue Report
           </p>
-          <h1 className="text-4xl font-semibold text-slate-900">Report Issue</h1>
-          <p className="max-w-2xl text-base text-slate-600">
+          <h1 className="text-2xl font-semibold text-slate-900 sm:text-4xl">
+            Report Issue
+          </h1>
+          <p className="max-w-2xl text-sm text-slate-600 sm:text-base">
             Report system incidents or improvement requests. The information
             will be sent directly to admin for handling.
           </p>
@@ -159,11 +161,11 @@ function ReportIssue() {
         <div className="grid gap-6">
           <form
             onSubmit={handleSubmit}
-            className="rounded-3xl border border-slate-200 bg-white p-6 shadow-[0_25px_60px_-40px_rgba(15,23,42,0.45)]"
+            className="rounded-3xl border border-slate-200 bg-white p-4 shadow-[0_25px_60px_-40px_rgba(15,23,42,0.45)] sm:p-6"
           >
-            <div className="grid gap-5 md:grid-cols-2">
+            <div className="grid gap-4 sm:gap-5 md:grid-cols-2">
               <div>
-                <label className="text-sm font-semibold text-slate-700">
+                <label className="text-xs font-semibold text-slate-700 sm:text-sm">
                   Issue category
                 </label>
                 <div className="mt-2">
@@ -183,7 +185,7 @@ function ReportIssue() {
               </div>
 
               <div>
-                <label className="text-sm font-semibold text-slate-700">
+                <label className="text-xs font-semibold text-slate-700 sm:text-sm">
                   Sender
                 </label>
                 <div className="mt-2 flex flex-col gap-1 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
@@ -196,7 +198,7 @@ function ReportIssue() {
             </div>
 
             <div className="mt-5">
-              <label className="text-sm font-semibold text-slate-700">
+              <label className="text-xs font-semibold text-slate-700 sm:text-sm">
                 Detailed description
               </label>
               <div className="mt-2">
@@ -215,11 +217,11 @@ function ReportIssue() {
             </div>
 
             <div className="mt-5">
-              <label className="text-sm font-semibold text-slate-700">
+              <label className="text-xs font-semibold text-slate-700 sm:text-sm">
                 Upload images
               </label>
               <div className="mt-2 flex flex-col gap-3">
-                <label className="flex cursor-pointer items-center justify-center gap-3 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-sm font-semibold text-slate-600 transition hover:border-indigo-400 hover:bg-white">
+                <label className="flex cursor-pointer items-center justify-center gap-3 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-5 text-sm font-semibold text-slate-600 transition hover:border-indigo-400 hover:bg-white sm:py-6">
                   <input
                     type="file"
                     accept="image/*"
@@ -230,7 +232,7 @@ function ReportIssue() {
                   Choose images
                 </label>
                 {images.length > 0 && (
-                  <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
                     {images.map((image, index) => (
                       <div
                         key={`${image.name}-${index}`}
@@ -271,7 +273,7 @@ function ReportIssue() {
               <button
                 type="submit"
                 disabled={!isValid || isSubmitting}
-                className="rounded-full bg-slate-900 px-13 py-5 text-sm font-semibold text-white shadow-lg shadow-slate-900/20 transition hover:-translate-y-0.5 hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
+                className="w-full rounded-full bg-slate-900 px-8 py-4 text-sm font-semibold text-white shadow-lg shadow-slate-900/20 transition hover:-translate-y-0.5 hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none sm:w-auto sm:px-10"
               >
                 {isSubmitting ? "Sending..." : "Send Report"}
               </button>
