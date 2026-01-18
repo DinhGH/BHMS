@@ -1,7 +1,58 @@
+/* eslint-disable no-unused-vars */
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+import { useState } from "react";
+import { AuthProvider } from "./contexts/AuthContext";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+import ProtectedRoute from "./components/ProtectedRoute";
 import "./styles/App.css";
 
 function App() {
-  return <h1 className="text-red-500">Hello, BHMS!</h1>;
+  const [resetEmail, setResetEmail] = useState("");
+
+  return (
+    <Router>
+      <AuthProvider>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route
+            path="/forgot-password"
+            element={
+              <ForgotPassword onOtpSent={(email) => setResetEmail(email)} />
+            }
+          />
+          <Route
+            path="/reset-password"
+            element={
+              <ResetPassword
+                onBackToLogin={() => (window.location.href = "/login")}
+                onResetComplete={() => (window.location.href = "/login")}
+              />
+            }
+          />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <div style={{ padding: "2rem", textAlign: "center" }}>
+                  <h1>Dashboard - Coming Soon</h1>
+                </div>
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/" element={<Navigate to="/login" replace />} />
+        </Routes>
+      </AuthProvider>
+    </Router>
+  );
 }
 
 export default App;
