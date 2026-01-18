@@ -4,10 +4,12 @@ import ActionButton from "../components/ui/ActionButton";
 import TenantItem from "../components/ui/TenantItem";
 import { FaUsers } from "react-icons/fa";
 import api from "../server/api";
+import { toast } from "react-hot-toast";
 
 export default function ViewDetailRoom({ roomId, onBack }) {
   const [room, setRoom] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (roomId) fetchRoomDetail();
@@ -22,6 +24,49 @@ export default function ViewDetailRoom({ roomId, onBack }) {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+  const renderInvoiceStatus = (status) => {
+    switch (status) {
+      case "NO_TENANT":
+        return "No tenant rented";
+      case "NO_INVOICE":
+        return "No invoice created";
+      case "PENDING":
+        return "Unpaid";
+      case "PAID":
+        return "Paid";
+      case "OVERDUE":
+        return "Overdue";
+      default:
+        return "-";
+    }
+  };
+  const handleDeleteRoom = async () => {
+    if (!room) return;
+
+    const confirmed = window.confirm(
+      `Are you sure you want to delete room "${room.name}"?\nThis action cannot be undone.`,
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setDeleting(true);
+
+      await api.delete(`/owner/rooms/${room.id}`);
+
+      toast.success(`Room "${room.name}" deleted successfully`);
+      onBack(true);
+    } catch (err) {
+      console.error(err);
+
+      toast.error(
+        err?.response?.data?.message ||
+          "Cannot delete room. Please check room status.",
+      );
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -65,7 +110,11 @@ export default function ViewDetailRoom({ roomId, onBack }) {
 
           {/* Info */}
           <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <InfoBox label="Payment Status" value={room.paymentStatus} />
+            <InfoBox
+              label="Payment Status"
+              value={renderInvoiceStatus(room.paymentStatus)}
+            />
+
             <InfoBox label="Rent" value={`${room.price}$/Month`} />
             <InfoBox
               label="Move-in Date"
@@ -92,7 +141,10 @@ export default function ViewDetailRoom({ roomId, onBack }) {
               }
             />
 
-            <InfoBox label="Room Type" value="Studio" />
+            <InfoBox
+              label="Invoice"
+              value={renderInvoiceStatus(room.paymentStatus)}
+            />
           </div>
         </div>
 
@@ -103,9 +155,9 @@ export default function ViewDetailRoom({ roomId, onBack }) {
         <div className="text-center space-y-4">
           <div className="text-sm font-semibold text-slate-700">Tenants</div>
 
-          {room.tenant ? (
+          {room?.tenant ? (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 justify-items-center">
-              <TenantItem tenant={room.tenant} />
+              <TenantItem tenant={room.tenant.user} />
             </div>
           ) : (
             <div className="flex flex-col items-center gap-2 text-slate-500">
@@ -120,7 +172,12 @@ export default function ViewDetailRoom({ roomId, onBack }) {
       <div className="flex flex-col-3 justify-center gap-4   ">
         <ActionButton label="Make Invoice" />
         <ActionButton label="Edit" />
-        <ActionButton label="Delete" danger />
+        <ActionButton
+          label={deleting ? "Deleting..." : "Delete"}
+          danger
+          disabled={deleting}
+          onClick={handleDeleteRoom}
+        />
       </div>
     </div>
   );

@@ -154,3 +154,33 @@ export const checkBoardingHouseByName = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+export const deleteBoardingHouseByName = async (req, res) => {
+  try {
+    const { name } = req.query;
+    if (!name) {
+      return res
+        .status(400)
+        .json({ message: "Boarding house name is required" });
+    }
+
+    const house = await prisma.boardingHouse.findFirst({
+      where: {
+        name: name.trim(),
+      },
+    });
+
+    if (!house) {
+      return res.status(404).json({ message: "Boarding house not found" });
+    }
+
+    await prisma.boardingHouse.delete({
+      where: { id: house.id },
+    });
+
+    res.json({ message: "Boarding house deleted successfully" });
+  } catch (error) {
+    console.error("Delete boarding house error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};

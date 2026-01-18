@@ -1,8 +1,9 @@
 import { useEffect, useState, useMemo } from "react";
 import api from "../server/api.js";
-import SearchInput from "../components/SearchInput.jsx";
-import Pagination from "../components/Pagination.jsx";
+import SearchInput from "./ui/SearchInput.jsx";
+import Pagination from "./ui/Pagination.jsx";
 import ViewDetailRoom from "./ViewDetailRoom.jsx";
+import AddNewRoomModal from "./AddNewRoomModel.jsx";
 
 export default function ViewDetailBoardingHouse({ house, onBack }) {
   const [rooms, setRooms] = useState([]);
@@ -10,9 +11,25 @@ export default function ViewDetailBoardingHouse({ house, onBack }) {
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedRoomId, setSelectedRoomId] = useState(null);
+  const [openAddRoom, setOpenAddRoom] = useState(false);
 
   const pageSize = 12;
-
+  const renderInvoiceStatus = (status) => {
+    switch (status) {
+      case "NO_TENANT":
+        return "No tenant rented";
+      case "NO_INVOICE":
+        return "No invoice created";
+      case "PENDING":
+        return "Unpaid";
+      case "PAID":
+        return "Paid";
+      case "OVERDUE":
+        return "Overdue";
+      default:
+        return "-";
+    }
+  };
   useEffect(() => {
     fetchRooms();
     setCurrentPage(1);
@@ -32,7 +49,6 @@ export default function ViewDetailBoardingHouse({ house, onBack }) {
 
   const filteredRooms = useMemo(() => {
     if (!search.trim()) return rooms;
-
     return rooms.filter((room) =>
       room.name.toLowerCase().includes(search.toLowerCase()),
     );
@@ -50,14 +66,20 @@ export default function ViewDetailBoardingHouse({ house, onBack }) {
     return (
       <ViewDetailRoom
         roomId={selectedRoomId}
-        onBack={() => setSelectedRoomId(null)}
+        onBack={(shouldRefresh = false) => {
+          setSelectedRoomId(null);
+
+          if (shouldRefresh) {
+            fetchRooms();
+          }
+        }}
       />
     );
   }
 
   return (
     <div className="space-y-4">
-      {/* Header */}
+      {/* ===== HEADER ===== */}
       <div className="flex items-center gap-4">
         <button
           onClick={onBack}
@@ -71,6 +93,7 @@ export default function ViewDetailBoardingHouse({ house, onBack }) {
         </h2>
       </div>
 
+      {/* ===== SEARCH + ACTION ===== */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-8">
         <SearchInput
           value={search}
@@ -83,79 +106,115 @@ export default function ViewDetailBoardingHouse({ house, onBack }) {
           <button className="px-4 py-2 text-sm border rounded-md">
             Filter
           </button>
-          <button className="px-4 py-2 text-sm bg-gray-300 hover:bg-blue-500 text-white rounded-md">
+          <button
+            onClick={() => setOpenAddRoom(true)}
+            className="px-4 py-2 text-sm bg-gray-300 hover:bg-blue-500 text-white rounded-md"
+          >
             Add New
           </button>
         </div>
+        <AddNewRoomModal
+          open={openAddRoom}
+          houseId={house.id}
+          onClose={() => setOpenAddRoom(false)}
+          onSuccess={fetchRooms}
+        />
       </div>
 
+      {/* ===== CONTENT ===== */}
       {loading ? (
         <div className="text-center py-10">Loading...</div>
       ) : filteredRooms.length === 0 ? (
         <div className="text-center py-10 text-slate-500">No rooms found</div>
       ) : (
         <>
+          {/* ===== ROOM GRID ===== */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {paginatedRooms.map((room) => (
-              <div
-                key={room.id}
-                className="bg-white border rounded-lg shadow-sm overflow-hidden hover:shadow-2xl"
-              >
-                <div
-                  className="apple-card"
-                  onMouseMove={(e) => {
-                    const card = e.currentTarget;
-                    const rect = card.getBoundingClientRect();
-                    const x = e.clientX - rect.left;
-                    const y = e.clientY - rect.top;
-                    const centerX = rect.width / 2;
-                    const centerY = rect.height / 2;
-                    const rotateX = -(y - centerY) / 14;
-                    const rotateY = (x - centerX) / 14;
-                    card.style.transform = `perspective(1200px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.05)`;
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = `perspective(1200px) rotateX(0deg) rotateY(0deg) scale(1)`;
-                  }}
-                >
-                  <img
-                    src={room.image || "/no-image.png"}
-                    alt={room.name}
-                    className="apple-card-image"
-                  />
-                </div>
-                <div className="p-4 space-y-2">
-                  <h3 className="font-semibold">{room.name}</h3>
+            {paginatedRooms.map((room) => {
+              const isOccupied = room.currentOccupants > 0;
 
-                  <div className="text-sm text-slate-600 space-y-1">
-                    <div>Rent: ${room.price} / Month</div>
-                    <div>
-                      Occupants: {room.currentOccupants}/{room.maxOccupants}
-                    </div>
-                    <div
-                      className={
-                        room.paymentStatus === "OVERDUE"
-                          ? "text-red-500"
-                          : "text-green-600"
-                      }
-                    >
-                      Payment: {room.paymentStatus}
-                    </div>
-                    <div>Contract Ends: {room.contractEnd}</div>
+              return (
+                <div
+                  key={room.id}
+                  className="bg-white border rounded-lg shadow-sm overflow-hidden hover:shadow-2xl"
+                >
+                  <div
+                    className="apple-card"
+                    onMouseMove={(e) => {
+                      const card = e.currentTarget;
+                      const rect = card.getBoundingClientRect();
+                      const x = e.clientX - rect.left;
+                      const y = e.clientY - rect.top;
+                      const centerX = rect.width / 2;
+                      const centerY = rect.height / 2;
+                      const rotateX = -(y - centerY) / 14;
+                      const rotateY = (x - centerX) / 14;
+                      card.style.transform = `perspective(1200px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.05)`;
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform =
+                        "perspective(1200px) rotateX(0deg) rotateY(0deg) scale(1)";
+                    }}
+                  >
+                    <img
+                      src={room.image || "/no-image.png"}
+                      alt={room.name}
+                      className="apple-card-image"
+                    />
                   </div>
 
-                  <button
-                    className="text-sm font-medium hover:underline"
-                    onClick={() => setSelectedRoomId(room.id)}
-                  >
-                    View Detail →
-                  </button>
+                  <div className="p-4 space-y-2">
+                    <h3 className="font-semibold">{room.name}</h3>
+
+                    <div className="text-sm text-slate-600 space-y-1">
+                      <div>Rent: ${room.price} / Month</div>
+
+                      <div>
+                        Status:{" "}
+                        <span
+                          className={
+                            isOccupied ? "text-green-600" : "text-slate-400"
+                          }
+                        >
+                          {isOccupied ? "Occupied" : "Empty"}
+                        </span>
+                      </div>
+
+                      <div
+                        className={
+                          room.paymentStatus === "OVERDUE"
+                            ? "text-red-500"
+                            : room.paymentStatus === "PAID"
+                              ? "text-green-600"
+                              : room.paymentStatus === "PENDING"
+                                ? "text-yellow-500"
+                                : "text-slate-400"
+                        }
+                      >
+                        Payment: {renderInvoiceStatus(room.paymentStatus)}
+                      </div>
+
+                      <div>
+                        Contract Ends:{" "}
+                        {room.contractEnd
+                          ? new Date(room.contractEnd).toLocaleDateString()
+                          : "—"}
+                      </div>
+                    </div>
+
+                    <button
+                      className="text-sm font-medium hover:underline"
+                      onClick={() => setSelectedRoomId(room.id)}
+                    >
+                      View Detail →
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
-          {/* Pagination */}
+          {/* ===== PAGINATION ===== */}
           {totalPages > 1 && (
             <Pagination
               currentPage={currentPage}

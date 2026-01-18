@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import SearchInput from "../components/SearchInput.jsx";
-import Pagination from "../components/Pagination.jsx";
+import SearchInput from "./ui/SearchInput.jsx";
+import Pagination from "./ui/Pagination.jsx";
 import api from "../server/api.js";
-import BoardingHouseFormModal from "./BoardingHouseFormModal.jsx";
+import AddNewBoardingHouseModal from "./AddNewBoardingHouseModal.jsx";
 import RoomManagement from "./ViewDetailBoardingHouse.jsx";
+import DeleteHouseModal from "./DeleteHouseModal.jsx";
 import "../index.css";
 
 export default function BoardingHouseManagement({ ownerId }) {
@@ -14,6 +15,7 @@ export default function BoardingHouseManagement({ ownerId }) {
   const [selectedHouse, setSelectedHouse] = useState(null);
 
   const [openModal, setOpenModal] = useState(false);
+  const [openDeleteModal, setOpenDeleteModal] = useState(false);
 
   const pageSize = 8;
 
@@ -43,6 +45,27 @@ export default function BoardingHouseManagement({ ownerId }) {
   const totalPages = Math.ceil(houses.length / pageSize);
   const startIndex = (currentPage - 1) * pageSize;
   const paginatedHouses = houses.slice(startIndex, startIndex + pageSize);
+  // Pagination logic
+  //handle delete by name
+  const handleDelete = async (houseName) => {
+    const confirmed = window.confirm(
+      `Are you sure you want to delete "${houseName}"?\nThis action cannot be undone.`,
+    );
+
+    if (!confirmed) return;
+
+    try {
+      await api.delete(
+        `/owner/boarding-houses?name=${encodeURIComponent(houseName)}`,
+      );
+
+      alert("Deleted successfully");
+      fetchHouses();
+    } catch (error) {
+      console.error("Delete error", error);
+      alert("Delete failed. Check house name again.");
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -63,9 +86,15 @@ export default function BoardingHouseManagement({ ownerId }) {
               className="sm:max-w-sm"
             />
             <div className="flex gap-6">
-              <button className="px-4 py-2 text-sm border rounded-md">
-                Filter
+              <button
+                className="flex px-4 py-2 text-sm bg-gray-300 hover:bg-red-500 text-white border rounded-md"
+                onClick={() => {
+                  setOpenDeleteModal(true);
+                }}
+              >
+                Delete
               </button>
+
               <button
                 className="flex items-center gap-2 px-4 py-2 text-sm bg-gray-300 hover:bg-blue-500 text-white rounded-md"
                 onClick={() => setOpenModal(true)}
@@ -75,11 +104,17 @@ export default function BoardingHouseManagement({ ownerId }) {
             </div>
           </div>
 
-          <BoardingHouseFormModal
+          <AddNewBoardingHouseModal
             open={openModal}
             ownerId={ownerId}
             onClose={() => setOpenModal(false)}
             onSuccess={fetchHouses}
+          />
+          <DeleteHouseModal
+            open={openDeleteModal}
+            onClose={() => setOpenDeleteModal(false)}
+            houses={houses}
+            onDelete={handleDelete}
           />
 
           {/* Content */}
@@ -91,11 +126,11 @@ export default function BoardingHouseManagement({ ownerId }) {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 hover:shadow-2xl">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 ">
                 {paginatedHouses.map((house) => (
                   <div
                     key={house.id}
-                    className="bg-white rounded-lg border shadow-sm overflow-hidden"
+                    className="bg-white rounded-lg border shadow-sm overflow-hidden hover:shadow-2xl"
                   >
                     <div
                       className="apple-card"
