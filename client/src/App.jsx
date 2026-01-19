@@ -13,6 +13,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminLayout from "./layouts/AdminLayout.jsx";
+import HomePageOwner from "./pages/owner/HomePageOwner";
 import "./styles/App.css";
 
 function App() {
@@ -51,6 +52,7 @@ function App() {
             }
           />
           <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/owner" element={<HomePageOwner />} />
         </Routes>
       </AuthProvider>
     </Router>
