@@ -14,6 +14,7 @@ import ResetPassword from "./pages/ResetPassword";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminLayout from "./layouts/AdminLayout.jsx";
 import HomePageOwner from "./pages/owner/HomePageOwner";
+import LandingPage from "./pages/LandingPage";
 import "./styles/App.css";
 
 function App() {
@@ -51,7 +52,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/" element={<LandingPage />} />
           <Route path="/owner" element={<HomePageOwner />} />
         </Routes>
       </AuthProvider>
