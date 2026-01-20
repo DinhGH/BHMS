@@ -1,0 +1,141 @@
+.tenant-detail-page {
+  padding: 24px;
+  background: #f4f6f8;
+  min-height: calc(100vh - 64px);
+}
+
+/* HEADER */
+.tenant-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.tenant-detail-header h2 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.subtitle {
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+}
+
+/* CONTENT */
+.tenant-detail-content {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 24px;
+}
+
+/* LEFT CARD */
+.tenant-avatar-card {
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.avatar-placeholder {
+  width: 160px;
+  height: 160px;
+  background: #e5e7eb;
+  border-radius: 6px;
+  margin: 0 auto 12px;
+}
+
+.avatar-label {
+  display: block;
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.avatar-actions {
+  display: flex;
+  flex-direction: column; /* stack vertically */
+  gap: 10px;
+  margin-top: 12px;
+}
+
+
+.upload {
+  margin-bottom: 16px;
+}
+
+.danger {
+  background: #d1d5db;
+}
+
+/* FORM */
+.tenant-form {
+  background: #ffffff;
+  padding: 24px;
+  border-radius: 8px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  font-size: 13px;
+  color: #374151;
+  margin-bottom: 6px;
+}
+
+.form-group input,
+.form-group select {
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+  font-size: 14px;
+  outline: none;
+}
+
+/* BUTTONS */
+.btn {
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 6px;
+  border: none;
+  background: #cfd4d9;
+  color: #ffffff;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.btn.primary {
+  background: #cfd4d9;
+}
+
+.btn:hover {
+  opacity: 0.9;
+}
+
+.btn.upload {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  height: 40px;              /* match other buttons */
+  padding: 0 16px;
+  cursor: pointer;
+  position: relative;
+}

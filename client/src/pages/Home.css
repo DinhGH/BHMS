@@ -1,0 +1,9 @@
+.home h1 {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.home p {
+  color: #666;
+}

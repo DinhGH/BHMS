@@ -1,0 +1,77 @@
+/* PAGE */
+.tenants-page {
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  background: #f4f6f8;
+  min-height: calc(100vh - 64px);
+  box-sizing: border-box;
+}
+
+/* CONTENT AREA (grid lives here) */
+.tenants-content {
+  flex: 1; /* 🔥 this pushes pagination down */
+}
+
+/* PAGINATION POSITION */
+.pagination {
+  margin-top: auto;           /* 🔥 stick to bottom */
+  padding: 24px 0 12px;
+  display: flex;
+  justify-content: center;
+}
+
+
+/* HEADER BAR */
+.tenants-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+/* SEARCH INPUT */
+.tenants-search {
+  width: 520px;   /* longer */
+  max-width: 50%;
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  font-size: 14px;
+  outline: none;
+  background: #ffffff;
+}
+
+.tenants-search::placeholder {
+  color: #9ca3af;
+}
+
+.tenants-search:focus {
+  border-color: #2563eb;
+}
+
+/* ACTION BUTTONS */
+.tenants-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.btn {
+  height: 40px;
+  padding: 0 18px;
+  border-radius: 6px;
+  border: none;
+  background: #cfd4d9;
+  color: #ffffff;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.btn:hover {
+  background: #bfc5ca;
+}
+
+.btn.primary {
+  background: #cfd4d9;
+}
