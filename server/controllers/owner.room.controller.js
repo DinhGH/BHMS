@@ -2,59 +2,87 @@ import { prisma } from "../lib/prisma.js";
 
 export const getRoomsByBoardingHouse = async (req, res) => {
   try {
-    const houseId = parseInt(req.params.houseId);
+    const houseId = Number(req.params.houseId);
+    const { minPrice, maxPrice, status, paymentStatus } = req.query;
+
     if (isNaN(houseId)) {
       return res.status(400).json({ message: "Invalid boarding house id" });
     }
 
+    /* ===== DB FILTER ===== */
+    const where = { houseId };
+
+    if (minPrice && maxPrice) {
+      where.price = {
+        gte: Number(minPrice),
+        lte: Number(maxPrice),
+      };
+    }
+
+    if (status === "LOCKED") {
+      where.status = "LOCKED";
+    }
+
     const rooms = await prisma.room.findMany({
-      where: { houseId },
+      where,
       include: {
-        contracts: {
+        rentalContracts: {
           where: { active: true },
-          include: {
-            tenant: true,
-          },
-        },
-        invoices: {
-          orderBy: { createdAt: "desc" },
           take: 1,
+          orderBy: { createdAt: "desc" },
+        },
+        Invoice: {
+          take: 1,
+          orderBy: { createdAt: "desc" },
         },
       },
       orderBy: { createdAt: "desc" },
     });
 
-    const result = rooms.map((room) => {
-      const activeContract = room.contracts[0] || null;
-      const latestInvoice = room.invoices[0] || null;
+    /* ===== MAP ===== */
+    let result = rooms.map((room) => {
+      const contract = room.rentalContracts[0] ?? null;
+      const invoice = room.Invoice[0] ?? null;
 
-      const hasTenant = !!activeContract;
-
-      let paymentStatus = "NO_TENANT";
-
-      if (activeContract) {
-        if (!latestInvoice) {
-          paymentStatus = "NO_INVOICE";
-        } else {
-          paymentStatus = latestInvoice.status; // PENDING | PAID | OVERDUE
-        }
+      let payment = "NO_TENANT";
+      if (contract) {
+        payment = invoice ? invoice.status : "NO_INVOICE";
       }
 
       return {
         id: room.id,
         name: room.name,
-        image: room.image,
+        imageUrl: room.imageUrl,
         price: room.price,
-        currentOccupants: room.contracts.length,
-        paymentStatus,
-        contractEnd: activeContract?.contractEnd || null,
+        status: room.status,
+        currentOccupants: contract ? 1 : 0,
+        paymentStatus: payment,
+        contractEnd: contract?.endDate ?? null,
       };
     });
 
+    /* ===== STATUS FILTER (TENANT BASED) ===== */
+    if (status === "OCCUPIED") {
+      result = result.filter(
+        (r) => r.status !== "LOCKED" && r.currentOccupants > 0,
+      );
+    }
+
+    if (status === "EMPTY") {
+      result = result.filter(
+        (r) => r.status !== "LOCKED" && r.currentOccupants === 0,
+      );
+    }
+
+    /* ===== PAYMENT FILTER ===== */
+    if (paymentStatus && paymentStatus !== "ALL") {
+      result = result.filter((r) => r.paymentStatus === paymentStatus);
+    }
+
     return res.json(result);
-  } catch (error) {
-    console.error("Get rooms error:", error);
-    return res.status(500).json({ message: "Server error" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -62,36 +90,26 @@ export const getRoomDetail = async (req, res) => {
   try {
     const roomId = Number(req.params.id);
 
-    if (!roomId || isNaN(roomId)) {
-      return res.status(400).json({ message: "Invalid room id" });
-    }
-
     const room = await prisma.room.findUnique({
       where: { id: roomId },
       include: {
-        house: { select: { id: true, name: true } },
-        contracts: {
-          where: { active: true },
-          take: 1,
-          include: {
-            tenant: {
-              select: {
-                id: true,
-                user: {
-                  select: {
-                    fullName: true,
-                    phone: true,
-                    avatar: true,
-                  },
-                },
-              },
-            },
+        house: {
+          select: {
+            electricFee: true,
+            waterFee: true,
           },
         },
-        invoices: {
+        rentalContracts: {
+          where: { active: true },
           orderBy: { createdAt: "desc" },
           take: 1,
-          select: { status: true },
+          include: {
+            tenant: true,
+          },
+        },
+        Invoice: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
         },
       },
     });
@@ -100,42 +118,57 @@ export const getRoomDetail = async (req, res) => {
       return res.status(404).json({ message: "Room not found" });
     }
 
-    const activeContract = room.contracts[0] ?? null;
-    const latestInvoice = room.invoices[0] ?? null;
-
-    let paymentStatus = "NO_TENANT";
-    if (activeContract) {
-      paymentStatus = latestInvoice ? latestInvoice.status : "NO_INVOICE";
-    }
+    const contract = room.rentalContracts[0] ?? null;
+    const invoice = room.Invoice[0] ?? null;
 
     res.json({
       id: room.id,
       name: room.name,
       price: room.price,
-      image: room.image,
-      isLocked: room.isLocked,
-      paymentStatus,
-      tenant: activeContract?.tenant ?? null,
-      moveInDate: activeContract?.moveInDate ?? null,
-      contractEnd: activeContract?.contractEnd ?? null,
+      imageUrl: room.imageUrl,
+
+      status: contract ? "OCCUPIED" : "EMPTY",
+
+      electricMeter: room.electricMeter,
+      waterMeter: room.waterMeter,
+
+      electricFee: room.house.electricFee,
+      waterFee: room.house.waterFee,
+
+      tenant: contract
+        ? {
+            id: contract.tenant.id,
+            fullName: contract.tenant.fullName,
+            email: contract.tenant.email,
+            phone: contract.tenant.phone,
+            gender: contract.tenant.gender,
+            imageUrl: contract.tenant.imageUrl,
+          }
+        : null,
+
+      moveInDate: contract?.moveInDate ?? null,
+      contractEnd: contract?.endDate ?? null,
+
+      paymentStatus: invoice?.status ?? "NO_INVOICE",
+      lastInvoice: invoice,
     });
-  } catch (error) {
-    console.error("Get room detail error:", error);
-    res.status(500).json({ message: "Server error" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Get room detail failed" });
   }
 };
 
 // POST /owner/rooms
 export const createRoom = async (req, res) => {
   try {
-    const { houseId, name, price, image } = req.body;
+    const { houseId, name, price, imageUrl } = req.body;
 
     const room = await prisma.room.create({
       data: {
-        houseId,
+        houseId: Number(houseId),
         name,
-        price,
-        image,
+        price: Number(price),
+        imageUrl,
       },
     });
 
@@ -145,6 +178,7 @@ export const createRoom = async (req, res) => {
     res.status(500).json({ message: "Create room failed" });
   }
 };
+
 export const checkRoomName = async (req, res) => {
   try {
     const houseId = Number(req.query.houseId);
@@ -177,10 +211,10 @@ export const deleteRoom = async (req, res) => {
     const room = await prisma.room.findUnique({
       where: { id: roomId },
       include: {
-        contracts: {
+        rentalContracts: {
           where: { active: true },
         },
-        invoices: true,
+        Invoice: true,
       },
     });
 
@@ -188,21 +222,18 @@ export const deleteRoom = async (req, res) => {
       return res.status(404).json({ message: "Room not found" });
     }
 
-    // ❌ Có tenant (có hợp đồng active) → KHÔNG cho xóa
-    if (room.contracts.length > 0) {
+    if (room.rentalContracts.length > 0) {
       return res.status(400).json({
         message: "Cannot delete room because it is currently rented",
       });
     }
 
-    // ❌ Có invoice → KHÔNG cho xóa (optional nhưng nên có)
-    if (room.invoices.length > 0) {
+    if (room.Invoice.length > 0) {
       return res.status(400).json({
         message: "Please delete all invoices before deleting this room",
       });
     }
 
-    // ✅ OK → xóa phòng
     await prisma.room.delete({
       where: { id: roomId },
     });
@@ -211,5 +242,43 @@ export const deleteRoom = async (req, res) => {
   } catch (error) {
     console.error("Delete room error:", error);
     return res.status(500).json({ message: "Server error" });
+  }
+};
+export const updateRoom = async (req, res) => {
+  try {
+    const roomId = Number(req.params.id);
+    if (isNaN(roomId)) {
+      return res.status(400).json({ message: "Invalid room id" });
+    }
+
+    const { name, price, electricMeter, waterMeter, imageUrl } = req.body;
+
+    if (!name || !price) {
+      return res.status(400).json({ message: "Name and price are required" });
+    }
+
+    const room = await prisma.room.findUnique({
+      where: { id: roomId },
+    });
+
+    if (!room) {
+      return res.status(404).json({ message: "Room not found" });
+    }
+
+    const updatedRoom = await prisma.room.update({
+      where: { id: roomId },
+      data: {
+        name: name.trim(),
+        price: Number(price),
+        electricMeter: Number(electricMeter) || 0,
+        waterMeter: Number(waterMeter) || 0,
+        imageUrl: imageUrl || null,
+      },
+    });
+
+    return res.json(updatedRoom);
+  } catch (error) {
+    console.error("UPDATE ROOM ERROR:", error);
+    return res.status(500).json({ message: "Update room failed" });
   }
 };

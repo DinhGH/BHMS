@@ -3,6 +3,7 @@ import InfoBox from "../components/ui/InfoBox";
 import ActionButton from "../components/ui/ActionButton";
 import TenantItem from "../components/ui/TenantItem";
 import { FaUsers } from "react-icons/fa";
+import EditRoomModal from "../components/EditRoomModal";
 import api from "../server/api";
 import { toast } from "react-hot-toast";
 
@@ -10,6 +11,7 @@ export default function ViewDetailRoom({ roomId, onBack }) {
   const [room, setRoom] = useState(null);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
 
   useEffect(() => {
     if (roomId) fetchRoomDetail();
@@ -69,11 +71,21 @@ export default function ViewDetailRoom({ roomId, onBack }) {
       setDeleting(false);
     }
   };
+  const handleMakeInvoice = async () => {
+    try {
+      await api.post(`/owner/rooms/${room.id}/invoice`);
+      toast.success("Invoice created successfully");
+      fetchRoomDetail();
+    } catch (err) {
+      console.error(err);
+      toast.error(err?.response?.data?.message || "Failed to create invoice");
+    }
+  };
 
   if (loading) return <div className="text-center py-16">Loading...</div>;
   if (!room)
     return <div className="text-center py-16 text-red-500">Room not found</div>;
-  const isOccupied = !!room.tenant;
+  const isOccupied = room.status === "OCCUPIED";
 
   return (
     <div className="space-y-8">
@@ -145,6 +157,15 @@ export default function ViewDetailRoom({ roomId, onBack }) {
               label="Invoice"
               value={renderInvoiceStatus(room.paymentStatus)}
             />
+            <InfoBox
+              label="Estimated Electric Cost"
+              value={`${room.electricMeter * room.electricFee}$`}
+            />
+
+            <InfoBox
+              label="Estimated Water Cost"
+              value={`${room.waterMeter * room.waterFee}$`}
+            />
           </div>
         </div>
 
@@ -157,7 +178,7 @@ export default function ViewDetailRoom({ roomId, onBack }) {
 
           {room?.tenant ? (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 justify-items-center">
-              <TenantItem tenant={room.tenant.user} />
+              <TenantItem tenant={room.tenant} />
             </div>
           ) : (
             <div className="flex flex-col items-center gap-2 text-slate-500">
@@ -170,8 +191,13 @@ export default function ViewDetailRoom({ roomId, onBack }) {
 
       {/* ACTIONS */}
       <div className="flex flex-col-3 justify-center gap-4   ">
-        <ActionButton label="Make Invoice" />
-        <ActionButton label="Edit" />
+        <ActionButton
+          label="Make Invoice"
+          disabled={room.status !== "OCCUPIED"}
+          onClick={handleMakeInvoice}
+        />
+
+        <ActionButton label="Edit" onClick={() => setShowEdit(true)} />
         <ActionButton
           label={deleting ? "Deleting..." : "Delete"}
           danger
@@ -179,6 +205,14 @@ export default function ViewDetailRoom({ roomId, onBack }) {
           onClick={handleDeleteRoom}
         />
       </div>
+      {showEdit && (
+        <EditRoomModal
+          open={showEdit}
+          room={room}
+          onClose={() => setShowEdit(false)}
+          onUpdated={fetchRoomDetail}
+        />
+      )}
     </div>
   );
 }

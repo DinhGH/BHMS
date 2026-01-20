@@ -8,77 +8,149 @@ datasource db {
 }
 
 model User {
-  id            Int            @id @default(autoincrement())
-  email         String         @unique
-  passwordHash  String?
-  fullName      String?
-  provider      String?
-  role          Role
-  status        User_status    @default(NO_RENTING)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  active        User_active    @default(YES)
-  avatar        String?
-  gender        String
-  hometown      String?
-  otp           String?        @db.VarChar(6)
-  otpExpire     DateTime?
-  phone         String
-  notifications Notification[]
-  owner         Owner?
-  reports       Report[]
-  tenant        Tenant?
+  id           Int         @id @default(autoincrement())
+  email        String      @unique
+  passwordHash String
+  role         Role
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  active       UserActive  @default(YES)
+  otp          String?     @db.VarChar(6)
+  otpExpire    DateTime?
+  licenseKey   LicenseKey?
+  owner        Owner?
+  Report       Report[]
+}
 
-  @@index([email])
+model LicenseKey {
+  id        Int       @id @default(autoincrement())
+  key       String    @unique
+  userId    Int?      @unique
+  startAt   DateTime?
+  expireAt  DateTime?
+  isActive  Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  usedAt    DateTime?
+  user      User?     @relation(fields: [userId], references: [id])
 }
 
 model Owner {
-  id     Int             @id @default(autoincrement())
-  userId Int             @unique
-  houses BoardingHouse[]
-  user   User            @relation(fields: [userId], references: [id])
+  id          Int             @id @default(autoincrement())
+  userId      Int             @unique
+  houses      BoardingHouse[]
+  user        User            @relation(fields: [userId], references: [id])
+  ReportAdmin ReportAdmin[]
 }
-
-model Tenant {
-  id        Int              @id @default(autoincrement())
-  userId    Int              @unique
-  invoices  Invoice[]
-  contracts RentalContract[]
-  user      User             @relation(fields: [userId], references: [id])
-}
-
 model BoardingHouse {
   id          Int      @id @default(autoincrement())
   ownerId     Int
   name        String
   address     String
+
+  imageUrl    String? 
+
   electricFee Float
   waterFee    Float
-  services    Json?
   createdAt   DateTime @default(now())
-  image       String?
+
   owner       Owner    @relation(fields: [ownerId], references: [id])
   rooms       Room[]
 
-  @@index([ownerId], map: "BoardingHouse_ownerId_fkey")
+  @@index([ownerId])
 }
 
 model Room {
-  id            Int              @id @default(autoincrement())
+  id            Int           @id @default(autoincrement())
   houseId       Int
   name          String
   price         Float
-  isLocked      Boolean          @default(false)
-  electricMeter Float            @default(0)
-  waterMeter    Float            @default(0)
-  createdAt     DateTime         @default(now())
-  image         String?
-  invoices      Invoice[]
-  contracts     RentalContract[]
-  house         BoardingHouse    @relation(fields: [houseId], references: [id])
 
-  @@index([houseId], map: "Room_houseId_fkey")
+  imageUrl      String?       
+
+  electricMeter Float         @default(0)
+  waterMeter    Float         @default(0)
+  createdAt     DateTime      @default(now())
+  status        RoomStatus    @default(EMPTY)
+
+  Invoice        Invoice[]
+  rentalContracts RentalContract[]
+
+  house         BoardingHouse @relation(fields: [houseId], references: [id])
+  roomServices  RoomService[]
+  tenants         Tenant[] 
+
+  @@index([houseId])
 }
+
+
+model Service {
+  id           Int           @id @default(autoincrement())
+  name         String
+  unit         ServiceUnit
+  createdAt    DateTime      @default(now())
+  roomServices RoomService[]
+}
+
+model RentalContract {
+  id          Int      @id @default(autoincrement())
+  roomId      Int
+  tenantId    Int
+
+  moveInDate  DateTime
+  endDate     DateTime
+  moveOutDate DateTime?
+
+  deposit     Float    @default(0)
+  active      Boolean  @default(true)
+
+  createdAt   DateTime @default(now())
+
+  room     Room   @relation(fields: [roomId], references: [id])
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+
+  @@index([roomId])
+  @@index([tenantId])
+}
+
+model RoomService {
+  id        Int      @id @default(autoincrement())
+  roomId    Int
+  serviceId Int
+  price     Float
+  createdAt DateTime @default(now())
+  room      Room     @relation(fields: [roomId], references: [id])
+  service   Service  @relation(fields: [serviceId], references: [id])
+
+  @@unique([roomId, serviceId])
+  @@index([roomId])
+  @@index([serviceId], map: "RoomService_serviceId_fkey")
+}
+
+model Tenant {
+  id        Int      @id @default(autoincrement())
+
+  roomId    Int
+
+  fullName  String
+  email     String
+  phone     String?
+  gender    Gender
+  age       Int
+
+  imageUrl  String?  
+
+  startDate DateTime
+  endDate   DateTime?
+
+  createdAt DateTime  @default(now())
+
+  room      Room      @relation(fields: [roomId], references: [id])
+  invoices  Invoice[]
+rentalContracts RentalContract[]
+  @@index([roomId])
+}
+
+
 
 model Invoice {
   id           Int           @id @default(autoincrement())
@@ -93,71 +165,72 @@ model Invoice {
   month        Int
   year         Int
   createdAt    DateTime      @default(now())
-  room         Room          @relation(fields: [roomId], references: [id])
-  tenant       Tenant        @relation(fields: [tenantId], references: [id])
-  payments     Payment[]
+  Room         Room          @relation(fields: [roomId], references: [id])
+  Tenant       Tenant        @relation(fields: [tenantId], references: [id])
+  payment      Payment?
 
   @@unique([roomId, month, year])
-  @@index([tenantId], map: "Invoice_tenantId_fkey")
+  @@index([tenantId])
 }
 
 model Payment {
-  id         Int           @id @default(autoincrement())
-  invoiceId  Int
-  method     PaymentMethod
-  amount     Float
-  proofImage String?
-  confirmed  Boolean       @default(false)
-  createdAt  DateTime      @default(now())
-  invoice    Invoice       @relation(fields: [invoiceId], references: [id])
-
-  @@index([invoiceId], map: "Payment_invoiceId_fkey")
+  id        Int           @id @default(autoincrement())
+  invoiceId Int           @unique
+  method    PaymentMethod
+  amount    Float
+  confirmed Boolean       @default(false)
+  createdAt DateTime      @default(now())
+  invoice   Invoice       @relation(fields: [invoiceId], references: [id])
 }
 
 model Notification {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  title     String
-  content   String
-  isRead    Boolean  @default(false)
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id])
-
-  @@index([userId], map: "Notification_userId_fkey")
+  id      Int      @id @default(autoincrement())
+  title   String
+  content String
+  sentAt  DateTime @default(now())
+  target  String
 }
 
 model Report {
-  id        Int          @id @default(autoincrement())
+  id        Int           @id @default(autoincrement())
   senderId  Int
   target    String
   content   String
   images    Json?
-  status    ReportStatus @default(PENDING)
-  createdAt DateTime     @default(now())
-  sender    User         @relation(fields: [senderId], references: [id])
+  status    Report_status @default(unread)
+  createdAt DateTime      @default(now())
+  User      User          @relation(fields: [senderId], references: [id])
 
   @@index([senderId], map: "Report_senderId_fkey")
 }
 
-model RentalContract {
-  id          Int      @id @default(autoincrement())
-  roomId      Int
-  tenantId    Int
-  moveInDate  DateTime
-  contractEnd DateTime
-  active      Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  room        Room     @relation(fields: [roomId], references: [id])
-  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+model ReportAdmin {
+  id        Int                @id @default(autoincrement())
+  senderId  Int
+  target    String
+  content   String
+  images    Json?
+  status    ReportAdmin_status @default(unread)
+  createdAt DateTime           @default(now())
+  Owner     Owner              @relation(fields: [senderId], references: [id])
 
-  @@index([roomId])
-  @@index([tenantId])
+  @@index([senderId], map: "ReportAdmin_senderId_fkey")
 }
 
 enum Role {
   ADMIN
   OWNER
-  TENANT
+}
+
+enum UserActive {
+  YES
+  NO
+}
+
+enum RoomStatus {
+  EMPTY
+  OCCUPIED
+  LOCKED
 }
 
 enum InvoiceStatus {
@@ -166,23 +239,28 @@ enum InvoiceStatus {
   OVERDUE
 }
 
-enum ReportStatus {
-  PENDING
-  PROCESSING
-  RESOLVED
-}
-
 enum PaymentMethod {
   GATEWAY
-  QR_TRANSFER
 }
 
-enum User_status {
-  RENTING
-  NO_RENTING
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
 }
 
-enum User_active {
-  YES
-  NO
+enum ServiceUnit {
+  PER_MONTH
+  PER_PERSON
+  PER_USAGE
+}
+
+enum Report_status {
+  unread
+  processed
+}
+
+enum ReportAdmin_status {
+  unread
+  processed
 }

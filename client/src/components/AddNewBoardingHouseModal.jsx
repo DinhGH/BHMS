@@ -9,8 +9,7 @@ export default function AddNewBoardingHouseModal({ open, onClose, onSuccess }) {
     address: "",
     electricFee: "",
     waterFee: "",
-    services: "",
-    image: "",
+    imageUrl: "",
   });
 
   const [errors, setErrors] = useState({});
@@ -19,17 +18,6 @@ export default function AddNewBoardingHouseModal({ open, onClose, onSuccess }) {
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  const parseServices = (text) => {
-    if (!text) return null;
-    const services = {};
-    text
-      .split(/,|\n/)
-      .map((s) => s.trim().toLowerCase())
-      .filter(Boolean)
-      .forEach((s) => (services[s] = true));
-    return Object.keys(services).length ? services : null;
   };
 
   /* ================= VALIDATION ================= */
@@ -52,10 +40,10 @@ export default function AddNewBoardingHouseModal({ open, onClose, onSuccess }) {
       newErrors.waterFee = "Water price must be greater than 0";
     }
 
-    if (form.image) {
+    if (form.imageUrl) {
       const urlRegex = /^(https?:\/\/)/i;
-      if (!urlRegex.test(form.image.trim())) {
-        newErrors.image = "Invalid image URL";
+      if (!urlRegex.test(form.imageUrl.trim())) {
+        newErrors.imageUrl = "Invalid image URL";
       }
     }
 
@@ -79,10 +67,9 @@ export default function AddNewBoardingHouseModal({ open, onClose, onSuccess }) {
       const payload = {
         name: form.name.trim(),
         address: form.address.trim(),
-        electricFee: form.electricFee ? Number(form.electricFee) : null,
-        waterFee: form.waterFee ? Number(form.waterFee) : null,
-        services: parseServices(form.services),
-        image: form.image?.trim() || null,
+        electricFee: form.electricFee ? Number(form.electricFee) : 0,
+        waterFee: form.waterFee ? Number(form.waterFee) : 0,
+        imageUrl: form.imageUrl?.trim() || null,
       };
 
       const existed = await api.get(
@@ -109,8 +96,8 @@ export default function AddNewBoardingHouseModal({ open, onClose, onSuccess }) {
 
   /* ================= UI ================= */
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-      <div className="bg-white w-full max-w-2xl max-h-screen p-6 overflow-y-auto relative rounded-lg">
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+      <div className="bg-white w-full max-w-2xl max-h-screen p-6 overflow-y-auto rounded-lg">
         <div
           className="flex items-center mb-6 cursor-pointer"
           onClick={onClose}
@@ -182,29 +169,17 @@ export default function AddNewBoardingHouseModal({ open, onClose, onSuccess }) {
         </div>
 
         {/* Image */}
-        <div className="mb-4">
+        <div className="mb-6">
           <label className="block mb-1 font-medium">Image URL</label>
           <input
-            name="image"
-            value={form.image}
+            name="imageUrl"
+            value={form.imageUrl}
             onChange={handleChange}
             className="w-full border p-2 rounded"
           />
-          {errors.image && (
-            <p className="text-red-500 text-sm">{errors.image}</p>
+          {errors.imageUrl && (
+            <p className="text-red-500 text-sm">{errors.imageUrl}</p>
           )}
-        </div>
-
-        {/* Services */}
-        <div className="mb-6">
-          <label className="block mb-1 font-medium">Services</label>
-          <textarea
-            name="services"
-            value={form.services}
-            onChange={handleChange}
-            className="w-full border p-2 rounded min-h-[90px]"
-            placeholder="wifi, parking, camera..."
-          />
         </div>
 
         <div className="flex gap-3 justify-end">

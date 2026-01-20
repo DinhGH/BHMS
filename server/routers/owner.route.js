@@ -12,7 +12,9 @@ import {
   createRoom,
   checkRoomName,
   deleteRoom,
+  updateRoom,
 } from "../controllers/owner.room.controller.js";
+import { makeInvoice } from "../controllers/invoice.controller.js";
 import { authOwner } from "../middlewares/owner.middleware.js";
 
 const router = express.Router();
@@ -28,5 +30,7 @@ router.post("/rooms", createRoom);
 // router.get("/rooms/check-name", checkRoomName);
 router.get("/rooms/:id", getRoomDetail);
 router.delete("/rooms/:id", deleteRoom);
+router.put("/rooms/:id", updateRoom);
+router.post("/rooms/:id/invoice", makeInvoice);
 
 export default router;
