@@ -206,8 +206,8 @@ function PaymentManagement() {
               />
             </div>
 
-            <div className="flex gap-3">
-              <div className="relative">
+            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+              <div className="relative w-full sm:w-auto">
                 <button 
                   onClick={() => setShowFilterDropdown(!showFilterDropdown)}
                   className="w-full sm:w-auto px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors flex items-center justify-center gap-2"
@@ -227,7 +227,7 @@ function PaymentManagement() {
                       className="fixed inset-0 z-10" 
                       onClick={() => setShowFilterDropdown(false)}
                     ></div>
-                    <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-20">
+                    <div className="fixed left-4 right-4 top-24 sm:absolute sm:left-auto sm:right-0 sm:top-auto sm:mt-2 sm:w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-20 max-h-[70vh] overflow-auto">
                       <div className="p-2">
                         <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase">
                           Payment Status
@@ -364,8 +364,10 @@ function PaymentManagement() {
                             className="inline-flex items-center justify-center w-10 h-10 rounded-md border border-gray-200 bg-white text-gray-700 shadow-sm hover:bg-gray-50 hover:shadow focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-1 active:scale-[0.98]"
                             aria-label="View payment details"
                           >
-                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-                              <path d="M6 10a2 2 0 114 0 2 2 0 01-4 0zm6 0a2 2 0 114 0 2 2 0 01-4 0zM2 10a2 2 0 114 0 2 2 0 01-4 0z" />
+                            <svg className="w-5 h-5 block" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                              <circle cx="5" cy="10" r="1.6" />
+                              <circle cx="10" cy="10" r="1.6" />
+                              <circle cx="15" cy="10" r="1.6" />
                             </svg>
                           </button>
                         </td>
@@ -393,7 +395,7 @@ function PaymentManagement() {
                       </span>
                     </div>
                     
-                    <div className="grid grid-cols-2 gap-3 mb-3 text-sm">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3 text-sm">
                       <div>
                         <div className="text-gray-500 mb-1">Payment ID</div>
                         <div className="text-gray-900">{payment.paymentId}</div>
@@ -417,8 +419,10 @@ function PaymentManagement() {
                       className="mt-3 inline-flex items-center gap-2 text-sm text-gray-700 hover:text-gray-900"
                     >
                       <span className="inline-flex items-center justify-center w-10 h-10 rounded-md border border-gray-200 bg-white text-gray-700 shadow-sm hover:bg-gray-50 hover:shadow active:scale-[0.98]">
-                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-                          <path d="M6 10a2 2 0 114 0 2 2 0 01-4 0zm6 0a2 2 0 114 0 2 2 0 01-4 0zM2 10a2 2 0 114 0 2 2 0 01-4 0z" />
+                        <svg className="w-5 h-5 block" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                          <circle cx="5" cy="10" r="1.6" />
+                          <circle cx="10" cy="10" r="1.6" />
+                          <circle cx="15" cy="10" r="1.6" />
                         </svg>
                       </span>
                       <span>Details</span>
@@ -428,10 +432,10 @@ function PaymentManagement() {
                       <img
                         src={payment.imageUrl}
                         alt="Payment proof"
-                        className="w-full max-w-30 aspect-3/4 object-cover rounded border border-gray-200"
+                        className="w-full aspect-3/4 object-cover rounded border border-gray-200"
                       />
                     ) : (
-                      <div className="w-full max-w-30 aspect-3/4 bg-gray-100 border-2 border-gray-300 rounded flex items-center justify-center">
+                      <div className="w-full aspect-3/4 bg-gray-100 border-2 border-gray-300 rounded flex items-center justify-center">
                         <svg className="w-full h-full text-gray-300" viewBox="0 0 100 140" preserveAspectRatio="none">
                           <line x1="0" y1="0" x2="100" y2="140" stroke="currentColor" strokeWidth="1" />
                           <line x1="100" y1="0" x2="0" y2="140" stroke="currentColor" strokeWidth="1" />
@@ -495,7 +499,7 @@ function PaymentManagement() {
             className="absolute inset-0 bg-black/40"
             onClick={() => setSelectedPayment(null)}
           ></div>
-          <div className="relative bg-white w-full max-w-lg mx-4 rounded-lg shadow-lg border border-gray-200">
+          <div className="relative bg-white w-full sm:max-w-lg mx-2 sm:mx-4 rounded-lg shadow-lg border border-gray-200 max-h-[90vh] overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
               <h3 className="text-base font-semibold text-gray-900">Payment Details</h3>
               <button
@@ -507,7 +511,7 @@ function PaymentManagement() {
                 </svg>
               </button>
             </div>
-            <div className="p-5 space-y-4 text-sm">
+            <div className="p-5 space-y-4 text-sm overflow-y-auto max-h-[calc(90vh-4rem)]">
               <div>
                 <div className="text-xs font-semibold text-gray-500 uppercase mb-2">Invoice Details</div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
