@@ -17,7 +17,7 @@ export default function AdminLayout() {
             headers: {
               Authorization: `Bearer ${token}`,
             },
-          }
+          },
         );
         setUser(res.data);
       } catch (error) {
@@ -30,9 +30,11 @@ export default function AdminLayout() {
   return (
     <div className="flex h-screen bg-gray-50">
       <AdminSidebar user={user} />
-      <div className="flex-1 overflow-y-auto">
-        <Outlet />
-      </div>
+      <main className="flex-1 overflow-y-auto lg:ml-0">
+        <div className="p-4 sm:p-6 lg:p-8">
+          <Outlet />
+        </div>
+      </main>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-/* eslint-disable react-hooks/set-state-in-effect */
+/* eslint-disable no-unused-vars */
 import { useState, useEffect } from "react";
 import Navbar from "../../components/Navbar";
 import Sidebar from "../../components/Sidebar";
@@ -11,7 +11,7 @@ import ReportManagement from "../../components/ReportManagement";
 import ReportIssue from "../../components/ReportIssue";
 import PaymentManagement from "../../components/PaymentManagement";
 import { useAuth } from "../../hooks/useAuth";
-import { getNotifications } from "../../services/api";
+// import { getNotifications } from "../../services/api";
 
 function HomePageOwner() {
   const { user, logout } = useAuth();
@@ -19,31 +19,23 @@ function HomePageOwner() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
-  const [notifications, setNotifications] = useState([]);
-  const [notificationsLoading, setNotificationsLoading] = useState(false);
+  // const [notifications, setNotifications] = useState([]);
+  // const [notificationsLoading, setNotificationsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Fetch notifications when user is available
-  useEffect(() => {
-    if (user?.id) {
-      setNotificationsLoading(true);
-      getNotifications(user.id, searchQuery)
-        .then((data) => setNotifications(data))
-        .catch((err) => {
-          console.error("Failed to fetch notifications:", err);
-          setNotifications([]);
-        })
-        .finally(() => setNotificationsLoading(false));
-    }
-  }, [user?.id, searchQuery]);
-
-  if (!user) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        Loading...
-      </div>
-    );
-  }
+  // // Fetch notifications when user is available
+  // useEffect(() => {
+  //   if (user?.id) {
+  //     setNotificationsLoading(true);
+  //     getNotifications(user.id, searchQuery)
+  //       .then((data) => setNotifications(data))
+  //       .catch((err) => {
+  //         console.error("Failed to fetch notifications:", err);
+  //         setNotifications([]);
+  //       })
+  //       .finally(() => setNotificationsLoading(false));
+  //   }
+  // }, [user?.id, searchQuery]);
 
   const renderContent = () => {
     switch (activeSection) {
@@ -139,36 +131,9 @@ function HomePageOwner() {
             />
           </div>
           <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50">
-            {notificationsLoading ? (
-              <div className="text-center text-sm text-slate-500 py-4">
-                Loading...
-              </div>
-            ) : notifications.length > 0 ? (
-              notifications.map((notification) => (
-                <div
-                  key={notification.id}
-                  className={`rounded-md border p-3 shadow-sm ${
-                    notification.isRead
-                      ? "border-slate-200 bg-white"
-                      : "border-blue-200 bg-blue-50"
-                  }`}
-                >
-                  <div className="text-[11px] text-slate-500 mb-1">
-                    {new Date(notification.createdAt).toLocaleString()}
-                  </div>
-                  <div className="text-sm font-semibold text-slate-900">
-                    {notification.title}
-                  </div>
-                  <div className="text-sm text-slate-700 line-clamp-2">
-                    {notification.content}
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="text-center text-sm text-slate-500 py-4">
-                No notifications found
-              </div>
-            )}
+            <div className="text-center text-sm text-slate-500 py-4">
+              No notifications found
+            </div>
           </div>
         </div>
       </div>

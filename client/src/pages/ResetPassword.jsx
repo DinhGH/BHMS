@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { resetPassword } from "../shared/utils/authService";
 
 export default function ResetPassword({ onBackToLogin, onResetComplete }) {
@@ -70,6 +70,22 @@ export default function ResetPassword({ onBackToLogin, onResetComplete }) {
   return (
     <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-gray-100 to-gray-200 p-4">
       <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md border border-gray-200">
+        {/* Logo & Brand */}
+        <Link
+          to="/"
+          className="flex items-center justify-center gap-3 mb-6 group"
+        >
+          <img
+            src="/images/icon.png"
+            alt="BHMS Logo"
+            className="h-12 w-12 transition-transform group-hover:scale-110"
+          />
+          <div className="flex flex-col leading-tight">
+            <h1 className="text-xl font-bold text-blue-600">BHMS</h1>
+            <p className="text-xs text-slate-600">Boarding House Management</p>
+          </div>
+        </Link>
+
         <h1 className="text-3xl font-bold text-black text-center mb-2">
           Reset Password
         </h1>
