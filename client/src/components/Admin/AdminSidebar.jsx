@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { useState } from "react";
 import { NavLink, useNavigate, Link } from "react-router-dom";
 import SearchInput from "./SearchInput.jsx";
@@ -7,6 +8,7 @@ import {
   FaUsers,
   FaBell,
   FaExclamationCircle,
+  FaUserShield,
 } from "react-icons/fa";
 import { AiFillSetting } from "react-icons/ai";
 
@@ -108,11 +110,7 @@ export default function AdminSidebar({ user }) {
       >
         {/* Header */}
         <div className="p-5 sm:p-6 border-b border-slate-200/70 bg-white/90 backdrop-blur">
-          <Link
-            to="/"
-            className="flex items-center gap-3 mb-5 group"
-            aria-label="Back to landing"
-          >
+          <div className="flex items-center gap-3 mb-5 group">
             <img
               src="/images/icon.png"
               alt="BHMS Logo"
@@ -124,13 +122,11 @@ export default function AdminSidebar({ user }) {
                 Boarding House Management
               </p>
             </div>
-          </Link>
+          </div>
 
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-full flex items-center justify-center shadow-md">
-              <span className="text-white font-bold text-lg">
-                {user?.name?.charAt(0).toUpperCase() || "A"}
-              </span>
+            <div className="w-10 h-10 bg-linear-to-br from-blue-600 to-blue-700 rounded-full flex items-center justify-center shadow-md">
+              <FaUserShield className="text-white text-lg" />
             </div>
             <div className="flex-1 min-w-0">
               <div className="font-bold text-gray-800 truncate">Admin</div>
@@ -196,7 +192,7 @@ export default function AdminSidebar({ user }) {
         <div className="p-4 border-t border-gray-200">
           <button
             onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-rose-400 to-rose-500 hover:from-rose-500 hover:to-rose-600 text-white rounded-xl transition-all duration-200 shadow-md hover:shadow-lg border border-rose-200/70"
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-linear-to-r from-rose-400 to-rose-500 hover:from-rose-500 hover:to-rose-600 text-white rounded-xl transition-all duration-200 shadow-md hover:shadow-lg border border-rose-200/70"
           >
             <CiLogout className="w-5 h-5" />
             <span className="font-medium">Log out</span>
