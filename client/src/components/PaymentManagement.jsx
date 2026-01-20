@@ -40,6 +40,48 @@ const formatInvoiceValue = (key, value) => {
   return String(value);
 };
 
+const formatInvoiceLabel = (key) => {
+  if (!key) return '';
+
+  const normalized = String(key).trim();
+  const overrides = {
+    roomId: 'Room Number',
+    roomID: 'Room Number',
+    houseId: 'Building ',
+    houseID: 'Building ',
+    tenantId: 'Tenant',
+    tenantID: 'Tenant',
+    waterCost: 'Water Cost',
+    electricCost: 'Electricity Cost',
+    electricityCost: 'Electricity Cost',
+    serviceCost: 'Service Fee',
+    totalAmount: 'Total Amount',
+    totalCost: 'Total Cost',
+    createdAt: 'Created At',
+    updatedAt: 'Updated At',
+    dueDate: 'Due Date',
+  };
+
+  if (overrides[normalized]) return overrides[normalized];
+
+  const spaced = normalized
+    .replace(/_/g, ' ')
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  return spaced
+    .split(' ')
+    .map((part) => {
+      const lower = part.toLowerCase();
+      if (lower === 'id') return 'ID';
+      if (lower === 'qr') return 'QR';
+      if (lower === 'vnd') return 'VND';
+      return part.charAt(0).toUpperCase() + part.slice(1);
+    })
+    .join(' ');
+};
+
 function PaymentManagement() {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
@@ -170,6 +212,16 @@ function PaymentManagement() {
     if (status === 'Overdue') return 'bg-red-100 text-red-800';
     return 'bg-blue-100 text-blue-800';
   };
+
+  const invoiceEntries = useMemo(() => {
+    const invoice = selectedPayment?.invoice || {};
+    return Object.entries(invoice).filter(([key]) => {
+      const normalizedKey = String(key).trim();
+      if (/^id$/i.test(normalizedKey)) return false;
+      if (/invoice[_\s-]?id/i.test(normalizedKey)) return false;
+      return true;
+    });
+  }, [selectedPayment]);
 
   return (
     <div className="min-h-screen bg-gray-50 p-3 md:p-4 lg:p-6">
@@ -432,13 +484,13 @@ function PaymentManagement() {
                       <img
                         src={payment.imageUrl}
                         alt="Payment proof"
-                        className="w-full aspect-3/4 object-cover rounded border border-gray-200"
+                        className="mt-4 w-full h-24 object-cover rounded-lg border border-gray-200"
                       />
                     ) : (
-                      <div className="w-full aspect-3/4 bg-gray-100 border-2 border-gray-300 rounded flex items-center justify-center">
-                        <svg className="w-full h-full text-gray-300" viewBox="0 0 100 140" preserveAspectRatio="none">
-                          <line x1="0" y1="0" x2="100" y2="140" stroke="currentColor" strokeWidth="1" />
-                          <line x1="100" y1="0" x2="0" y2="140" stroke="currentColor" strokeWidth="1" />
+                      <div className="mt-4 w-full h-24 bg-gray-100 border border-gray-200 rounded-lg flex items-center justify-center">
+                        <svg className="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11l3 3 5-5" />
                         </svg>
                       </div>
                     )}
@@ -499,70 +551,87 @@ function PaymentManagement() {
             className="absolute inset-0 bg-black/40"
             onClick={() => setSelectedPayment(null)}
           ></div>
-          <div className="relative bg-white w-full sm:max-w-lg mx-2 sm:mx-4 rounded-lg shadow-lg border border-gray-200 max-h-[90vh] overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
-              <h3 className="text-base font-semibold text-gray-900">Payment Details</h3>
+          <div className="relative bg-white w-full sm:max-w-xl mx-2 sm:mx-4 rounded-xl shadow-xl border border-gray-200 max-h-[90vh] overflow-hidden">
+            <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-200 bg-white">
+              <div>
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900">Payment Details</h3>
+                <div className="mt-0.5 text-xs sm:text-sm text-gray-500">ID: {selectedPayment.paymentId || selectedPayment.id}</div>
+              </div>
               <button
                 onClick={() => setSelectedPayment(null)}
-                className="text-gray-500 hover:text-gray-700"
+                className="inline-flex items-center justify-center w-9 h-9 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                aria-label="Close"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
-            <div className="p-5 space-y-4 text-sm overflow-y-auto max-h-[calc(90vh-4rem)]">
-              <div>
-                <div className="text-xs font-semibold text-gray-500 uppercase mb-2">Invoice Details</div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
-                  {Object.keys(selectedPayment.invoice || {}).length === 0 ? (
-                    <div className="text-gray-500">No invoice data</div>
-                  ) : (
-                    Object.entries(selectedPayment.invoice).map(([key, value]) => (
-                      <div key={key} className="flex justify-between sm:block">
-                        <div className="text-gray-500 capitalize">{key}</div>
-                        <div className="text-gray-900">
-                          {formatInvoiceValue(key, value)}
-                        </div>
+            <div className="px-4 sm:px-6 py-5 space-y-5 text-sm overflow-y-auto max-h-[calc(90vh-5rem)]">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="rounded-lg border border-gray-200 p-4">
+                  <div className="text-xs font-semibold text-gray-500 uppercase mb-3">Payment</div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="text-gray-500">Amount</div>
+                      <div className="text-gray-900 font-semibold">{selectedPayment.amount}</div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="text-gray-500">Method</div>
+                      <div className="text-gray-900">{selectedPayment.method}</div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="text-gray-500">Created At</div>
+                      <div className="text-gray-900">
+                        {selectedPayment.createdAt
+                          ? new Date(selectedPayment.createdAt).toLocaleString('vi-VN')
+                          : '-'}
                       </div>
-                    ))
+                    </div>
+                    <div className="pt-1">
+                      <span className={`inline-flex px-3 py-1 text-xs font-medium rounded-full ${selectedPayment.confirmed ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                        {selectedPayment.confirmed ? 'Confirmed' : 'Unconfirmed'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-lg border border-gray-200 p-4">
+                  <div className="text-xs font-semibold text-gray-500 uppercase mb-3">Proof Image</div>
+                  {selectedPayment.imageUrl ? (
+                    <a href={selectedPayment.imageUrl} target="_blank" rel="noreferrer" className="block">
+                      <img
+                        src={selectedPayment.imageUrl}
+                        alt="Payment proof"
+                        className="w-full h-32 object-cover rounded-lg border border-gray-200"
+                      />
+                      <div className="mt-2 text-xs text-blue-600">Tap to open full image</div>
+                    </a>
+                  ) : (
+                    <div className="w-full h-32 rounded-lg border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center text-gray-500">
+                      No image
+                    </div>
                   )}
                 </div>
               </div>
 
-              <div className="border-t border-gray-200 pt-4">
-                <div className="text-xs font-semibold text-gray-500 uppercase mb-2">Payment</div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
-                  <div className="flex justify-between sm:block">
-                    <div className="text-gray-500">ID</div>
-                    <div className="text-gray-900">{selectedPayment.id}</div>
-                  </div>
-                  <div className="flex justify-between sm:block">
-                    <div className="text-gray-500">Invoice ID</div>
-                    <div className="text-gray-900">{selectedPayment.invoiceId ?? '-'}</div>
-                  </div>
-                  <div className="flex justify-between sm:block">
-                    <div className="text-gray-500">Method</div>
-                    <div className="text-gray-900">{selectedPayment.method}</div>
-                  </div>
-                  <div className="flex justify-between sm:block">
-                    <div className="text-gray-500">Amount</div>
-                    <div className="text-gray-900 font-medium">{selectedPayment.amount}</div>
-                  </div>
-                  <div className="flex justify-between sm:block">
-                    <div className="text-gray-500">Confirmed</div>
-                    <div className={`inline-flex px-3 py-1 text-xs font-medium rounded-full ${selectedPayment.confirmed ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                      {selectedPayment.confirmed ? 'true' : 'false'}
-                    </div>
-                  </div>
-                  <div className="flex justify-between sm:block">
-                    <div className="text-gray-500">Created At</div>
-                    <div className="text-gray-900">
-                      {selectedPayment.createdAt
-                        ? new Date(selectedPayment.createdAt).toLocaleString('vi-VN')
-                        : '-'}
-                    </div>
-                  </div>
+              <div className="rounded-lg border border-gray-200 p-4">
+                <div className="text-xs font-semibold text-gray-500 uppercase mb-3">Invoice Details</div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
+                  {invoiceEntries.length === 0 ? (
+                    <div className="text-gray-500">No invoice data</div>
+                  ) : (
+                    invoiceEntries.map(([key, value]) => (
+                      <div key={key} className="min-w-0">
+                        <div className="text-gray-500 text-xs">{formatInvoiceLabel(key)}</div>
+                        <div className="text-gray-900 wrap-break-word">
+                          {/tenant[_\s-]?id/i.test(String(key)) && selectedPayment?.author
+                            ? selectedPayment.author
+                            : formatInvoiceValue(key, value)}
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </div>
