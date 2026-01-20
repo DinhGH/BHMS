@@ -30,3 +30,12 @@ export async function markNotificationAsRead(notificationId) {
   if (!res.ok) throw new Error("Failed to mark notification as read");
   return await res.json();
 }
+
+export async function getPayments() {
+  const res = await fetch(`${BASE_URL}/api/payments`, {
+    credentials: "include",
+  });
+
+  if (!res.ok) throw new Error("Failed to fetch payments");
+  return await res.json();
+}
