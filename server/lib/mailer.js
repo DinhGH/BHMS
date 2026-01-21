@@ -28,7 +28,7 @@ export const sendTenantStatusEmail = async ({ to, reportId, status }) => {
   const text = `Your report #${reportId} status is now ${status}.`;
   const html = `
     <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-      <h2 style="margin: 0 0 12px;">Report status updated</h2>
+      <h2 style="margin: 0 0 12px;">Report Status Upadated </h2>
       <p>Your report <strong>#${reportId}</strong> status is now <strong>${status}</strong>.</p>
       <p>Thank you for your feedback.</p>
     </div>
