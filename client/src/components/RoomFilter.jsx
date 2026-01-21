@@ -1,48 +1,10 @@
-import { useEffect, useRef } from "react";
-
-const ROOM_STATUS = ["ALL", "EMPTY", "OCCUPIED", "LOCKED"];
-const PAYMENT_STATUS = [
-  "ALL",
-  "NO_TENANT",
-  "NO_INVOICE",
-  "PENDING",
-  "PAID",
-  "OVERDUE",
-];
-
 export default function RoomFilter({ filters, setFilters }) {
-  const initialized = useRef(false);
+  /* ===== UPDATE STATE AND URL ===== */
+  const updateFilters = (next) => {
+    // Update state first
+    setFilters(next);
 
-  /* ===== LOAD FILTER FROM URL (ONCE) ===== */
-  useEffect(() => {
-    if (initialized.current) return;
-    initialized.current = true;
-
-    const params = new URLSearchParams(window.location.search);
-
-    const minPrice = params.get("minPrice");
-    const maxPrice = params.get("maxPrice");
-    const status = params.get("status");
-    const paymentStatus = params.get("paymentStatus");
-
-    setFilters((prev) => ({
-      ...prev,
-
-      priceRange:
-        minPrice && maxPrice
-          ? { min: Number(minPrice), max: Number(maxPrice) }
-          : prev.priceRange,
-
-      roomStatus: ROOM_STATUS.includes(status) ? status : prev.roomStatus,
-
-      paymentStatus: PAYMENT_STATUS.includes(paymentStatus)
-        ? paymentStatus
-        : prev.paymentStatus,
-    }));
-  }, [setFilters]);
-
-  /* ===== UPDATE URL ===== */
-  const updateURL = (next) => {
+    // Then update URL
     const params = new URLSearchParams();
 
     if (next.priceRange) {
@@ -58,16 +20,11 @@ export default function RoomFilter({ filters, setFilters }) {
       params.set("paymentStatus", next.paymentStatus);
     }
 
-    window.history.replaceState(
-      null,
-      "",
-      `${window.location.pathname}?${params.toString()}`,
-    );
-  };
+    const newUrl = params.toString()
+      ? `${window.location.pathname}?${params.toString()}`
+      : window.location.pathname;
 
-  const updateFilters = (next) => {
-    setFilters(next);
-    updateURL(next);
+    window.history.pushState(null, "", newUrl);
   };
 
   return (

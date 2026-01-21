@@ -39,7 +39,12 @@ export default function ViewDetailBoardingHouse({ house, onBack }) {
     }
   };
 
-  /* ================= FETCH ================= */
+  // Thêm vào sau khai báo filters state
+  useEffect(() => {
+    console.log("🔍 Filters state changed:", filters);
+  }, [filters]);
+
+  // Thêm vào trong fetchRooms function
   const fetchRooms = async () => {
     try {
       setLoading(true);
@@ -59,10 +64,13 @@ export default function ViewDetailBoardingHouse({ house, onBack }) {
         params.paymentStatus = filters.paymentStatus;
       }
 
+      console.log("📡 Sending API request with params:", params);
+
       const data = await api.get(`/owner/boarding-houses/${house.id}/rooms`, {
         params,
       });
 
+      console.log("✅ Received data:", data);
       setRooms(data);
     } catch (err) {
       console.error("Fetch rooms error", err);
@@ -71,10 +79,11 @@ export default function ViewDetailBoardingHouse({ house, onBack }) {
     }
   };
 
+  // Fetch when filters change
   useEffect(() => {
     fetchRooms();
     setCurrentPage(1);
-  }, [house.id, filters]);
+  }, [filters, house.id]);
 
   /* ================= SEARCH (CLIENT) ================= */
   const filteredRooms = useMemo(() => {
@@ -134,7 +143,7 @@ export default function ViewDetailBoardingHouse({ house, onBack }) {
           <RoomFilter filters={filters} setFilters={setFilters} />
           <button
             onClick={() => setOpenAddRoom(true)}
-            className="px-4 py-2 text-sm bg-gray-300 hover:bg-blue-500 text-white rounded-md"
+            className="px-4 py-2 text-sm bg-blue-500 hover:bg-blue-600 text-white rounded-md"
           >
             Add New
           </button>

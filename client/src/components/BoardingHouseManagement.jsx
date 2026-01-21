@@ -150,7 +150,7 @@ export default function BoardingHouseManagement({ ownerId }) {
                       }}
                     >
                       <img
-                        src={house.image || "/no-image.png"}
+                        src={house.imageUrl || "/no-image.png"}
                         alt={house.name}
                         className="apple-card-image"
                       />
