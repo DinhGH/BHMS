@@ -39,7 +39,29 @@ async function request(url, options = {}) {
 }
 
 const api = {
-  get: (url) => request(url),
+  get: (url, config = {}) => {
+    // Xử lý query parameters
+    let finalUrl = url;
+    if (config.params) {
+      const params = new URLSearchParams();
+      Object.keys(config.params).forEach((key) => {
+        const value = config.params[key];
+        if (value !== undefined && value !== null) {
+          params.append(key, value);
+        }
+      });
+
+      const queryString = params.toString();
+      if (queryString) {
+        finalUrl = `${url}?${queryString}`;
+      }
+    }
+
+    return request(finalUrl, {
+      method: "GET",
+      ...config,
+    });
+  },
 
   post: (url, data) =>
     request(url, {

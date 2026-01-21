@@ -5,6 +5,13 @@ export const getRoomsByBoardingHouse = async (req, res) => {
     const houseId = Number(req.params.houseId);
     const { minPrice, maxPrice, status, paymentStatus } = req.query;
 
+    console.log("🔥 BACKEND RECEIVED:");
+    console.log("  - houseId:", houseId);
+    console.log("  - minPrice:", minPrice, typeof minPrice);
+    console.log("  - maxPrice:", maxPrice, typeof maxPrice);
+    console.log("  - status:", status, typeof status);
+    console.log("  - paymentStatus:", paymentStatus, typeof paymentStatus);
+
     if (isNaN(houseId)) {
       return res.status(400).json({ message: "Invalid boarding house id" });
     }
@@ -17,11 +24,15 @@ export const getRoomsByBoardingHouse = async (req, res) => {
         gte: Number(minPrice),
         lte: Number(maxPrice),
       };
+      console.log("  - Price filter applied:", where.price);
     }
 
     if (status === "LOCKED") {
       where.status = "LOCKED";
+      console.log("  - Status filter applied: LOCKED");
     }
+
+    console.log("🔍 DB WHERE clause:", JSON.stringify(where, null, 2));
 
     const rooms = await prisma.room.findMany({
       where,
@@ -38,6 +49,8 @@ export const getRoomsByBoardingHouse = async (req, res) => {
       },
       orderBy: { createdAt: "desc" },
     });
+
+    console.log("📦 DB returned rooms:", rooms.length);
 
     /* ===== MAP ===== */
     let result = rooms.map((room) => {
@@ -61,27 +74,48 @@ export const getRoomsByBoardingHouse = async (req, res) => {
       };
     });
 
+    console.log("🗺️  After mapping:", result.length, "rooms");
+
     /* ===== STATUS FILTER (TENANT BASED) ===== */
     if (status === "OCCUPIED") {
+      const beforeFilter = result.length;
       result = result.filter(
         (r) => r.status !== "LOCKED" && r.currentOccupants > 0,
+      );
+      console.log(
+        `  - OCCUPIED filter: ${beforeFilter} → ${result.length} rooms`,
       );
     }
 
     if (status === "EMPTY") {
+      const beforeFilter = result.length;
       result = result.filter(
         (r) => r.status !== "LOCKED" && r.currentOccupants === 0,
       );
+      console.log(`  - EMPTY filter: ${beforeFilter} → ${result.length} rooms`);
     }
 
     /* ===== PAYMENT FILTER ===== */
     if (paymentStatus && paymentStatus !== "ALL") {
+      const beforeFilter = result.length;
       result = result.filter((r) => r.paymentStatus === paymentStatus);
+      console.log(
+        `  - Payment filter (${paymentStatus}): ${beforeFilter} → ${result.length} rooms`,
+      );
     }
+
+    console.log("✅ Final result:", result.length, "rooms");
+    console.log(
+      "   Rooms:",
+      result.map(
+        (r) =>
+          `${r.name} ($${r.price}, ${r.currentOccupants > 0 ? "Occupied" : "Empty"}, ${r.paymentStatus})`,
+      ),
+    );
 
     return res.json(result);
   } catch (err) {
-    console.error(err);
+    console.error("❌ ERROR:", err);
     res.status(500).json({ message: "Server error" });
   }
 };

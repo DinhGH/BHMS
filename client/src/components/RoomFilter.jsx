@@ -1,8 +1,11 @@
 export default function RoomFilter({ filters, setFilters }) {
   /* ===== UPDATE STATE AND URL ===== */
   const updateFilters = (next) => {
+    console.log("🎯 RoomFilter updateFilters called with:", next);
+
     // Update state first
     setFilters(next);
+    console.log("✅ setFilters called");
 
     // Then update URL
     const params = new URLSearchParams();
