@@ -10,6 +10,7 @@ import NotificationManagement from "../../components/NotificationManagement";
 import ReportManagement from "../../components/ReportManagement";
 import ReportIssue from "../../components/ReportIssue";
 import PaymentManagement from "../../components/PaymentManagement";
+import ServiceManagement from "../../components/ServiceManagement";
 import { useAuth } from "../../hooks/useAuth";
 import { getNotifications } from "../../services/api";
 
@@ -63,6 +64,8 @@ function HomePageOwner() {
         return <ReportIssue />;
       case "payments":
         return <PaymentManagement />;
+      case "services":
+        return <ServiceManagement />;
       default:
         return <Dashboard />;
     }

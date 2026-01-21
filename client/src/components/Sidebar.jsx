@@ -10,6 +10,7 @@ import {
   FaSignOutAlt,
   FaBars,
   FaTimes,
+  FaWrench,
 } from "react-icons/fa";
 
 function Sidebar({ activeSection, setActiveSection, isOpen, setIsOpen }) {
@@ -28,6 +29,11 @@ function Sidebar({ activeSection, setActiveSection, isOpen, setIsOpen }) {
       id: "rooms",
       label: "Room Management",
       icon: <FaDoorOpen />,
+    },
+    {
+      id: "services",
+      label: "Services",
+      icon: <FaWrench />,
     },
     {
       id: "tenants",

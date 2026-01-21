@@ -24,9 +24,62 @@ export async function markNotificationAsRead(notificationId) {
     {
       method: "PATCH",
       credentials: "include",
-    }
+    },
   );
 
   if (!res.ok) throw new Error("Failed to mark notification as read");
+  return await res.json();
+}
+
+//////////////////////////////////////////////////
+// SERVICES
+//////////////////////////////////////////////////
+
+export async function getServices(houseId) {
+  if (!houseId) throw new Error("houseId is required");
+
+  const res = await fetch(`${BASE_URL}/api/services/house/${houseId}`, {
+    credentials: "include",
+  });
+
+  if (!res.ok) throw new Error("Failed to fetch services");
+  return await res.json();
+}
+
+export async function createService(serviceData) {
+  const res = await fetch(`${BASE_URL}/api/services`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify(serviceData),
+  });
+
+  if (!res.ok) throw new Error("Failed to create service");
+  return await res.json();
+}
+
+export async function updateService(serviceId, serviceData) {
+  const res = await fetch(`${BASE_URL}/api/services/${serviceId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify(serviceData),
+  });
+
+  if (!res.ok) throw new Error("Failed to update service");
+  return await res.json();
+}
+
+export async function deleteService(serviceId) {
+  const res = await fetch(`${BASE_URL}/api/services/${serviceId}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+
+  if (!res.ok) throw new Error("Failed to delete service");
   return await res.json();
 }
