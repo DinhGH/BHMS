@@ -3,15 +3,10 @@ import { prisma } from "../lib/prisma.js";
 
 const router = express.Router();
 
-// Get all services for a boarding house
-router.get("/house/:houseId", async (req, res) => {
+// Get all services (across all houses)
+router.get("/", async (req, res) => {
   try {
-    const { houseId } = req.params;
-
     const services = await prisma.service.findMany({
-      where: {
-        houseId: parseInt(houseId),
-      },
       orderBy: {
         createdAt: "desc",
       },
@@ -19,7 +14,7 @@ router.get("/house/:houseId", async (req, res) => {
 
     res.json(services);
   } catch (error) {
-    console.error("Error fetching services:", error);
+    console.error("Error fetching all services:", error);
     res.status(500).json({ error: "Failed to fetch services" });
   }
 });
@@ -27,19 +22,16 @@ router.get("/house/:houseId", async (req, res) => {
 // Create a new service
 router.post("/", async (req, res) => {
   try {
-    const { houseId, name, description, price, priceType, unit } = req.body;
+    const { name, description, price, priceType, unit } = req.body;
 
-    if (!houseId || !name || price === undefined || !priceType) {
-      return res
-        .status(400)
-        .json({
-          error: "Missing required fields: houseId, name, price, priceType",
-        });
+    if (!name || price === undefined || !priceType) {
+      return res.status(400).json({
+        error: "Missing required fields: name, price, priceType",
+      });
     }
 
     const service = await prisma.service.create({
       data: {
-        houseId: parseInt(houseId),
         name,
         description: description || null,
         price: parseFloat(price),

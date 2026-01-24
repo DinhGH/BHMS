@@ -1,85 +1,93 @@
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+const API_BASE_URL = "http://localhost:3000/api";
 
-export async function getNotifications(userId, q = "") {
-  if (!userId) throw new Error("userId is required");
+// Helper: apply client-side filters
+const applyServiceFilters = (list, filters = {}) => {
+  const {
+    text, // search by name/description
+    priceType, // FIXED | UNIT_BASED | PERCENTAGE
+    isActive, // true/false
+    minPrice, // number
+    maxPrice, // number
+    unit, // match unit
+  } = filters;
 
-  const params = new URLSearchParams();
-  if (q) params.set("q", q);
+  return list.filter((s) => {
+    const name = (s.name || "").toLowerCase();
+    const desc = (s.description || "").toLowerCase();
+    const unitStr = (s.unit || "").toLowerCase();
 
-  const url = `${BASE_URL}/api/notifications/${userId}${
-    q ? `?${params.toString()}` : ""
-  }`;
+    if (text) {
+      const q = text.toLowerCase();
+      if (!name.includes(q) && !desc.includes(q)) return false;
+    }
+    if (priceType && s.priceType !== priceType) return false;
+    if (typeof isActive === "boolean" && s.isActive !== isActive) return false;
+    if (typeof minPrice === "number" && s.price < minPrice) return false;
+    if (typeof maxPrice === "number" && s.price > maxPrice) return false;
+    if (unit && !unitStr.includes(unit.toLowerCase())) return false;
 
-  const res = await fetch(url, {
-    credentials: "include",
+    return true;
   });
+};
 
-  if (!res.ok) throw new Error("Failed to fetch notifications");
-  return await res.json();
-}
+// Service Management APIs
+export const getServices = async (filters) => {
+  const token = localStorage.getItem("token");
+  const headers = token ? { Authorization: `Bearer ${token}` } : {};
+  const response = await fetch(`${API_BASE_URL}/services`, { headers });
+  if (!response.ok) throw new Error("Failed to fetch services");
+  const data = await response.json();
+  return filters
+    ? applyServiceFilters(Array.isArray(data) ? data : [], filters)
+    : data;
+};
 
-export async function markNotificationAsRead(notificationId) {
-  const res = await fetch(
-    `${BASE_URL}/api/notifications/${notificationId}/read`,
-    {
-      method: "PATCH",
-      credentials: "include",
-    },
-  );
-
-  if (!res.ok) throw new Error("Failed to mark notification as read");
-  return await res.json();
-}
-
-//////////////////////////////////////////////////
-// SERVICES
-//////////////////////////////////////////////////
-
-export async function getServices(houseId) {
-  if (!houseId) throw new Error("houseId is required");
-
-  const res = await fetch(`${BASE_URL}/api/services/house/${houseId}`, {
-    credentials: "include",
-  });
-
-  if (!res.ok) throw new Error("Failed to fetch services");
-  return await res.json();
-}
-
-export async function createService(serviceData) {
-  const res = await fetch(`${BASE_URL}/api/services`, {
+export const createService = async (serviceData) => {
+  const token = localStorage.getItem("token");
+  const headers = {
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+  const response = await fetch(`${API_BASE_URL}/services`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    credentials: "include",
+    headers,
     body: JSON.stringify(serviceData),
   });
+  if (!response.ok) throw new Error("Failed to create service");
+  return await response.json();
+};
 
-  if (!res.ok) throw new Error("Failed to create service");
-  return await res.json();
-}
-
-export async function updateService(serviceId, serviceData) {
-  const res = await fetch(`${BASE_URL}/api/services/${serviceId}`, {
+export const updateService = async (serviceId, serviceData) => {
+  const token = localStorage.getItem("token");
+  const headers = {
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+  const response = await fetch(`${API_BASE_URL}/services/${serviceId}`, {
     method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    credentials: "include",
+    headers,
     body: JSON.stringify(serviceData),
   });
+  if (!response.ok) throw new Error("Failed to update service");
+  return await response.json();
+};
 
-  if (!res.ok) throw new Error("Failed to update service");
-  return await res.json();
-}
-
-export async function deleteService(serviceId) {
-  const res = await fetch(`${BASE_URL}/api/services/${serviceId}`, {
+export const deleteService = async (serviceId) => {
+  const token = localStorage.getItem("token");
+  const headers = token ? { Authorization: `Bearer ${token}` } : {};
+  const response = await fetch(`${API_BASE_URL}/services/${serviceId}`, {
     method: "DELETE",
-    credentials: "include",
+    headers,
   });
+  if (!response.ok) throw new Error("Failed to delete service");
+  return await response.json();
+};
 
-  if (!res.ok) throw new Error("Failed to delete service");
-  return await res.json();
-}
+// Notifications API (implement basic fetch)
+export const getNotifications = async () => {
+  const token = localStorage.getItem("token");
+  const headers = token ? { Authorization: `Bearer ${token}` } : {};
+  const res = await fetch(`${API_BASE_URL}/notifications`, { headers });
+  if (!res.ok) throw new Error("Failed to fetch notifications");
+  return res.json();
+};

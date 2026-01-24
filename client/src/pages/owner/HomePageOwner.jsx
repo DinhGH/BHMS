@@ -1,5 +1,4 @@
-/* eslint-disable react-hooks/set-state-in-effect */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Navbar from "../../components/Navbar";
 import Sidebar from "../../components/Sidebar";
 import Dashboard from "../../components/Dashboard";
@@ -24,19 +23,41 @@ function HomePageOwner() {
   const [notificationsLoading, setNotificationsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Fetch notifications when user is available
+  // Fetch notifications once when user is ready (lọc tại client theo searchQuery)
   useEffect(() => {
-    if (user?.id) {
+    if (!user?.id) return;
+    let cancelled = false;
+
+    (async () => {
       setNotificationsLoading(true);
-      getNotifications(user.id, searchQuery)
-        .then((data) => setNotifications(data))
-        .catch((err) => {
-          console.error("Failed to fetch notifications:", err);
-          setNotifications([]);
-        })
-        .finally(() => setNotificationsLoading(false));
-    }
-  }, [user?.id, searchQuery]);
+      try {
+        const data = await getNotifications(); // không truyền tham số
+        if (!cancelled) {
+          setNotifications(Array.isArray(data) ? data : []);
+        }
+      } catch (err) {
+        console.error("Failed to fetch notifications:", err);
+        if (!cancelled) setNotifications([]);
+      } finally {
+        if (!cancelled) setNotificationsLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
+
+  // Lọc client-side theo searchQuery (title/content)
+  const filteredNotifications = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return notifications;
+    return notifications.filter((n) => {
+      const t = (n.title || "").toLowerCase();
+      const c = (n.content || "").toLowerCase();
+      return t.includes(q) || c.includes(q);
+    });
+  }, [notifications, searchQuery]);
 
   if (!user) {
     return (
@@ -146,8 +167,8 @@ function HomePageOwner() {
               <div className="text-center text-sm text-slate-500 py-4">
                 Loading...
               </div>
-            ) : notifications.length > 0 ? (
-              notifications.map((notification) => (
+            ) : filteredNotifications.length > 0 ? (
+              filteredNotifications.map((notification) => (
                 <div
                   key={notification.id}
                   className={`rounded-md border p-3 shadow-sm ${

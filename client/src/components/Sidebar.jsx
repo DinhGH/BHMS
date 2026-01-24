@@ -8,7 +8,6 @@ import {
   FaCreditCard,
   FaTachometerAlt,
   FaSignOutAlt,
-  FaBars,
   FaTimes,
   FaWrench,
 } from "react-icons/fa";
