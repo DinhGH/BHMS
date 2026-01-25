@@ -8,8 +8,8 @@ import {
   FaCreditCard,
   FaTachometerAlt,
   FaSignOutAlt,
-  FaBars,
   FaTimes,
+  FaWrench,
 } from "react-icons/fa";
 
 function Sidebar({ activeSection, setActiveSection, isOpen, setIsOpen }) {
@@ -28,6 +28,11 @@ function Sidebar({ activeSection, setActiveSection, isOpen, setIsOpen }) {
       id: "rooms",
       label: "Room Management",
       icon: <FaDoorOpen />,
+    },
+    {
+      id: "services",
+      label: "Services",
+      icon: <FaWrench />,
     },
     {
       id: "tenants",
@@ -59,11 +64,6 @@ function Sidebar({ activeSection, setActiveSection, isOpen, setIsOpen }) {
   const handleMenuClick = (id) => {
     setActiveSection(id);
     setIsOpen(false); // Close sidebar on mobile after selection
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    window.location.href = "/login";
   };
 
   return (
@@ -115,10 +115,7 @@ function Sidebar({ activeSection, setActiveSection, isOpen, setIsOpen }) {
 
           {/* Logout Button */}
           <div className="p-2 sm:p-3 border-t border-gray-300">
-            <button
-              className="w-full flex items-center gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg text-gray-600 hover:bg-red-100 hover:text-red-800 transition-all duration-200"
-              onClick={handleLogout}
-            >
+            <button className="w-full flex items-center gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg text-gray-600 hover:bg-red-100 hover:text-red-800 transition-all duration-200">
               <FaSignOutAlt className="text-base sm:text-lg shrink-0" />
               <span className="text-xs sm:text-sm font-medium">Log Out</span>
             </button>
