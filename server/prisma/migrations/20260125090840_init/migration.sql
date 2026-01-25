@@ -9,6 +9,10 @@ CREATE TABLE `User` (
     `status` ENUM('ACTIVE', 'BLOCKED') NOT NULL DEFAULT 'ACTIVE',
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
+    `imageUrl` VARCHAR(191) NULL,
+    `active` ENUM('YES', 'NO') NOT NULL DEFAULT 'YES',
+    `otp` VARCHAR(6) NULL,
+    `otpExpire` DATETIME(3) NULL,
 
     UNIQUE INDEX `User_email_key`(`email`),
     PRIMARY KEY (`id`)
@@ -26,9 +30,18 @@ CREATE TABLE `Owner` (
 -- CreateTable
 CREATE TABLE `Tenant` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `userId` INTEGER NOT NULL,
+    `age` INTEGER NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `email` VARCHAR(191) NOT NULL,
+    `endDate` DATETIME(3) NULL,
+    `fullName` VARCHAR(191) NOT NULL,
+    `gender` ENUM('MALE', 'FEMALE', 'OTHER') NOT NULL,
+    `phone` VARCHAR(191) NULL,
+    `roomId` INTEGER NOT NULL,
+    `startDate` DATETIME(3) NOT NULL,
+    `imageUrl` VARCHAR(191) NULL,
 
-    UNIQUE INDEX `Tenant_userId_key`(`userId`),
+    INDEX `Tenant_roomId_idx`(`roomId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -40,7 +53,7 @@ CREATE TABLE `BoardingHouse` (
     `address` VARCHAR(191) NOT NULL,
     `electricFee` DOUBLE NOT NULL,
     `waterFee` DOUBLE NOT NULL,
-    `services` JSON NULL,
+    `imageUrl` VARCHAR(191) NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
     PRIMARY KEY (`id`)
@@ -53,10 +66,60 @@ CREATE TABLE `Room` (
     `name` VARCHAR(191) NOT NULL,
     `price` DOUBLE NOT NULL,
     `isLocked` BOOLEAN NOT NULL DEFAULT false,
-    `electricMeter` DOUBLE NOT NULL DEFAULT 0,
-    `waterMeter` DOUBLE NOT NULL DEFAULT 0,
+    `imageUrl` VARCHAR(191) NULL,
+    `electricMeterAfter` DOUBLE NOT NULL DEFAULT 0,
+    `electricMeterNow` DOUBLE NOT NULL DEFAULT 0,
+    `waterMeterAfter` DOUBLE NOT NULL DEFAULT 0,
+    `waterMeterNow` DOUBLE NOT NULL DEFAULT 0,
+    `constractEnd` DATETIME(3) NOT NULL,
+    `constractStart` DATETIME(3) NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `RentalContract` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `tenantId` INTEGER NOT NULL,
+    `roomId` INTEGER NOT NULL,
+    `startDate` DATETIME(3) NOT NULL,
+    `endDate` DATETIME(3) NULL,
+    `terms` VARCHAR(191) NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    INDEX `RentalContract_tenantId_idx`(`tenantId`),
+    INDEX `RentalContract_roomId_idx`(`roomId`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `Service` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `name` VARCHAR(191) NOT NULL,
+    `description` VARCHAR(191) NULL,
+    `price` DOUBLE NOT NULL,
+    `priceType` ENUM('FIXED', 'UNIT_BASED', 'PERCENTAGE') NOT NULL DEFAULT 'FIXED',
+    `unit` VARCHAR(191) NULL,
+    `isActive` BOOLEAN NOT NULL DEFAULT true,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+
+    UNIQUE INDEX `Service_name_key`(`name`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `RoomService` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `roomId` INTEGER NOT NULL,
+    `serviceId` INTEGER NOT NULL,
+    `price` DOUBLE NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    INDEX `RoomService_roomId_idx`(`roomId`),
+    INDEX `RoomService_serviceId_fkey`(`serviceId`),
+    UNIQUE INDEX `RoomService_roomId_serviceId_key`(`roomId`, `serviceId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -111,9 +174,33 @@ CREATE TABLE `Report` (
     `target` VARCHAR(191) NOT NULL,
     `content` VARCHAR(191) NOT NULL,
     `images` JSON NULL,
-    `status` ENUM('PENDING', 'PROCESSING', 'RESOLVED') NOT NULL DEFAULT 'PENDING',
+    `status` ENUM('PENDING', 'PROCESSING', 'RESOLVED', 'REVIEWING', 'FIXING') NOT NULL DEFAULT 'PENDING',
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `ReportAdmin` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `senderId` INTEGER NOT NULL,
+    `target` VARCHAR(191) NOT NULL,
+    `content` VARCHAR(191) NOT NULL,
+    `images` JSON NULL,
+    `status` ENUM('PENDING', 'PROCESSING', 'RESOLVED', 'REVIEWING', 'FIXING') NOT NULL DEFAULT 'REVIEWING',
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    INDEX `ReportAdmin_senderId_fkey`(`senderId`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `LicenseKey` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `userId` INTEGER NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    UNIQUE INDEX `LicenseKey_userId_key`(`userId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -121,13 +208,25 @@ CREATE TABLE `Report` (
 ALTER TABLE `Owner` ADD CONSTRAINT `Owner_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Tenant` ADD CONSTRAINT `Tenant_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `Tenant` ADD CONSTRAINT `Tenant_roomId_fkey` FOREIGN KEY (`roomId`) REFERENCES `Room`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `BoardingHouse` ADD CONSTRAINT `BoardingHouse_ownerId_fkey` FOREIGN KEY (`ownerId`) REFERENCES `Owner`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Room` ADD CONSTRAINT `Room_houseId_fkey` FOREIGN KEY (`houseId`) REFERENCES `BoardingHouse`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `RentalContract` ADD CONSTRAINT `RentalContract_tenantId_fkey` FOREIGN KEY (`tenantId`) REFERENCES `Tenant`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `RentalContract` ADD CONSTRAINT `RentalContract_roomId_fkey` FOREIGN KEY (`roomId`) REFERENCES `Room`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `RoomService` ADD CONSTRAINT `RoomService_roomId_fkey` FOREIGN KEY (`roomId`) REFERENCES `Room`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `RoomService` ADD CONSTRAINT `RoomService_serviceId_fkey` FOREIGN KEY (`serviceId`) REFERENCES `Service`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Invoice` ADD CONSTRAINT `Invoice_roomId_fkey` FOREIGN KEY (`roomId`) REFERENCES `Room`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -143,3 +242,9 @@ ALTER TABLE `Notification` ADD CONSTRAINT `Notification_userId_fkey` FOREIGN KEY
 
 -- AddForeignKey
 ALTER TABLE `Report` ADD CONSTRAINT `Report_senderId_fkey` FOREIGN KEY (`senderId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `ReportAdmin` ADD CONSTRAINT `ReportAdmin_senderId_fkey` FOREIGN KEY (`senderId`) REFERENCES `Owner`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `LicenseKey` ADD CONSTRAINT `LicenseKey_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
