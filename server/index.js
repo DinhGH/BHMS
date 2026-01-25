@@ -3,23 +3,15 @@ dotenv.config();
 
 import express from "express";
 import cors from "cors";
-import { prisma } from "./lib/prisma.js";
-<<<<<<< HEAD
 import authRoutes from "./routes/authRoutes.js";
-<<<<<<< HEAD
-
-const app = express();
-const PORT = process.env.PORT || 5000;
-=======
 import userRoutes from "./routes/userRoutes.js";
-=======
 import serviceRoutes from "./routes/services.js";
->>>>>>> owner
+import paymentRoutes from "./routes/paymentRoutes.js";
+import tenantRoutes from "./routes/tenantRoutes.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
->>>>>>> i-sprint1-1-admin-owner
 app.use(
   cors({
     origin: true,
@@ -28,12 +20,17 @@ app.use(
 );
 app.use(express.json());
 
+// Health check
+app.get("/", (req, res) => {
+  res.json({ message: "Backend is running successfully 🚀" });
+});
+
 // Routes
-<<<<<<< HEAD
 app.use("/api/auth", authRoutes);
-<<<<<<< HEAD
-=======
+app.use("/api/user", userRoutes);
 app.use("/api/services", serviceRoutes);
+app.use("/api/payments", paymentRoutes);
+app.use("/api/tenants", tenantRoutes);
 
 // 404 handler for unmatched routes
 app.use((req, res) => {
@@ -47,21 +44,8 @@ app.use((err, req, res, next) => {
     message: err.message || "Internal server error",
   });
 });
->>>>>>> owner
 
-// Health check
-app.get("/", (req, res) => {
-  res.json({ message: "Backend is running successfully 🚀" });
-});
-=======
-app.use("/api/user", userRoutes);
->>>>>>> i-sprint1-1-admin-owner
-
-// Sample route
-app.get("/", (req, res) => {
-  res.send("Backend is running successfully 🚀");
-});
-
+// Start server
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });

@@ -241,6 +241,7 @@ ALTER TABLE `Payment` ADD CONSTRAINT `Payment_invoiceId_fkey` FOREIGN KEY (`invo
 ALTER TABLE `Notification` ADD CONSTRAINT `Notification_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+<<<<<<< HEAD:server/prisma/migrations/20260125090840_init/migration.sql
 ALTER TABLE `Report` ADD CONSTRAINT `Report_senderId_fkey` FOREIGN KEY (`senderId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -248,3 +249,6 @@ ALTER TABLE `ReportAdmin` ADD CONSTRAINT `ReportAdmin_senderId_fkey` FOREIGN KEY
 
 -- AddForeignKey
 ALTER TABLE `LicenseKey` ADD CONSTRAINT `LicenseKey_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+=======
+ALTER TABLE `Report` ADD CONSTRAINT `Report_senderId_fkey` FOREIGN KEY (`senderId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+>>>>>>> f4031ca153e6a944cd5e36ac3660e8122cb02fe1:server/prisma/migrations/20260109025943_init/migration.sql

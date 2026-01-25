@@ -2,7 +2,8 @@ import React from "react";
 import { Outlet } from "react-router-dom";
 import AdminSidebar from "../components/Admin/AdminSidebar.jsx";
 import { useEffect, useState } from "react";
-import axios from "axios";
+
+import api from "../services/api.js";
 
 export default function AdminLayout() {
   const [user, setUser] = useState(null);
@@ -10,31 +11,24 @@ export default function AdminLayout() {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const token = localStorage.getItem("token"); // nếu bạn dùng JWT
-        const res = await axios.get(
-          import.meta.env.VITE_API_URL + "/users/me",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          },
-        );
-        setUser(res.data);
+        const user = await api("/users/me");
+        setUser(user);
       } catch (error) {
         console.log("Failed to fetch user", error);
+        console.log("Error response:", error.response?.data);
       }
     };
+
     fetchUser();
   }, []);
 
   return (
     <div className="flex h-screen bg-gray-50">
       <AdminSidebar user={user} />
-      <main className="flex-1 overflow-y-auto lg:ml-0">
-        <div className="p-4 sm:p-6 lg:p-8">
-          <Outlet />
-        </div>
-      </main>
+
+      <div className="flex-1 overflow-y-auto">
+        <Outlet />
+      </div>
     </div>
   );
 }

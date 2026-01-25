@@ -115,3 +115,183 @@ export const getNotifications = async () => {
   if (!res.ok) throw new Error("Failed to fetch notifications");
   return res.json();
 };
+
+async function request(url, options = {}) {
+  const token = localStorage.getItem("token");
+
+  const headers = {
+    ...(options.headers || {}),
+  };
+
+  if (!(options.body instanceof FormData)) {
+    headers["Content-Type"] = "application/json";
+  }
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const res = await fetch(`${API_BASE_URL}${url}`, {
+    ...options,
+    headers,
+  });
+
+  if (!res.ok) {
+    let errorData = {};
+    try {
+      errorData = await res.json();
+    } catch {
+      // ignore JSON parse error
+    }
+
+    throw {
+      status: res.status,
+      message: errorData.message || "Unauthorized",
+    };
+  }
+
+  if (res.status === 204) return null;
+  return res.json();
+}
+
+const api = {
+  get: (url) => request(url),
+
+  post: (url, data) =>
+    request(url, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  put: (url, data) =>
+    request(url, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+
+  delete: (url, data) =>
+    request(url, {
+      method: "DELETE",
+      body: JSON.stringify(data),
+    }),
+};
+
+export default api;
+
+export async function getReports({
+  page = 1,
+  limit = 10,
+  status,
+  search,
+  target,
+  orderBy,
+  order,
+}) {
+  const params = new URLSearchParams();
+  params.set("page", String(page));
+  params.set("limit", String(limit));
+  if (status) params.set("status", status);
+  if (search) params.set("search", search);
+  if (target) params.set("target", target);
+  if (orderBy) params.set("orderBy", orderBy);
+  if (order) params.set("order", order);
+
+  const url = `${API_BASE_URL}/reports?${params.toString()}`;
+  const res = await fetch(url, { credentials: "include" });
+  if (!res.ok) throw new Error("Failed to fetch reports");
+  return await res.json();
+}
+
+export async function updateReportStatus(reportId, status) {
+  const res = await fetch(`${API_BASE_URL}/reports/${reportId}/status`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ status }),
+  });
+
+  if (!res.ok) throw new Error("Failed to update report status");
+  return await res.json();
+}
+
+export async function createReportAdmin(payload) {
+  const res = await fetch(`${API_BASE_URL}/report-admins`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) throw new Error("Failed to create report");
+  return await res.json();
+}
+
+export async function getPayments() {
+  const res = await fetch(`${API_BASE_URL}/payments`, {
+    credentials: "include",
+  });
+
+  if (!res.ok) throw new Error("Failed to fetch payments");
+  return await res.json();
+}
+// Tenant Management APIs
+export async function getTenants() {
+  const res = await fetch(`${API_BASE_URL}/tenants`, {
+    credentials: "include",
+  });
+
+  if (!res.ok) throw new Error("Failed to fetch tenants");
+  return await res.json();
+}
+
+export async function getTenant(id) {
+  const res = await fetch(`${API_BASE_URL}/tenants/${id}`, {
+    credentials: "include",
+  });
+
+  if (!res.ok) throw new Error("Failed to fetch tenant");
+  return await res.json();
+}
+
+export async function createTenant(data) {
+  const res = await fetch(`${API_BASE_URL}/tenants`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(data),
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Failed to create tenant");
+  }
+  return await res.json();
+}
+
+export async function updateTenant(id, data) {
+  const res = await fetch(`${API_BASE_URL}/tenants/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(data),
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Failed to update tenant");
+  }
+  return await res.json();
+}
+
+export async function deleteTenant(id) {
+  const res = await fetch(`${API_BASE_URL}/tenants/${id}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Failed to delete tenant");
+  }
+  return await res.json();
+}
