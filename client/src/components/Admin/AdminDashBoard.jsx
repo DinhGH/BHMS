@@ -1,9 +1,35 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 
 export default function AdminDashBoard() {
+	const [dashboard, setDashboard] = useState(null);
+	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState("");
+
+	useEffect(() => {
+		const fetchDashboard = async () => {
+			try {
+				const baseUrl =
+					import.meta.env.VITE_API_URL || "http://localhost:3000";
+				const apiBase = baseUrl.endsWith("/api")
+					? baseUrl
+					: `${baseUrl}/api`;
+				const res = await fetch(`${apiBase}/users/dashboard`);
+				if (!res.ok) throw new Error("Failed to load dashboard");
+				const data = await res.json();
+				setDashboard(data);
+			} catch {
+				setError("Không thể tải dữ liệu dashboard");
+			} finally {
+				setLoading(false);
+			}
+		};
+
+		fetchDashboard();
+	}, []);
+
 	const userStats = {
-		active: 1250,
-		inactive: 320,
+		active: dashboard?.summary?.activeUsers ?? 0,
+		inactive: dashboard?.summary?.inactiveUsers ?? 0,
 	};
 
 	const totalUsers = userStats.active + userStats.inactive;
@@ -12,22 +38,10 @@ export default function AdminDashBoard() {
 		: 0;
 	const inactivePct = 100 - activePct;
 
-	const revenueByMonth = [
-		{ month: "M1", value: 120 },
-		{ month: "M2", value: 140 },
-		{ month: "M3", value: 160 },
-		{ month: "M4", value: 155 },
-		{ month: "M5", value: 190 },
-		{ month: "M6", value: 220 },
-		{ month: "M7", value: 210 },
-		{ month: "M8", value: 260 },
-		{ month: "M9", value: 240 },
-		{ month: "M10", value: 280 },
-		{ month: "M11", value: 300 },
-		{ month: "M12", value: 340 },
-	];
-
-	const maxRevenue = Math.max(...revenueByMonth.map((item) => item.value));
+	const revenueByMonth = dashboard?.revenueByMonth ?? [];
+	const maxRevenue = revenueByMonth.length
+		? Math.max(...revenueByMonth.map((item) => item.value))
+		: 0;
 
 	const currency = (value) =>
 		new Intl.NumberFormat("vi-VN", {
@@ -39,6 +53,19 @@ export default function AdminDashBoard() {
 	const formattedDate = new Intl.DateTimeFormat("vi-VN").format(
 		new Date()
 	);
+
+	if (loading) {
+		return (
+			<div className="min-h-screen flex items-center justify-center bg-gray-50">
+				<div className="flex flex-col items-center gap-3">
+					<div className="h-12 w-12 rounded-full border-4 border-blue-200 border-t-blue-600 animate-spin" />
+					<div className="text-lg font-semibold text-gray-700 tracking-wide animate-pulse">
+						Loading data...
+					</div>
+				</div>
+			</div>
+		);
+	}
 
 	return (
 		<div className="p-6 space-y-6">
@@ -53,6 +80,10 @@ export default function AdminDashBoard() {
 					Updated: {formattedDate}
 				</div>
 			</div>
+
+			{error && (
+				<div className="text-sm text-red-500">{error}</div>
+			)}
 
 			<div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
 				<div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
@@ -75,13 +106,15 @@ export default function AdminDashBoard() {
 				</div>
 				<div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
 					<p className="text-sm text-gray-500">Bookings today</p>
-					<div className="text-2xl font-bold text-gray-900">86</div>
+					<div className="text-2xl font-bold text-gray-900">
+						{dashboard?.summary?.bookingsToday ?? 0}
+					</div>
 					<div className="text-xs text-red-600 mt-2">-2.1% compared to yesterday</div>
 				</div>
 				<div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
 					<p className="text-sm text-gray-500">Monthly revenue</p>
 					<div className="text-2xl font-bold text-gray-900">
-						{currency(340)}
+						{currency(dashboard?.summary?.monthlyRevenue ?? 0)}
 					</div>
 					<div className="text-xs text-green-600 mt-2">
 						+12.5% compared to last month
@@ -156,7 +189,11 @@ export default function AdminDashBoard() {
 								<div className="w-full h-48 flex items-end justify-center">
 									<div
 										className="w-8 rounded-t-lg bg-blue-500/90 hover:bg-blue-600 transition-colors"
-										style={{ height: `${(item.value / maxRevenue) * 100}%` }}
+										style={{
+											height: maxRevenue
+												? `${(item.value / maxRevenue) * 100}%`
+												: "0%",
+										}}
 										title={`${item.month}: ${item.value} Million VND`}
 									/>
 								</div>
@@ -166,7 +203,7 @@ export default function AdminDashBoard() {
 					</div>
 
 					<div className="mt-4 text-sm text-gray-600">
-						Total annual revenue: {currency(revenueByMonth.reduce((sum, item) => sum + item.value, 0))}
+						Total annual revenue: {currency(dashboard?.totalAnnualRevenue ?? 0)}
 					</div>
 				</div>
 			</div>
@@ -177,24 +214,7 @@ export default function AdminDashBoard() {
 						Recent activity
 					</h2>
 					<div className="space-y-4">
-						{[
-							{
-								title: "Nguyễn Văn A booked Deluxe room",
-								time: "10 minutes ago",
-							},
-							{
-								title: "Trần Thị B upgraded to Premium package",
-								time: "1 hour ago",
-							},
-							{
-								title: "Phạm Văn C paid invoice #HMS2301",
-								time: "2 hours ago",
-							},
-							{
-								title: "Lê Thị D canceled booking",
-								time: "Yesterday",
-							},
-						].map((item, index) => (
+						{(dashboard?.recentActivity ?? []).map((item, index) => (
 							<div
 								key={index}
 								className="flex items-center justify-between border-b border-gray-100 pb-3"
@@ -212,9 +232,21 @@ export default function AdminDashBoard() {
 					</h2>
 					<div className="space-y-4">
 						{[
-							{ label: "Occupancy rate", value: 78, color: "bg-green-500" },
-							{ label: "5-star ratings", value: 62, color: "bg-blue-500" },
-							{ label: "Returning customers", value: 55, color: "bg-purple-500" },
+							{
+								label: "Occupancy rate",
+								value: dashboard?.goals?.occupancyRate ?? 0,
+								color: "bg-green-500",
+							},
+							{
+								label: "5-star ratings",
+								value: dashboard?.goals?.fiveStarRatings ?? 0,
+								color: "bg-blue-500",
+							},
+							{
+								label: "Returning customers",
+								value: dashboard?.goals?.returningCustomers ?? 0,
+								color: "bg-purple-500",
+							},
 						].map((item) => (
 							<div key={item.label}>
 								<div className="flex items-center justify-between text-sm text-gray-600 mb-2">

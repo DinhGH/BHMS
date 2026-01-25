@@ -1,8 +1,9 @@
 import express from "express";
-import { getCurrentUser } from "../controllers/admin.controller.js";
+import { getAdminDashboard, getCurrentUser } from "../controllers/admin.controller.js";
 
 const router = express.Router();
 
 router.get("/me", getCurrentUser);
+router.get("/dashboard", getAdminDashboard);
 
 export default router;

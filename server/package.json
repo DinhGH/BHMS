@@ -11,6 +11,9 @@
   "license": "ISC",
   "description": "",
   "type": "module",
+  "prisma": {
+    "seed": "node prisma/seed.js"
+  },
   "dependencies": {
     "@prisma/client": "^6.9.0",
     "cors": "^2.8.5",
