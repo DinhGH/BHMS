@@ -3,11 +3,14 @@ dotenv.config();
 
 import express from "express";
 import cors from "cors";
+
 import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import serviceRoutes from "./routes/services.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
 import tenantRoutes from "./routes/tenantRoutes.js";
+
+import ownerRoute from "./routers/owner.route.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -31,6 +34,7 @@ app.use("/api/user", userRoutes);
 app.use("/api/services", serviceRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/tenants", tenantRoutes);
+app.use("/owner", ownerRoute);
 
 // 404 handler for unmatched routes
 app.use((req, res) => {

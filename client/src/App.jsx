@@ -13,9 +13,9 @@ import LandingPage from "./pages/LandingPage";
 import "./styles/App.css";
 import ServiceManagement from "./components/ServiceManagement";
 import ReportManagement from "./components/ReportManagement";
-import Dashboard from "./pages/admin/Dashboard.jsx";
+import Dashboard from "./pages/Admin/Dashboard.jsx";
 import AdminUser from "./pages/Admin/AdminUser.jsx";
-import ReportAdmin from "./pages/admin/ReportAdmin.jsx";
+import ReportAdmin from "./pages/Admin/ReportAdmin.jsx";
 
 function App() {
   const [resetEmail, setResetEmail] = useState("");
