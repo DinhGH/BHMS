@@ -3,10 +3,27 @@ import { prisma } from "../lib/prisma.js";
 /* ================= GET ALL ================= */
 export const getAllBoardingHouses = async (req, res) => {
   try {
+    const ownerId = 3;
     const search = (req.query.search || "").replace(/\s+/g, "").toLowerCase();
 
     const houses = await prisma.boardingHouse.findMany({
-      include: { rooms: true },
+      where: {
+        ownerId: ownerId,
+      },
+      include: {
+        rooms: {
+          include: {
+            Tenant: true,
+            Invoice: {
+              orderBy: { createdAt: "desc" },
+              take: 1, // invoice mới nhất
+              include: {
+                payment: true,
+              },
+            },
+          },
+        },
+      },
       orderBy: { createdAt: "desc" },
     });
 
@@ -16,15 +33,39 @@ export const getAllBoardingHouses = async (req, res) => {
         const address = h.address.replace(/\s+/g, "").toLowerCase();
         return name.includes(search) || address.includes(search);
       })
-      .map((h) => ({
-        id: h.id,
-        name: h.name,
-        address: h.address,
-        totalRooms: h.rooms.length,
-        occupied: h.rooms.filter((r) => r.status === "OCCUPIED").length,
-        available: h.rooms.filter((r) => r.status === "EMPTY").length,
-        imageUrl: h.imageUrl,
-      }));
+      .map((h) => {
+        let occupied = 0;
+        let available = 0;
+
+        h.rooms.forEach((room) => {
+          const hasTenant = room.Tenant.length > 0;
+          const latestInvoice = room.Invoice[0];
+
+          const isPaidInvoice =
+            latestInvoice &&
+            latestInvoice.status === "PAID" &&
+            latestInvoice.payment.some((p) => p.confirmed === true);
+
+          // 🔥 CHỈ OCCUPIED KHI: có người + đã thanh toán
+          const isOccupied = hasTenant && isPaidInvoice;
+
+          if (isOccupied) {
+            occupied++;
+          } else {
+            available++;
+          }
+        });
+
+        return {
+          id: h.id,
+          name: h.name,
+          address: h.address,
+          totalRooms: h.rooms.length,
+          occupied,
+          available,
+          imageUrl: h.imageUrl,
+        };
+      });
 
     res.json(result);
   } catch (err) {
@@ -36,7 +77,7 @@ export const getAllBoardingHouses = async (req, res) => {
 /* ================= CREATE ================= */
 export const createBoardingHouse = async (req, res) => {
   try {
-    const ownerId = 1;
+    const ownerId = req.ownerId;
     const { name, address, electricFee, waterFee, imageUrl } = req.body;
 
     if (!name || !address) {
@@ -57,8 +98,8 @@ export const createBoardingHouse = async (req, res) => {
       data: {
         name: name.trim(),
         address: address.trim(),
-        electricFee: Number(electricFee) || 0,
-        waterFee: Number(waterFee) || 0,
+        electricFee: Number(electricFee),
+        waterFee: Number(waterFee),
         imageUrl: imageUrl || null,
         ownerId,
       },
@@ -74,7 +115,7 @@ export const createBoardingHouse = async (req, res) => {
 /* ================= UPDATE ================= */
 export const updateBoardingHouse = async (req, res) => {
   try {
-    const ownerId = 1;
+    const ownerId = req.ownerId;
     const id = Number(req.params.id);
     const { name, address, electricFee, waterFee, imageUrl } = req.body;
 

@@ -5,6 +5,7 @@ import api from "../server/api.js";
 import AddNewBoardingHouseModal from "./AddNewBoardingHouseModal.jsx";
 import RoomManagement from "./ViewDetailBoardingHouse.jsx";
 import DeleteHouseModal from "./DeleteHouseModal.jsx";
+import EditBoardingHouseModal from "./EditBoardingHouseModal.jsx";
 import "../index.css";
 
 export default function BoardingHouseManagement({ ownerId }) {
@@ -16,6 +17,8 @@ export default function BoardingHouseManagement({ ownerId }) {
 
   const [openModal, setOpenModal] = useState(false);
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
+  const [openEditModal, setOpenEditModal] = useState(false);
+  const [editingHouse, setEditingHouse] = useState(null);
 
   const pageSize = 8;
 
@@ -163,13 +166,29 @@ export default function BoardingHouseManagement({ ownerId }) {
                         <div>Occupied: {house.occupied}</div>
                         <div>Available: {house.available}</div>
                       </div>
-
-                      <button
-                        className="text-sm font-medium hover:underline"
-                        onClick={() => setSelectedHouse(house)}
-                      >
-                        View Detail →
-                      </button>
+                      <div className="flex justify-between">
+                        <button
+                          className="text-sm font-medium hover:underline"
+                          onClick={() => setSelectedHouse(house)}
+                        >
+                          View Detail →
+                        </button>
+                        <button
+                          className="text-sm font-medium hover:underline pr-4"
+                          onClick={() => {
+                            setEditingHouse(house);
+                            setOpenEditModal(true);
+                          }}
+                        >
+                          Edit
+                        </button>
+                        <EditBoardingHouseModal
+                          open={openEditModal}
+                          house={editingHouse}
+                          onClose={() => setOpenEditModal(false)}
+                          onSuccess={fetchHouses}
+                        />
+                      </div>
                     </div>
                   </div>
                 ))}

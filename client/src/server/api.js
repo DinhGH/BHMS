@@ -40,7 +40,6 @@ async function request(url, options = {}) {
 
 const api = {
   get: (url, config = {}) => {
-    // Xử lý query parameters
     let finalUrl = url;
     if (config.params) {
       const params = new URLSearchParams();
