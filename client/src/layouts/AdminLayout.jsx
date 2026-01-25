@@ -2,7 +2,6 @@ import React from "react";
 import { Outlet } from "react-router-dom";
 import AdminSidebar from "../components/Admin/AdminSidebar.jsx";
 import { useEffect, useState } from "react";
-import axios from "axios";
 
 export default function AdminLayout() {
   const [user, setUser] = useState(null);
