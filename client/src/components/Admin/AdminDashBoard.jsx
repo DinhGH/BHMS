@@ -4,27 +4,39 @@ export default function AdminDashBoard() {
 	const [dashboard, setDashboard] = useState(null);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState("");
+	const [refreshing, setRefreshing] = useState(false);
 
-	useEffect(() => {
-		const fetchDashboard = async () => {
-			try {
-				const baseUrl =
-					import.meta.env.VITE_API_URL || "http://localhost:3000";
-				const apiBase = baseUrl.endsWith("/api")
-					? baseUrl
-					: `${baseUrl}/api`;
-				const res = await fetch(`${apiBase}/users/dashboard`);
-				if (!res.ok) throw new Error("Failed to load dashboard");
-				const data = await res.json();
-				setDashboard(data);
-			} catch {
-				setError("Không thể tải dữ liệu dashboard");
-			} finally {
+	const fetchDashboard = async (showLoader = true, forceRefresh = false) => {
+		if (showLoader) {
+			setLoading(true);
+		}
+		setError("");
+		try {
+			const baseUrl =
+				import.meta.env.VITE_API_URL || "http://localhost:3000";
+			const apiBase = baseUrl.endsWith("/api")
+				? baseUrl
+				: `${baseUrl}/api`;
+			const params = new URLSearchParams({ t: Date.now().toString() });
+			if (forceRefresh) {
+				params.set("refresh", "true");
+			}
+			const res = await fetch(`${apiBase}/users/dashboard?${params.toString()}`);
+			if (!res.ok) throw new Error("Failed to load dashboard");
+			const data = await res.json();
+			setDashboard(data);
+		} catch {
+			setError("Không thể tải dữ liệu dashboard");
+		} finally {
+			if (showLoader) {
 				setLoading(false);
 			}
-		};
+			setRefreshing(false);
+		}
+	};
 
-		fetchDashboard();
+	useEffect(() => {
+		fetchDashboard(true);
 	}, []);
 
 	const userStats = {
@@ -68,16 +80,26 @@ export default function AdminDashBoard() {
 	}
 
 	return (
-		<div className="p-6 space-y-6">
-			<div className="flex items-center justify-between">
+		<div className="p-4 sm:p-6 space-y-6">
+			<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 				<div>
 					<h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
 					<p className="text-sm text-gray-500">
 						Overview of system operations and revenue
 					</p>
 				</div>
-				<div className="text-sm text-gray-500">
-					Updated: {formattedDate}
+				<div className="flex flex-wrap items-center gap-3 text-sm text-gray-500">
+					<span>Updated: {formattedDate}</span>
+					<button
+						onClick={() => {
+							setRefreshing(true);
+							fetchDashboard(true, true);
+						}}
+						className="px-4 py-2 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium shadow-sm hover:shadow-md transition-all disabled:opacity-60 cursor-pointer hover:-translate-y-0.5"
+						disabled={refreshing}
+					>
+						{refreshing ? "Refreshing..." : "Refresh"}
+					</button>
 				</div>
 			</div>
 
@@ -85,7 +107,7 @@ export default function AdminDashBoard() {
 				<div className="text-sm text-red-500">{error}</div>
 			)}
 
-			<div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+			<div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
 				<div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
 					<p className="text-sm text-gray-500">Total users</p>
 					<div className="text-2xl font-bold text-gray-900">
@@ -105,7 +127,7 @@ export default function AdminDashBoard() {
 					</div>
 				</div>
 				<div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-					<p className="text-sm text-gray-500">Bookings today</p>
+					<p className="text-sm text-gray-500">Subscripted bought today</p>
 					<div className="text-2xl font-bold text-gray-900">
 						{dashboard?.summary?.bookingsToday ?? 0}
 					</div>
@@ -183,12 +205,15 @@ export default function AdminDashBoard() {
 						<span className="text-sm text-gray-500">Unit: Million VND</span>
 					</div>
 
-					<div className="h-64 flex items-end gap-3">
+					<div className="h-64 flex items-end gap-3 overflow-x-auto pb-2">
 						{revenueByMonth.map((item) => (
-							<div key={item.month} className="flex-1 flex flex-col items-center">
+							<div
+								key={item.month}
+								className="flex-1 min-w-[40px] sm:min-w-[48px] flex flex-col items-center"
+							>
 								<div className="w-full h-48 flex items-end justify-center">
 									<div
-										className="w-8 rounded-t-lg bg-blue-500/90 hover:bg-blue-600 transition-colors"
+										className="w-6 sm:w-8 rounded-t-lg bg-blue-500/90 hover:bg-blue-600 transition-colors"
 										style={{
 											height: maxRevenue
 												? `${(item.value / maxRevenue) * 100}%`
@@ -213,7 +238,7 @@ export default function AdminDashBoard() {
 					<h2 className="text-lg font-semibold text-gray-900 mb-4">
 						Recent activity
 					</h2>
-					<div className="space-y-4">
+					<div className="space-y-4 max-h-[360px] overflow-y-auto pr-1">
 						{(dashboard?.recentActivity ?? []).map((item, index) => (
 							<div
 								key={index}
@@ -227,43 +252,55 @@ export default function AdminDashBoard() {
 				</div>
 
 				<div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-					<h2 className="text-lg font-semibold text-gray-900 mb-4">
-						Monthly goals
-					</h2>
-					<div className="space-y-4">
-						{[
-							{
-								label: "Occupancy rate",
-								value: dashboard?.goals?.occupancyRate ?? 0,
-								color: "bg-green-500",
-							},
-							{
-								label: "5-star ratings",
-								value: dashboard?.goals?.fiveStarRatings ?? 0,
-								color: "bg-blue-500",
-							},
-							{
-								label: "Returning customers",
-								value: dashboard?.goals?.returningCustomers ?? 0,
-								color: "bg-purple-500",
-							},
-						].map((item) => (
-							<div key={item.label}>
-								<div className="flex items-center justify-between text-sm text-gray-600 mb-2">
-									<span>{item.label}</span>
-									<span>{item.value}%</span>
+					<div>
+						<h2 className="text-lg font-semibold text-gray-900 mb-4">
+							Report Admin status
+						</h2>
+						<div className="space-y-4">
+							{[
+								{
+									label: "Reviewing",
+									value: dashboard?.reportAdminSummary?.reviewing ?? 0,
+									color: "bg-blue-500",
+								},
+								{
+									label: "Fixing",
+									value: dashboard?.reportAdminSummary?.fixing ?? 0,
+									color: "bg-amber-500",
+								},
+								{
+									label: "Fixed",
+									value: dashboard?.reportAdminSummary?.fixed ?? 0,
+									color: "bg-green-500",
+								},
+							].map((item) => (
+								<div key={item.label}>
+									<div className="flex items-center justify-between text-sm text-gray-600 mb-2">
+										<span>{item.label}</span>
+										<span>{item.value}</span>
+									</div>
+									<div className="h-2 bg-gray-100 rounded-full">
+										<div
+											className={`h-2 rounded-full ${item.color}`}
+											style={{ width: `${Math.min(item.value * 10, 100)}%` }}
+										/>
+									</div>
 								</div>
-								<div className="h-2 bg-gray-100 rounded-full">
-									<div
-										className={`h-2 rounded-full ${item.color}`}
-										style={{ width: `${item.value}%` }}
-									/>
-								</div>
-							</div>
-						))}
+							))}
+						</div>
 					</div>
 				</div>
 			</div>
+			{refreshing && (
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-white/70">
+					<div className="flex flex-col items-center gap-3">
+						<div className="h-12 w-12 rounded-full border-4 border-blue-200 border-t-blue-600 animate-spin" />
+						<div className="text-lg font-semibold text-gray-700 tracking-wide animate-pulse">
+							Refreshing...
+						</div>
+					</div>
+				</div>
+			)}
 		</div>
 	);
 }

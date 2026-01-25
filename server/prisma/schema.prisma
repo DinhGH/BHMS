@@ -213,6 +213,19 @@ model Service {
   RoomService RoomService[]
 }
 
+model Subscription {
+  id          Int                @id @default(autoincrement())
+  plan        SubscriptionPlan
+  amount      Float
+  currency    String             @default("VND")
+  status      SubscriptionStatus @default(ACTIVE)
+  purchasedAt DateTime           @default(now())
+  periodStart DateTime
+  periodEnd   DateTime
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+}
+
 enum Role {
   ADMIN
   OWNER
@@ -239,6 +252,18 @@ enum Service_priceType {
   FIXED
   UNIT_BASED
   PERCENTAGE
+}
+
+enum SubscriptionPlan {
+  BASIC
+  PREMIUM
+  PROFESSIONAL
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  EXPIRED
 }
 
 enum Report_status {

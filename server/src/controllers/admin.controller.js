@@ -12,6 +12,64 @@ const dashboardCache = {
   createdAt: 0,
 };
 
+const seedSubscriptionsIfEmpty = async () => {
+  const total = await prisma.subscription.count();
+  if (total > 0) {
+    return;
+  }
+
+  const now = new Date();
+  const year = now.getFullYear();
+  const planPrices = {
+    BASIC: 199_000,
+    PREMIUM: 399_000,
+    PROFESSIONAL: 699_000,
+  };
+
+  const planKeys = Object.keys(planPrices);
+  const data = [];
+
+  for (let month = 0; month < 12; month += 1) {
+    const baseDay = 4 + (month % 5);
+    Object.entries(planPrices).forEach(([plan, amount], idx) => {
+      const purchaseDate = new Date(year, month, baseDay + idx);
+      const periodStart = new Date(year, month, baseDay + idx);
+      const periodEnd = new Date(year, month + 1, baseDay + idx);
+
+      data.push({
+        plan,
+        amount,
+        currency: "VND",
+        status: "ACTIVE",
+        purchasedAt: purchaseDate,
+        periodStart,
+        periodEnd,
+      });
+    });
+
+    const extraCount = month % 4;
+    for (let extra = 0; extra < extraCount; extra += 1) {
+      const plan = planKeys[(month + extra) % planKeys.length];
+      const amount = planPrices[plan];
+      const purchaseDate = new Date(year, month, 18 + extra);
+      const periodStart = new Date(year, month, 18 + extra);
+      const periodEnd = new Date(year, month + 1, 18 + extra);
+
+      data.push({
+        plan,
+        amount,
+        currency: "VND",
+        status: "ACTIVE",
+        purchasedAt: purchaseDate,
+        periodStart,
+        periodEnd,
+      });
+    }
+  }
+
+  await prisma.subscription.createMany({ data });
+};
+
 /**
  * GET /api/user/me
  * Lấy thông tin user hiện tại dựa vào token
@@ -64,9 +122,12 @@ export const getCurrentUser = async (req, res) => {
  */
 export const getAdminDashboard = async (req, res) => {
   try {
-    if (Date.now() - dashboardCache.createdAt < CACHE_TTL_MS && dashboardCache.data) {
+    const forceRefresh = req.query?.refresh === "true";
+    if (!forceRefresh && Date.now() - dashboardCache.createdAt < CACHE_TTL_MS && dashboardCache.data) {
       return res.status(200).json(dashboardCache.data);
     }
+
+    await seedSubscriptionsIfEmpty();
 
     const now = new Date();
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -82,6 +143,7 @@ export const getAdminDashboard = async (req, res) => {
       bookingsToday,
       roomsWithInvoices,
       reportCounts,
+      reportAdminCounts,
       totalTenants,
     ] = await Promise.all([
       prisma.user.groupBy({
@@ -89,14 +151,18 @@ export const getAdminDashboard = async (req, res) => {
         _count: { _all: true },
       }),
       prisma.room.count(),
-      prisma.invoice.count({
-        where: { createdAt: { gte: startOfToday, lt: startOfTomorrow } },
+      prisma.subscription.count({
+        where: { purchasedAt: { gte: startOfToday, lt: startOfTomorrow } },
       }),
       prisma.invoice.groupBy({
         by: ["roomId"],
         where: { month: now.getMonth() + 1, year: now.getFullYear() },
       }),
       prisma.report.groupBy({
+        by: ["status"],
+        _count: { _all: true },
+      }),
+      prisma.reportAdmin.groupBy({
         by: ["status"],
         _count: { _all: true },
       }),
@@ -118,27 +184,26 @@ export const getAdminDashboard = async (req, res) => {
     }));
 
     const revenueRows = await prisma.$queryRaw`
-      SELECT MONTH(createdAt) AS month, SUM(amount) AS total
-      FROM \`Payment\`
-      WHERE confirmed = 1
-        AND createdAt >= ${startOfYear}
-        AND createdAt < ${endOfYear}
-      GROUP BY MONTH(createdAt)
+      SELECT MONTH(purchasedAt) AS month, SUM(amount) AS total
+      FROM \`Subscription\`
+      WHERE status = 'ACTIVE'
+        AND purchasedAt >= ${startOfYear}
+        AND purchasedAt < ${endOfYear}
+      GROUP BY MONTH(purchasedAt)
     `;
 
     revenueRows.forEach((row) => {
       const monthIndex = Number(row.month) - 1;
       if (monthIndex >= 0 && monthIndex < 12) {
-        revenueByMonth[monthIndex].value = Math.round(
-          Number(row.total || 0) / 1_000_000
-        );
+        revenueByMonth[monthIndex].value =
+          Math.round((Number(row.total || 0) / 1_000_000) * 10) / 10;
       }
     });
 
-    const monthlyRevenueAgg = await prisma.payment.aggregate({
+    const monthlyRevenueAgg = await prisma.subscription.aggregate({
       where: {
-        confirmed: true,
-        createdAt: { gte: startOfMonth, lt: startOfNextMonth },
+        status: "ACTIVE",
+        purchasedAt: { gte: startOfMonth, lt: startOfNextMonth },
       },
       _sum: { amount: true },
     });
@@ -153,6 +218,14 @@ export const getAdminDashboard = async (req, res) => {
     const totalReports = reportCounts.reduce((sum, item) => sum + item._count._all, 0);
     const resolvedReports = reportCounts.find((item) => item.status === "RESOLVED")?._count
       ._all ?? 0;
+
+    const reportAdminStatusCount = (status) =>
+      reportAdminCounts.find((item) => item.status === status)?._count?._all ?? 0;
+    const reportAdminSummary = {
+      reviewing: reportAdminStatusCount("REVIEWING"),
+      fixing: reportAdminStatusCount("FIXING"),
+      fixed: reportAdminStatusCount("RESOLVED"),
+    };
 
     const returningCustomersRows = await prisma.$queryRaw`
       SELECT COUNT(*) AS count
@@ -176,8 +249,12 @@ export const getAdminDashboard = async (req, res) => {
       ? Math.round((returningCustomers / totalTenants) * 100)
       : 0;
 
-    const [recentPayments, recentInvoices, recentReports, recentNotifications] =
+    const [recentSubscriptions, recentPayments, recentInvoices, recentReports, recentNotifications] =
       await Promise.all([
+        prisma.subscription.findMany({
+          orderBy: { purchasedAt: "desc" },
+          take: 5,
+        }),
         prisma.payment.findMany({
           orderBy: { createdAt: "desc" },
           take: 5,
@@ -201,6 +278,10 @@ export const getAdminDashboard = async (req, res) => {
       ]);
 
     const activityItems = [
+      ...recentSubscriptions.map((subscription) => ({
+        title: `Subscription ${subscription.plan} ${subscription.amount.toLocaleString("vi-VN")} VND`,
+        createdAt: subscription.purchasedAt,
+      })),
       ...recentPayments.map((payment) => ({
         title: `Payment ${payment.amount.toLocaleString("vi-VN")} VND for invoice #${payment.invoiceId}`,
         createdAt: payment.createdAt,
@@ -238,6 +319,7 @@ export const getAdminDashboard = async (req, res) => {
       revenueByMonth,
       totalAnnualRevenue,
       recentActivity: activityItems,
+      reportAdminSummary,
       goals: {
         occupancyRate,
         fiveStarRatings,
