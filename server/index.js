@@ -9,6 +9,7 @@ import { prisma } from "./lib/prisma.js";
 import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import serviceRoutes from "./routes/services.js";
+import paymentRoutes from "./routes/paymentRoutes.js";
 
 import userRouter from "./src/routers/admin.routes.js";
 
@@ -32,6 +33,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/services", serviceRoutes);
 app.use("/api/users", userRouter);
+app.use("/api/payments", paymentRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/report-admins", reportAdminRoutes);
 

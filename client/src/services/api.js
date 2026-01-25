@@ -225,3 +225,12 @@ export async function createReportAdmin(payload) {
   if (!res.ok) throw new Error("Failed to create report");
   return await res.json();
 }
+
+export async function getPayments() {
+  const res = await fetch(`${API_BASE_URL}/payments`, {
+    credentials: "include",
+  });
+
+  if (!res.ok) throw new Error("Failed to fetch payments");
+  return await res.json();
+}
