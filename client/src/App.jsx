@@ -13,6 +13,9 @@ import LandingPage from "./pages/LandingPage";
 import "./styles/App.css";
 import ServiceManagement from "./components/ServiceManagement";
 import ReportManagement from "./components/ReportManagement";
+import Dashboard from "./pages/admin/Dashboard.jsx";
+import AdminUser from "./pages/Admin/AdminUser.jsx";
+import ReportAdmin from "./pages/admin/ReportAdmin.jsx";
 
 function App() {
   const [resetEmail, setResetEmail] = useState("");
@@ -22,7 +25,11 @@ function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/admin" element={<AdminLayout />}></Route>
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<Dashboard />} />
+          <Route path="users" element={<AdminUser />} />
+          <Route path="report" element={<ReportAdmin />} />
+        </Route>
         <Route
           path="/forgot-password"
           element={

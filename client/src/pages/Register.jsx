@@ -82,7 +82,7 @@ const Register = () => {
 
       // Redirect to dashboard
       setTimeout(() => {
-        navigate("/dashboard");
+        navigate("/login");
       }, 1500);
     } catch (err) {
       setError("Connection error. Please check the server.");
