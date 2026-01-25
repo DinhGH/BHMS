@@ -12,16 +12,7 @@
   "description": "",
   "type": "module",
   "dependencies": {
-<<<<<<< HEAD
-    "@prisma/client": "^5.9.0",
-    "bcryptjs": "^2.4.3",
-    "cors": "^2.8.5",
-    "dotenv": "^17.2.3",
-    "express": "^5.2.1",
-    "jsonwebtoken": "^9.0.0",
     "nodemailer": "^7.0.12",
-    "prisma": "^5.9.0"
-=======
     "@prisma/client": "^6.9.0",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
@@ -29,7 +20,6 @@
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
     "prisma": "^6.9.0"
->>>>>>> admin-user
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",

@@ -5,11 +5,15 @@ import express from "express";
 import cors from "cors";
 
 import { prisma } from "./lib/prisma.js";
+
 import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import serviceRoutes from "./routes/services.js";
 
 import userRouter from "./src/routers/admin.routes.js";
+
+import reportRoutes from "./routes/reportRoutes.js";
+import reportAdminRoutes from "./routes/reportAdminRoutes.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -28,6 +32,8 @@ app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/services", serviceRoutes);
 app.use("/api/users", userRouter);
+app.use("/api/reports", reportRoutes);
+app.use("/api/report-admins", reportAdminRoutes);
 
 // 404 handler for unmatched routes (after all routes)
 app.use((req, res) => {
