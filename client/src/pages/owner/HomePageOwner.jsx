@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/set-state-in-effect */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Navbar from "../../components/Navbar";
 import Sidebar from "../../components/Sidebar";
 import Dashboard from "../../components/Dashboard";
@@ -10,6 +10,7 @@ import NotificationManagement from "../../components/NotificationManagement";
 import ReportManagement from "../../components/ReportManagement";
 import ReportIssue from "../../components/ReportIssue";
 import PaymentManagement from "../../components/PaymentManagement";
+import Loading from "../../components/loading";
 import { useAuth } from "../../hooks/useAuth";
 import { getNotifications } from "../../services/api";
 
@@ -22,6 +23,8 @@ function HomePageOwner() {
   const [notifications, setNotifications] = useState([]);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [sectionLoading, setSectionLoading] = useState(false);
+  const isFirstRender = useRef(true);
 
   // Fetch notifications when user is available
   useEffect(() => {
@@ -36,6 +39,18 @@ function HomePageOwner() {
         .finally(() => setNotificationsLoading(false));
     }
   }, [user?.id, searchQuery]);
+
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+
+    setSectionLoading(true);
+    const timeoutId = setTimeout(() => setSectionLoading(false), 400);
+
+    return () => clearTimeout(timeoutId);
+  }, [activeSection]);
 
   if (!user) {
     return (
@@ -86,6 +101,7 @@ function HomePageOwner() {
 
   return (
     <div className="flex flex-col h-screen bg-white overflow-hidden">
+      <Loading isLoading={sectionLoading} />
       <Navbar
         onMenuClick={() => setSidebarOpen(!sidebarOpen)}
         onBellClick={toggleNotifications}
