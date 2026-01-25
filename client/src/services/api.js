@@ -1,37 +1,26 @@
-const API_BASE_URL = "http://localhost:5000/api";
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
 
-export const fetchApi = async (path, options = {}) => {
-  const { method = "GET", body, ...rest } = options;
+const defaultHeaders = { "Content-Type": "application/json" };
 
-  const headers = {
-    "Content-Type": "application/json",
-    ...rest.headers,
-  };
-
-  // Add token if exists
+const withAuthHeaders = () => {
   const token = localStorage.getItem("token");
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-
-  const config = {
-    method,
-    headers,
-    ...rest,
-  };
-
-  if (body) {
-    config.body = JSON.stringify(body);
-  }
-
-  const response = await fetch(`${API_BASE_URL}${path}`, config);
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || "API request failed");
-  }
-
-  return await response.json();
+  return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
-export default { fetchApi };
+export async function fetchApi(path, { method = "GET", body } = {}) {
+  const headers = { ...defaultHeaders, ...withAuthHeaders() };
+
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method,
+    headers,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const message = data?.message || data?.error || "Request failed";
+    throw new Error(message);
+  }
+  return data;
+}

@@ -1,7 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 /* eslint-disable react-hooks/set-state-in-effect */
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { logoutUser } from "../shared/utils/authService";
 
 const AuthContext = createContext();
 
@@ -29,22 +28,12 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem("token", authToken);
   };
 
-  const logout = async () => {
-    try {
-      // Call logout API
-      if (user?.id) {
-        await logoutUser(user.id);
-      }
-    } catch (error) {
-      console.error("Logout API error:", error);
-    } finally {
-      // Clear local state and storage
-      setUser(null);
-      setToken(null);
-      localStorage.removeItem("user");
-      localStorage.removeItem("token");
-      localStorage.removeItem("rememberMe");
-    }
+  const logout = () => {
+    setUser(null);
+    setToken(null);
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    localStorage.removeItem("rememberMe");
   };
 
   const value = {
