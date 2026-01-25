@@ -59,6 +59,40 @@ export async function updateReportStatus(reportId, status) {
   return await res.json();
 }
 
+export async function createReport(payload) {
+  const res = await fetch(`${BASE_URL}/api/reports`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) throw new Error("Failed to create report");
+  return await res.json();
+}
+
+export async function updateReport(reportId, payload) {
+  const res = await fetch(`${BASE_URL}/api/reports/${reportId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) throw new Error("Failed to update report");
+  return await res.json();
+}
+
+export async function deleteReport(reportId) {
+  const res = await fetch(`${BASE_URL}/api/reports/${reportId}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+
+  if (!res.ok) throw new Error("Failed to delete report");
+  return await res.json();
+}
+
 export async function createReportAdmin(payload) {
   const res = await fetch(`${BASE_URL}/api/report-admins`, {
     method: "POST",

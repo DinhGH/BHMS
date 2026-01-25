@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getReports, updateReportStatus } from '../services/api';
+import { createReport, deleteReport, getReports, updateReport, updateReportStatus } from '../services/api';
 
 // Icon components
 const Plus = () => (
@@ -37,6 +37,25 @@ function ReportManagement() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [refreshKey, setRefreshKey] = useState(0);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [createLoading, setCreateLoading] = useState(false);
+  const [createError, setCreateError] = useState('');
+  const [createForm, setCreateForm] = useState({
+    senderEmail: '',
+    target: 'Room',
+    content: '',
+    images: [],
+  });
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState('');
+  const [editForm, setEditForm] = useState({
+    id: null,
+    target: '',
+    content: '',
+    images: [],
+  });
+  const [deleteLoadingId, setDeleteLoadingId] = useState(null);
 
   const reportsPerPage = 10;
   const currentReports = reports;
@@ -126,6 +145,160 @@ function ReportManagement() {
     setSortBy('createdAt');
     setSortOrder('desc');
     setRefreshKey((prev) => prev + 1);
+  };
+
+  const resetCreateForm = () => {
+    setCreateForm({ senderEmail: '', target: 'Room', content: '', images: [] });
+    setCreateError('');
+  };
+
+  const resetEditForm = () => {
+    setEditForm({ id: null, target: '', content: '', images: [] });
+    setEditError('');
+  };
+
+  const handleCreateFiles = async (files) => {
+    if (!files || files.length === 0) return;
+    const toBase64 = (file) =>
+      new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+    try {
+      const images = await Promise.all([...files].map(toBase64));
+      setCreateForm((prev) => ({
+        ...prev,
+        images: [...prev.images, ...images],
+      }));
+    } catch (err) {
+      console.error(err);
+      setCreateError('Failed to read images');
+    }
+  };
+
+  const handleCreateReport = async (e) => {
+    e.preventDefault();
+    setCreateError('');
+
+    const senderEmail = createForm.senderEmail.trim();
+    if (!senderEmail) {
+      setCreateError('Sender Email is required');
+      return;
+    }
+    if (!createForm.target.trim()) {
+      setCreateError('Target is required');
+      return;
+    }
+    if (createForm.content.trim().length < 20) {
+      setCreateError('Content must be at least 20 characters');
+      return;
+    }
+
+    try {
+      setCreateLoading(true);
+      await createReport({
+        senderEmail,
+        target: createForm.target.trim(),
+        content: createForm.content.trim(),
+        images: createForm.images.length ? createForm.images : undefined,
+      });
+      setIsCreateOpen(false);
+      resetCreateForm();
+      setRefreshKey((prev) => prev + 1);
+    } catch (err) {
+      console.error(err);
+      setCreateError('Failed to create report');
+    } finally {
+      setCreateLoading(false);
+    }
+  };
+
+  const handleOpenEdit = (report) => {
+    setEditForm({
+      id: report.id,
+      target: report.target || '',
+      content: report.content || '',
+      images: Array.isArray(report.images) ? report.images : [],
+    });
+    setEditError('');
+    setIsEditOpen(true);
+  };
+
+  const handleEditFiles = async (files) => {
+    if (!files || files.length === 0) return;
+    const toBase64 = (file) =>
+      new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+    try {
+      const images = await Promise.all([...files].map(toBase64));
+      setEditForm((prev) => ({
+        ...prev,
+        images: [...prev.images, ...images],
+      }));
+    } catch (err) {
+      console.error(err);
+      setEditError('Failed to read images');
+    }
+  };
+
+  const handleEditReport = async (e) => {
+    e.preventDefault();
+    setEditError('');
+
+    if (!editForm.id) {
+      setEditError('Invalid report');
+      return;
+    }
+    if (!editForm.target.trim()) {
+      setEditError('Target is required');
+      return;
+    }
+    if (editForm.content.trim().length < 20) {
+      setEditError('Content must be at least 20 characters');
+      return;
+    }
+
+    try {
+      setEditLoading(true);
+      await updateReport(editForm.id, {
+        target: editForm.target.trim(),
+        content: editForm.content.trim(),
+        images: editForm.images.length ? editForm.images : null,
+      });
+      setIsEditOpen(false);
+      resetEditForm();
+      setRefreshKey((prev) => prev + 1);
+    } catch (err) {
+      console.error(err);
+      setEditError('Failed to update report');
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  const handleDeleteReport = async (id) => {
+    if (!id) return;
+    if (!window.confirm('Delete this report?')) return;
+
+    try {
+      setDeleteLoadingId(id);
+      await deleteReport(id);
+      setExpandedReport(null);
+      setRefreshKey((prev) => prev + 1);
+    } catch (err) {
+      console.error(err);
+      setError('Failed to delete report');
+    } finally {
+      setDeleteLoadingId(null);
+    }
   };
 
   const markStatus = async (id, status) => {
@@ -284,6 +457,15 @@ function ReportManagement() {
 
             <div className="flex flex-wrap items-center gap-3">
               <button
+                className="px-5 py-2.5 text-base font-medium text-white bg-blue-600 border border-blue-600 rounded-md transition-all duration-200 hover:bg-blue-700 hover:-translate-y-0.5 active:translate-y-0"
+                onClick={() => {
+                  resetCreateForm();
+                  setIsCreateOpen(true);
+                }}
+              >
+                Add Report
+              </button>
+              <button
                 className="px-5 py-2.5 text-base font-medium text-gray-700 bg-white border border-gray-300 rounded-md transition-all duration-200 hover:bg-gray-50 hover:-translate-y-0.5 active:translate-y-0"
                 onClick={() => setIsFilterOpen(!isFilterOpen)}
               >
@@ -391,16 +573,16 @@ function ReportManagement() {
                   </div>
 
                   {expandedReport === report.id && (
-                    <div className="px-4 py-5 bg-gray-50 border-t border-gray-200 sm:px-6">
-                      <div className="flex flex-col gap-6 lg:flex-row lg:flex-wrap lg:gap-8">
-                        <div className="flex items-start gap-4">
-                          <span className="text-base text-gray-500 whitespace-nowrap">Reported By</span>
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                    <div className="px-4 py-5 bg-white border-t border-gray-200 sm:px-6">
+                      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_260px]">
+                        <div className="space-y-5">
+                          <div className="flex items-center gap-4 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+                            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-sm">
                               <span className="text-gray-500 text-sm">👤</span>
                             </div>
                             <div>
-                              <div className="text-base font-medium text-gray-900">
+                              <div className="text-sm text-gray-500">Reported By</div>
+                              <div className="text-base font-semibold text-gray-900">
                                 {report.sender?.fullName || 'Unknown'}
                               </div>
                               <div className="text-sm text-gray-500">
@@ -408,66 +590,99 @@ function ReportManagement() {
                               </div>
                             </div>
                           </div>
-                        </div>
 
-                        <div className="flex-1">
-                          <div className="text-base text-gray-500 mb-2">Detail Report</div>
-                          <div className="text-base text-gray-700 leading-relaxed">{report.content}</div>
-                        </div>
+                          <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+                            <div className="text-sm font-medium text-gray-500">Detail Report</div>
+                            <div className="mt-2 text-base text-gray-700 leading-relaxed">
+                              {report.content}
+                            </div>
+                          </div>
 
-                        <div className="min-w-30">
-                          <div className="text-base text-gray-500 mb-2">Date</div>
-                          <div className="text-base font-medium text-gray-900 whitespace-pre-line">
-                            {formatDate(report.createdAt)}
+                          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                            <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+                              <div className="text-sm text-gray-500">Date</div>
+                              <div className="mt-1 text-sm font-semibold text-gray-900">
+                                {formatDate(report.createdAt)}
+                              </div>
+                            </div>
+                            <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+                              <div className="text-sm text-gray-500">Target</div>
+                              <div className="mt-1 text-sm font-semibold text-gray-900">{report.target}</div>
+                            </div>
+                            <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+                              <div className="text-sm text-gray-500">Status</div>
+                              <div
+                                className={`mt-2 inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
+                                  report.status === 'REVIEWING'
+                                    ? 'bg-blue-100 text-blue-700'
+                                    : report.status === 'FIXING'
+                                      ? 'bg-amber-100 text-amber-700'
+                                      : 'bg-emerald-100 text-emerald-700'
+                                }`}
+                              >
+                                {statusLabel(report.status)}
+                              </div>
+                            </div>
                           </div>
                         </div>
 
-                        <div className="min-w-37.5">
-                          <div className="text-base text-gray-500 mb-2">Target</div>
-                          <div className="text-base font-medium text-gray-900">{report.target}</div>
-                        </div>
-
-                        <div className="min-w-40">
-                          <div className="text-base text-gray-500 mb-2">Status</div>
-                          <div
-                            className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold ${
-                              report.status === 'REVIEWING'
-                                ? 'bg-blue-100 text-blue-700'
-                                : report.status === 'FIXING'
-                                  ? 'bg-amber-100 text-amber-700'
-                                  : 'bg-emerald-100 text-emerald-700'
-                            }`}
-                          >
-                            {statusLabel(report.status)}
+                        <div className="space-y-3">
+                          <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+                            <div className="text-xs font-semibold uppercase tracking-wide text-gray-400">Actions</div>
+                            <div className="mt-3 flex flex-col gap-2">
+                              <button
+                                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition-all duration-200 hover:bg-gray-100"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenEdit(report);
+                                }}
+                              >
+                                Edit
+                              </button>
+                              <button
+                                className="w-full rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700 transition-all duration-200 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+                                disabled={deleteLoadingId === report.id}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteReport(report.id);
+                                }}
+                              >
+                                {deleteLoadingId === report.id ? 'Deleting...' : 'Delete'}
+                              </button>
+                            </div>
                           </div>
-                          <div className="mt-4 flex flex-col gap-2">
-                            <button
-                              className="w-full rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 transition-all duration-200 hover:bg-blue-100"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                markStatus(report.id, 'REVIEWING');
-                              }}
-                            >
-                              Mark as Reviewing
-                            </button>
-                            <button
-                              className="w-full rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-700 transition-all duration-200 hover:bg-amber-100"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                markStatus(report.id, 'FIXING');
-                              }}
-                            >
-                              Mark as Fixing
-                            </button>
-                            <button
-                              className="w-full rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700 transition-all duration-200 hover:bg-emerald-100"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                markStatus(report.id, 'FIXED');
-                              }}
-                            >
-                              Mark as Fixed
-                            </button>
+
+                          <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+                            <div className="text-xs font-semibold uppercase tracking-wide text-gray-400">Set Status</div>
+                            <div className="mt-3 flex flex-col gap-2">
+                              <button
+                                className="w-full rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 transition-all duration-200 hover:bg-blue-100"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  markStatus(report.id, 'REVIEWING');
+                                }}
+                              >
+                                Mark as Reviewing
+                              </button>
+                              <button
+                                className="w-full rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-700 transition-all duration-200 hover:bg-amber-100"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  markStatus(report.id, 'FIXING');
+                                }}
+                              >
+                                Mark as Fixing
+                              </button>
+                              <button
+                                className="w-full rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700 transition-all duration-200 hover:bg-emerald-100"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  markStatus(report.id, 'FIXED');
+                                }}
+                              >
+                                Mark as Fixed
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -531,6 +746,194 @@ function ReportManagement() {
           )}
         </div>
       </div>
+
+      {isCreateOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-2xl rounded-lg bg-white shadow-xl">
+            <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+              <h2 className="text-xl font-semibold text-gray-900">Add Report</h2>
+              <button
+                className="text-gray-400 hover:text-gray-600"
+                onClick={() => {
+                  setIsCreateOpen(false);
+                  resetCreateForm();
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateReport} className="px-6 py-5">
+              <div className="grid gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Sender Email</label>
+                  <input
+                    type="email"
+                    value={createForm.senderEmail}
+                    onChange={(e) =>
+                      setCreateForm((prev) => ({ ...prev, senderEmail: e.target.value }))
+                    }
+                    className="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="tenant@example.com"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Target</label>
+                  <input
+                    type="text"
+                    value={createForm.target}
+                    onChange={(e) =>
+                      setCreateForm((prev) => ({ ...prev, target: e.target.value }))
+                    }
+                    className="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Room / Service / Payment"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Content</label>
+                  <textarea
+                    rows={4}
+                    value={createForm.content}
+                    onChange={(e) =>
+                      setCreateForm((prev) => ({ ...prev, content: e.target.value }))
+                    }
+                    className="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Describe the issue"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Images (optional)</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={(e) => handleCreateFiles(e.target.files)}
+                    className="mt-2 block w-full text-sm text-gray-500 file:mr-4 file:rounded-md file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-blue-700 hover:file:bg-blue-100"
+                  />
+                  {createForm.images.length > 0 && (
+                    <p className="mt-2 text-sm text-gray-500">
+                      {createForm.images.length} image(s) selected
+                    </p>
+                  )}
+                </div>
+                {createError && (
+                  <div className="rounded-md bg-red-50 px-4 py-2 text-sm text-red-600">
+                    {createError}
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-6 flex justify-end gap-3">
+                <button
+                  type="button"
+                  className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  onClick={() => {
+                    setIsCreateOpen(false);
+                    resetCreateForm();
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={createLoading}
+                  className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {createLoading ? 'Creating...' : 'Create Report'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {isEditOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-2xl rounded-lg bg-white shadow-xl">
+            <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+              <h2 className="text-xl font-semibold text-gray-900">Edit Report</h2>
+              <button
+                className="text-gray-400 hover:text-gray-600"
+                onClick={() => {
+                  setIsEditOpen(false);
+                  resetEditForm();
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleEditReport} className="px-6 py-5">
+              <div className="grid gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Target</label>
+                  <input
+                    type="text"
+                    value={editForm.target}
+                    onChange={(e) =>
+                      setEditForm((prev) => ({ ...prev, target: e.target.value }))
+                    }
+                    className="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Room / Service / Payment"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Content</label>
+                  <textarea
+                    rows={4}
+                    value={editForm.content}
+                    onChange={(e) =>
+                      setEditForm((prev) => ({ ...prev, content: e.target.value }))
+                    }
+                    className="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Describe the issue"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Images (optional)</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={(e) => handleEditFiles(e.target.files)}
+                    className="mt-2 block w-full text-sm text-gray-500 file:mr-4 file:rounded-md file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-blue-700 hover:file:bg-blue-100"
+                  />
+                  {editForm.images.length > 0 && (
+                    <p className="mt-2 text-sm text-gray-500">
+                      {editForm.images.length} image(s) selected
+                    </p>
+                  )}
+                </div>
+                {editError && (
+                  <div className="rounded-md bg-red-50 px-4 py-2 text-sm text-red-600">
+                    {editError}
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-6 flex justify-end gap-3">
+                <button
+                  type="button"
+                  className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  onClick={() => {
+                    setIsEditOpen(false);
+                    resetEditForm();
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={editLoading}
+                  className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {editLoading ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

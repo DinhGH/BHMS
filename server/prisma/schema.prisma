@@ -184,6 +184,9 @@ enum InvoiceStatus {
 }
 
 enum ReportStatus {
+  PENDING
+  PROCESSING
+  RESOLVED
   FIXED
   REVIEWING
   FIXING
@@ -202,6 +205,7 @@ enum Service_unit {
 enum User_role {
   ADMIN
   OWNER
+  TENANT
 }
 
 enum Tenant_gender {

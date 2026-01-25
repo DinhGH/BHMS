@@ -1,6 +1,9 @@
 import { prisma } from "../lib/prisma.js";
 import { sendTenantStatusEmail } from "../lib/mailer.js";
 
+const toDbStatus = (status) => (status === "FIXED" ? "RESOLVED" : status);
+const toClientStatus = (status) => (status === "RESOLVED" ? "FIXED" : status);
+
 const parsePagination = (req) => {
   const page = Math.max(parseInt(req.query.page || "1", 10), 1);
   const limit = Math.min(Math.max(parseInt(req.query.limit || "10", 10), 1), 100);
@@ -15,24 +18,21 @@ export const listReports = async (req, res) => {
 
     const where = {};
     if (status) {
-      where.status = status;
+      where.status = toDbStatus(status);
     }
     if (target) {
       where.target = target;
     }
     if (search) {
       const q = search.toString();
-      const tenantMatches = await prisma.tenant.findMany({
+      const userMatches = await prisma.user.findMany({
         where: {
-          OR: [
-            { fullName: { contains: q } },
-            { email: { contains: q } },
-          ],
+          email: { contains: q },
         },
         select: { id: true },
       });
 
-      const senderIds = tenantMatches.map((t) => t.id);
+      const senderIds = userMatches.map((u) => u.id);
       const orClauses = [{ content: { contains: q } }];
       if (senderIds.length > 0) {
         orClauses.push({ senderId: { in: senderIds } });
@@ -55,24 +55,23 @@ export const listReports = async (req, res) => {
         }),
         prisma.report.count({ where: { status: "REVIEWING" } }),
         prisma.report.count({ where: { status: "FIXING" } }),
-        prisma.report.count({ where: { status: "FIXED" } }),
+        prisma.report.count({ where: { status: "RESOLVED" } }),
       ]);
 
     const senderIds = [...new Set(reports.map((r) => r.senderId))];
-    const tenants = senderIds.length
-      ? await prisma.tenant.findMany({
+    const users = senderIds.length
+      ? await prisma.user.findMany({
           where: { id: { in: senderIds } },
-          select: { id: true, fullName: true, email: true },
+          select: { id: true, email: true },
         })
       : [];
-    const tenantById = new Map(tenants.map((t) => [t.id, t]));
+    const userById = new Map(users.map((u) => [u.id, u]));
     const reportsWithSender = reports.map((report) => {
-      const tenant = tenantById.get(report.senderId);
+      const user = userById.get(report.senderId);
       return {
         ...report,
-        sender: tenant
-          ? { id: tenant.id, fullName: tenant.fullName, email: tenant.email }
-          : null,
+        status: toClientStatus(report.status),
+        sender: user ? { id: user.id, email: user.email } : null,
       };
     });
 
@@ -96,6 +95,89 @@ export const listReports = async (req, res) => {
   }
 };
 
+export const createReport = async (req, res) => {
+  try {
+    const { senderId, senderEmail, target, content, images } = req.body || {};
+    const senderIdNum = Number(senderId);
+    const normalizedEmail = typeof senderEmail === "string"
+      ? senderEmail.trim().toLowerCase()
+      : "";
+
+    if (!senderIdNum && !normalizedEmail) {
+      return res
+        .status(400)
+        .json({ message: "senderId or senderEmail is required" });
+    }
+    if (!target || typeof target !== "string") {
+      return res.status(400).json({ message: "Target is required" });
+    }
+    if (!content || typeof content !== "string" || content.trim().length < 20) {
+      return res
+        .status(400)
+        .json({ message: "Content must be at least 20 characters" });
+    }
+    if (images !== null && images !== undefined) {
+      const isStringArray =
+        Array.isArray(images) && images.every((item) => typeof item === "string");
+      if (!isStringArray) {
+        return res
+          .status(400)
+          .json({ message: "Images must be an array of base64 strings" });
+      }
+    }
+
+    let user = null;
+
+    if (senderIdNum) {
+      user = await prisma.user.findUnique({
+        where: { id: senderIdNum },
+        select: { id: true, email: true },
+      });
+    }
+
+    if (!user && normalizedEmail) {
+      user = await prisma.user.findUnique({
+        where: { email: normalizedEmail },
+        select: { id: true, email: true },
+      });
+    }
+
+    if (!user && normalizedEmail) {
+      user = await prisma.user.create({
+        data: {
+          email: normalizedEmail,
+          passwordHash: "DEV_ONLY",
+          role: "TENANT",
+        },
+        select: { id: true, email: true },
+      });
+    }
+
+    if (!user) {
+      return res.status(404).json({ message: "Sender not found" });
+    }
+
+    const report = await prisma.report.create({
+      data: {
+        senderId: user.id,
+        target: target.trim(),
+        content: content.trim(),
+        images: images ?? null,
+        status: "REVIEWING",
+      },
+    });
+
+    return res.status(201).json({
+      ...report,
+      status: toClientStatus(report.status),
+      sender: { id: user.id, email: user.email },
+    });
+  } catch (error) {
+    console.error("createReport error:", error);
+    return res.status(500).json({ message: "Failed to create report" });
+  }
+};
+
 export const getReportById = async (req, res) => {
   try {
     const id = Number(req.params.id);
@@ -107,16 +189,15 @@ export const getReportById = async (req, res) => {
 
     if (!report) return res.status(404).json({ message: "Report not found" });
 
-    const tenant = await prisma.tenant.findUnique({
+    const user = await prisma.user.findUnique({
       where: { id: report.senderId },
-      select: { id: true, fullName: true, email: true },
+      select: { id: true, email: true },
     });
 
     res.json({
       ...report,
-      sender: tenant
-        ? { id: tenant.id, fullName: tenant.fullName, email: tenant.email }
-        : null,
+      status: toClientStatus(report.status),
+      sender: user ? { id: user.id, email: user.email } : null,
     });
   } catch (error) {
     console.error("getReportById error:", error);
@@ -128,6 +209,7 @@ export const updateReportStatus = async (req, res) => {
   try {
     const id = Number(req.params.id);
     const { status } = req.body;
+    const dbStatus = toDbStatus(status);
 
     if (!id) return res.status(400).json({ message: "Invalid report id" });
     if (!status || !["REVIEWING", "FIXING", "FIXED"].includes(status)) {
@@ -136,19 +218,19 @@ export const updateReportStatus = async (req, res) => {
 
     const report = await prisma.report.update({
       where: { id },
-      data: { status },
+      data: { status: dbStatus },
     });
 
-    const tenant = await prisma.tenant.findUnique({
+    const user = await prisma.user.findUnique({
       where: { id: report.senderId },
-      select: { id: true, fullName: true, email: true },
+      select: { id: true, email: true },
     });
 
     let emailResult = null;
-    if (tenant?.email && ["FIXING", "FIXED"].includes(status)) {
+    if (user?.email && ["FIXING", "FIXED"].includes(status)) {
       try {
         emailResult = await sendTenantStatusEmail({
-          to: tenant.email,
+          to: user.email,
           reportId: report.id,
           status,
         });
@@ -160,13 +242,83 @@ export const updateReportStatus = async (req, res) => {
 
     res.json({
       ...report,
-      sender: tenant
-        ? { id: tenant.id, fullName: tenant.fullName, email: tenant.email }
-        : null,
+      status: toClientStatus(report.status),
+      sender: user ? { id: user.id, email: user.email } : null,
       email: emailResult,
     });
   } catch (error) {
     console.error("updateReportStatus error:", error);
     res.status(500).json({ message: "Failed to update report status" });
+  }
+};
+
+export const updateReport = async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const { target, content, images } = req.body || {};
+
+    if (!id) return res.status(400).json({ message: "Invalid report id" });
+
+    const data = {};
+    if (typeof target === "string" && target.trim()) {
+      data.target = target.trim();
+    }
+    if (typeof content === "string") {
+      if (content.trim().length < 20) {
+        return res
+          .status(400)
+          .json({ message: "Content must be at least 20 characters" });
+      }
+      data.content = content.trim();
+    }
+    if (images !== undefined) {
+      if (images !== null) {
+        const isStringArray =
+          Array.isArray(images) && images.every((item) => typeof item === "string");
+        if (!isStringArray) {
+          return res
+            .status(400)
+            .json({ message: "Images must be an array of base64 strings" });
+        }
+      }
+      data.images = images;
+    }
+
+    if (Object.keys(data).length === 0) {
+      return res.status(400).json({ message: "No fields to update" });
+    }
+
+    const report = await prisma.report.update({
+      where: { id },
+      data,
+    });
+
+    const user = await prisma.user.findUnique({
+      where: { id: report.senderId },
+      select: { id: true, email: true },
+    });
+
+    res.json({
+      ...report,
+      status: toClientStatus(report.status),
+      sender: user ? { id: user.id, email: user.email } : null,
+    });
+  } catch (error) {
+    console.error("updateReport error:", error);
+    res.status(500).json({ message: "Failed to update report" });
+  }
+};
+
+export const deleteReport = async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!id) return res.status(400).json({ message: "Invalid report id" });
+
+    await prisma.report.delete({ where: { id } });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error("deleteReport error:", error);
+    res.status(500).json({ message: "Failed to delete report" });
   }
 };
