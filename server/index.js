@@ -13,6 +13,7 @@ import reportRoutes from "./routes/reportRoutes.js";
 import reportAdminRoutes from "./routes/reportAdminRoutes.js";
 
 import ownerRoute from "./routers/owner.route.js";
+import adminRoutes from "./src/routers/admin.routes.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -39,6 +40,7 @@ app.use("/api/tenants", tenantRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/report-admins", reportAdminRoutes);
 app.use("/api/owner", ownerRoute);
+app.use("/api/users", adminRoutes);
 
 // 404 handler for unmatched routes
 app.use((req, res) => {

@@ -6,6 +6,7 @@ import {
   updateUser,
   addUser,
   getCurrentUser,
+  getAdminDashboard,
 } from "../controllers/admin.controller.js";
 
 const router = express.Router();
@@ -13,6 +14,7 @@ const router = express.Router();
 // router.use(protectedRoute(["ADMIN"]));
 
 router.get("/me", getCurrentUser);
+router.get("/dashboard", getAdminDashboard);
 
 router.get("/", getUsers);
 

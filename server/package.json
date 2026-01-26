@@ -11,6 +11,9 @@
   "license": "ISC",
   "description": "",
   "type": "module",
+  "prisma": {
+    "seed": "node prisma/seed.js"
+  },
   "dependencies": {
     "nodemailer": "^7.0.12",
     "@prisma/client": "^6.9.0",

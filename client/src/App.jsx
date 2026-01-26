@@ -8,14 +8,16 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminLayout from "./layouts/AdminLayout.jsx";
+
 import HomePageOwner from "./pages/owner/HomePageOwner";
 import LandingPage from "./pages/LandingPage";
 import "./styles/App.css";
 import ServiceManagement from "./components/ServiceManagement";
 import ReportManagement from "./components/ReportManagement";
-import Dashboard from "./pages/Admin/Dashboard.jsx";
 import AdminUser from "./pages/Admin/AdminUser.jsx";
 import ReportAdmin from "./pages/Admin/ReportAdmin.jsx";
+
+import AdminDashBoard from "./components/Admin/AdminDashBoard.jsx";
 
 function App() {
   const [resetEmail, setResetEmail] = useState("");
@@ -33,7 +35,7 @@ function App() {
             </ProtectedRoute>
           }
         >
-          <Route index element={<Dashboard />} />
+          <Route index element={<AdminDashBoard />} />
           <Route path="users" element={<AdminUser />} />
           <Route path="report" element={<ReportAdmin />} />
         </Route>
