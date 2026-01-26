@@ -34,7 +34,7 @@ export default function ViewDetailRoom({ roomId, onBack }) {
   const fetchRoomDetail = async () => {
     try {
       setLoading(true);
-      const res = await api.get(`/owner/rooms/${roomId}`);
+      const res = await api.get(`/api/owner/rooms/${roomId}`);
       setRoom(res);
     } catch (err) {
       console.error(err);
@@ -118,7 +118,7 @@ export default function ViewDetailRoom({ roomId, onBack }) {
 
     try {
       setDeleting(true);
-      await api.delete(`/owner/rooms/${room.id}`);
+      await api.delete(`/api/owner/rooms/${room.id}`);
       toast.success(`Room "${room.name}" deleted successfully`);
       onBack(true);
     } catch (err) {
@@ -133,7 +133,7 @@ export default function ViewDetailRoom({ roomId, onBack }) {
 
   const handleMakeInvoice = async () => {
     try {
-      await api.post(`/owner/rooms/${room.id}/invoice`);
+      await api.post(`/api/owner/rooms/${room.id}/invoice`);
       toast.success("Invoice created successfully");
       fetchRoomDetail();
     } catch (err) {

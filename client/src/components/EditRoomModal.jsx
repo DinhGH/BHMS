@@ -40,7 +40,7 @@ export default function EditRoomModal({ open, room, onClose, onUpdated }) {
 
   const handleSubmit = async () => {
     try {
-      await api.put(`/owner/rooms/${room.id}`, {
+      await api.put(`/api/owner/rooms/${room.id}`, {
         name: form.name.trim(),
         price: Number(form.price),
         electricMeterNow: Number(form.electricMeterNow) || 0,

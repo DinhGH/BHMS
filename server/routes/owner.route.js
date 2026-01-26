@@ -27,7 +27,7 @@ import { makeInvoice } from "../controllers/invoice.controller.js";
 import { authOwner } from "../middlewares/owner.middleware.js";
 
 const router = express.Router();
-// router.use(authOwner);
+router.use(authOwner);
 router.get("/boarding-houses", getAllBoardingHouses);
 router.get("/boarding-houses/check", checkBoardingHouseByName);
 router.post("/boarding-houses", createBoardingHouse);

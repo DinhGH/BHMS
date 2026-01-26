@@ -19,7 +19,7 @@ export default function AddTenantModal({ open, roomId, onClose, onAdded }) {
     const timer = setTimeout(async () => {
       try {
         setSearching(true);
-        const tenants = await api.get("/owner/tenants/search", {
+        const tenants = await api.get("/api/owner/tenants/search", {
           params: { query: searchQuery },
         });
         setSuggestions(tenants);
@@ -50,7 +50,7 @@ export default function AddTenantModal({ open, roomId, onClose, onAdded }) {
     try {
       setLoading(true);
 
-      await api.post(`/owner/rooms/${roomId}/add-tenant`, {
+      await api.post(`/api/owner/rooms/${roomId}/add-tenant`, {
         tenantId: selectedTenant.id,
       });
 

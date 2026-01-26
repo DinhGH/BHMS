@@ -68,7 +68,7 @@ export default function AddNewRoomModal({ open, onClose, houseId, onSuccess }) {
         constractEnd: form.constractEnd ? new Date(form.constractEnd) : null,
       };
 
-      await api.post("/owner/rooms", payload);
+      await api.post("/api/owner/rooms", payload);
 
       toast.success("Room added successfully");
       onSuccess?.();

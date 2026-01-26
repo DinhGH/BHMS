@@ -3,7 +3,7 @@ import { prisma } from "../lib/prisma.js";
 /* ================= GET ALL ================= */
 export const getAllBoardingHouses = async (req, res) => {
   try {
-    const ownerId = 3; // req.ownerId;
+    const ownerId = req.ownerId;
     const search = (req.query.search || "").replace(/\s+/g, "").toLowerCase();
 
     const houses = await prisma.boardingHouse.findMany({
@@ -101,7 +101,7 @@ export const createBoardingHouse = async (req, res) => {
         electricFee: Number(electricFee),
         waterFee: Number(waterFee),
         imageUrl: imageUrl || null,
-        ownerId,
+        ownerId: req.ownerId,
       },
     });
 

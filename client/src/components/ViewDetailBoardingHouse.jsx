@@ -61,9 +61,12 @@ export default function ViewDetailBoardingHouse({ house, onBack }) {
 
       console.log("Fetching with params:", params); // Debug log
 
-      const data = await api.get(`/owner/boarding-houses/${house.id}/rooms`, {
-        params,
-      });
+      const data = await api.get(
+        `/api/owner/boarding-houses/${house.id}/rooms`,
+        {
+          params,
+        },
+      );
 
       console.log("Received rooms:", data); // Debug log
       setRooms(data);
