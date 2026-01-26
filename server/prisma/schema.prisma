@@ -50,6 +50,7 @@ enum ServicePriceType {
 enum User_role {
   ADMIN
   OWNER
+  TENANT
 }
 
 enum Tenant_gender {

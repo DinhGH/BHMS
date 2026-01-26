@@ -9,6 +9,8 @@ import userRoutes from "./routes/userRoutes.js";
 import serviceRoutes from "./routes/services.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
 import tenantRoutes from "./routes/tenantRoutes.js";
+import reportRoutes from "./routes/reportRoutes.js";
+import reportAdminRoutes from "./routes/reportAdminRoutes.js";
 
 import ownerRoute from "./routers/owner.route.js";
 
@@ -34,6 +36,8 @@ app.use("/api/user", userRoutes);
 app.use("/api/services", serviceRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/tenants", tenantRoutes);
+app.use("/api/reports", reportRoutes);
+app.use("/api/report-admins", reportAdminRoutes);
 app.use("/api/owner", ownerRoute);
 
 // 404 handler for unmatched routes

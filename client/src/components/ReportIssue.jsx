@@ -95,6 +95,7 @@ function ReportIssue() {
     try {
       const payload = {
         senderId: user.id,
+        senderEmail: user?.email,
         target: target.trim(),
         content: content.trim(),
         images: images.length ? images.map((item) => item.dataUrl) : null,
