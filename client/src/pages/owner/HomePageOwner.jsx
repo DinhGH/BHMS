@@ -1,20 +1,80 @@
-import { useState } from "react";
-import Navbar from "../components/Navbar";
-import Sidebar from "../components/Sidebar";
-import Dashboard from "../components/Dashboard";
-import BoardingHouseManagement from "../components/BoardingHouseManagement";
-import RoomManagement from "../components/RoomManagement";
-import TenantsManagement from "../components/TenantsManagement";
-import NotificationManagement from "../components/NotificationManagement";
-import ReportManagement from "../components/ReportManagement";
-import ReportIssue from "../components/ReportIssue";
-import PaymentManagement from "../components/PaymentManagement";
+import { useState, useEffect, useMemo } from "react";
+import Navbar from "../../components/Navbar";
+import Sidebar from "../../components/Sidebar";
+import Dashboard from "../../components/Dashboard";
+import BoardingHouseManagement from "../../components/BoardingHouseManagement";
+import RoomManagement from "../../components/RoomManagement";
+import TenantsManagement from "../../components/TenantsManagement";
+import NotificationManagement from "../../components/NotificationManagement";
+import ReportManagement from "../../components/ReportManagement";
+import ReportIssue from "../../components/ReportIssue";
+import PaymentManagement from "../../components/PaymentManagement";
+import ServiceManagement from "../../components/ServiceManagement";
+import { useAuth } from "../../contexts/AuthContext";
+import { getNotifications } from "../../services/api";
+// import { getNotifications } from "../../services/api";
 
 function HomePageOwner() {
+  const { user, loading, logout } = useAuth();
   const [activeSection, setActiveSection] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Fetch notifications once when user is ready (lọc tại client theo searchQuery)
+  useEffect(() => {
+    if (!user?.id) return;
+    let cancelled = false;
+
+    (async () => {
+      setNotificationsLoading(true);
+      try {
+        const data = await getNotifications(); // không truyền tham số
+        if (!cancelled) {
+          setNotifications(Array.isArray(data) ? data : []);
+        }
+      } catch (err) {
+        console.error("Failed to fetch notifications:", err);
+        if (!cancelled) setNotifications([]);
+      } finally {
+        if (!cancelled) setNotificationsLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
+
+  // Lọc client-side theo searchQuery (title/content)
+  const filteredNotifications = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return notifications;
+    return notifications.filter((n) => {
+      const t = (n.title || "").toLowerCase();
+      const c = (n.content || "").toLowerCase();
+      return t.includes(q) || c.includes(q);
+    });
+  }, [notifications, searchQuery]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        Loading...
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center h-screen text-red-600 font-semibold">
+        Không tìm thấy thông tin người dùng
+      </div>
+    );
+  }
 
   const renderContent = () => {
     switch (activeSection) {
@@ -34,6 +94,8 @@ function HomePageOwner() {
         return <ReportIssue />;
       case "payments":
         return <PaymentManagement />;
+      case "services":
+        return <ServiceManagement />;
       default:
         return <Dashboard />;
     }
@@ -61,7 +123,9 @@ function HomePageOwner() {
         onMenuClick={() => setSidebarOpen(!sidebarOpen)}
         onBellClick={toggleNotifications}
         onAvatarClick={toggleProfile}
+        onLogout={logout}
         sidebarOpen={sidebarOpen}
+        user={user}
       />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar
@@ -69,8 +133,15 @@ function HomePageOwner() {
           setActiveSection={setActiveSection}
           isOpen={sidebarOpen}
           setIsOpen={setSidebarOpen}
+          onLogout={logout}
         />
-        <main className="flex-1 overflow-y-auto bg-gray-50 p-3 sm:p-4 md:p-6">
+        <main
+          className={`flex-1 overflow-y-auto bg-gray-50 ${
+            activeSection === "reports" || activeSection === "report-issue"
+              ? "p-0"
+              : "p-3 sm:p-4 md:p-6"
+          }`}
+        >
           {renderContent()}
         </main>
       </div>
@@ -104,24 +175,42 @@ function HomePageOwner() {
             <input
               type="text"
               placeholder="Search notifications..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50">
-            {[1, 2, 3].map((id) => (
-              <div
-                key={id}
-                className="rounded-md border border-slate-200 p-3 bg-white shadow-sm"
-              >
-                <div className="text-[11px] text-slate-500 mb-1">2h ago</div>
-                <div className="text-sm font-semibold text-slate-900">
-                  Notification title {id}
-                </div>
-                <div className="text-sm text-slate-700 line-clamp-2">
-                  This is a sample notification detail for preview purposes.
-                </div>
+            {notificationsLoading ? (
+              <div className="text-center text-sm text-slate-500 py-4">
+                Loading...
               </div>
-            ))}
+            ) : filteredNotifications.length > 0 ? (
+              filteredNotifications.map((notification) => (
+                <div
+                  key={notification.id}
+                  className={`rounded-md border p-3 shadow-sm ${
+                    notification.isRead
+                      ? "border-slate-200 bg-white"
+                      : "border-blue-200 bg-blue-50"
+                  }`}
+                >
+                  <div className="text-[11px] text-slate-500 mb-1">
+                    {new Date(notification.createdAt).toLocaleString()}
+                  </div>
+                  <div className="text-sm font-semibold text-slate-900">
+                    {notification.title}
+                  </div>
+                  <div className="text-sm text-slate-700 line-clamp-2">
+                    {notification.content}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center text-sm text-slate-500 py-4">
+                No notifications found
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -144,12 +233,16 @@ function HomePageOwner() {
             <div className="rounded-lg border border-slate-200 p-4 bg-white space-y-1">
               <div className="text-xs text-slate-500">Full Name</div>
               <div className="text-sm font-semibold text-slate-900">
-                Nguyễn Văn A
+                {user?.name || "Owner Name"}
               </div>
               <div className="text-xs text-slate-500">Email</div>
-              <div className="text-sm text-slate-800">owner@example.com</div>
+              <div className="text-sm text-slate-800">
+                {user?.email || "owner@example.com"}
+              </div>
               <div className="text-xs text-slate-500">Phone</div>
-              <div className="text-sm text-slate-800">+84 912 345 678</div>
+              <div className="text-sm text-slate-800">
+                {user?.phone || "+84 912 345 678"}
+              </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <button className="w-full flex items-center justify-center gap-2 border border-slate-300 text-slate-900 font-semibold py-2 rounded-lg hover:bg-slate-100 transition">
@@ -159,9 +252,6 @@ function HomePageOwner() {
                 Settings
               </button>
             </div>
-            <button className="w-full flex items-center justify-center gap-2 bg-slate-900 hover:bg-black text-white font-semibold py-2 rounded-lg transition">
-              Logout
-            </button>
           </div>
         </div>
       </div>
