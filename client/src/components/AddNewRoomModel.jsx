@@ -16,7 +16,6 @@ export default function AddNewRoomModal({ open, onClose, houseId, onSuccess }) {
   const [isValid, setIsValid] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  /* ================= VALIDATE ================= */
   useEffect(() => {
     const newErrors = {};
 

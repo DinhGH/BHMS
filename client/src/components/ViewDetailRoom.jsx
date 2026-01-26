@@ -5,6 +5,7 @@ import TenantItem from "../components/ui/TenantItem";
 import { FaUsers } from "react-icons/fa";
 import EditRoomModal from "../components/EditRoomModal";
 import AddTenantModal from "../components/AddTenantModal";
+import RemoveTenantModal from "../components/RemoveTenantModal";
 import api from "../server/api";
 import { toast } from "react-hot-toast";
 
@@ -14,6 +15,7 @@ export default function ViewDetailRoom({ roomId, onBack }) {
   const [deleting, setDeleting] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [showAddTenant, setShowAddTenant] = useState(false);
+  const [showRemoveTenant, setShowRemoveTenant] = useState(false);
 
   /* ================= FETCH ================= */
 
@@ -232,19 +234,39 @@ export default function ViewDetailRoom({ roomId, onBack }) {
           disabled={!isOccupied}
           onClick={handleMakeInvoice}
         />
-
-        <ActionButton
-          label="Add Tenant"
-          onClick={() => setShowAddTenant(true)}
-        />
-        {showAddTenant && (
-          <AddTenantModal
-            open={showAddTenant}
-            roomId={room.id}
-            onClose={() => setShowAddTenant(false)}
-            onAdded={fetchRoomDetail}
+        {/* ADD TENANT */}
+        <>
+          <ActionButton
+            label="Add Tenant"
+            onClick={() => setShowAddTenant(true)}
           />
-        )}
+          {showAddTenant && (
+            <AddTenantModal
+              open={showAddTenant}
+              roomId={room.id}
+              onClose={() => setShowAddTenant(false)}
+              onAdded={fetchRoomDetail}
+            />
+          )}
+        </>
+
+        {/* REMOVE TENANT */}
+        <>
+          <ActionButton
+            label="Remove Tenant"
+            danger
+            disabled={!room.tenants || room.tenants.length === 0}
+            onClick={() => setShowRemoveTenant(true)}
+          />
+          {showRemoveTenant && (
+            <RemoveTenantModal
+              open={showRemoveTenant}
+              roomId={room.id}
+              onClose={() => setShowRemoveTenant(false)}
+              onRemoved={fetchRoomDetail}
+            />
+          )}
+        </>
 
         <ActionButton label="Edit" onClick={() => setShowEdit(true)} />
 

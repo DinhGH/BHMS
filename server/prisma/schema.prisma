@@ -68,8 +68,8 @@ model Room {
   electricMeterNow   Float            @default(0)
   waterMeterAfter    Float            @default(0)
   waterMeterNow      Float            @default(0)
-  constractEnd       DateTime?
-  constractStart     DateTime?
+  contractEnd       DateTime?
+  contractStart     DateTime?
   createdAt          DateTime         @default(now())
   Invoice            Invoice[]
   RentalContract     RentalContract[]
@@ -121,7 +121,7 @@ model Tenant {
   imageUrl       String?
   invoices       Invoice[]
   RentalContract RentalContract[]
-  Room           Room?             @relation(fields: [roomId], references: [id])
+  Room           Room?            @relation(fields: [roomId], references: [id])
 
   @@index([roomId])
 }
@@ -213,6 +213,19 @@ model RentalContract {
   @@index([tenantId])
 }
 
+model Subscription {
+  id          Int                 @id @default(autoincrement())
+  plan        Subscription_plan
+  amount      Float
+  currency    String              @default("VND")
+  status      Subscription_status @default(ACTIVE)
+  purchasedAt DateTime            @default(now())
+  periodStart DateTime
+  periodEnd   DateTime
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime
+}
+
 enum UserActive {
   YES
   NO
@@ -266,4 +279,16 @@ enum Tenant_gender {
   MALE
   FEMALE
   OTHER
+}
+
+enum Subscription_plan {
+  BASIC
+  PREMIUM
+  PROFESSIONAL
+}
+
+enum Subscription_status {
+  ACTIVE
+  CANCELED
+  EXPIRED
 }

@@ -108,7 +108,7 @@ export default function AddTenantModal({ open, roomId, onClose, onAdded }) {
           )}
 
           {/* Suggestions Dropdown */}
-          {suggestions.length > 0 && (
+          {suggestions.length > 0 && !selectedTenant && (
             <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-y-auto">
               {suggestions.map((tenant) => (
                 <div
@@ -137,24 +137,29 @@ export default function AddTenantModal({ open, roomId, onClose, onAdded }) {
 
         {/* Selected Tenant Info */}
         {selectedTenant && (
-          <div className="bg-blue-50 p-4 rounded-md border border-blue-200">
-            <div className="text-sm font-medium text-blue-900 mb-2">
-              Selected Tenant:
+          <div>
+            <div className="bg-white p-4 rounded-md border border-blue-200">
+              <div className="text-sm font-medium text-blue-900 mb-2">
+                Selected Tenant:
+              </div>
+              <div className="space-y-1 text-sm">
+                <div>
+                  <strong>Name:</strong> {selectedTenant.fullName}
+                </div>
+                <div>
+                  <strong>Email:</strong> {selectedTenant.email}
+                </div>
+                <div>
+                  <strong>Phone:</strong> {selectedTenant.phone || "N/A"}
+                </div>
+                <div>
+                  <strong>Age:</strong> {selectedTenant.age} •
+                  <strong> Gender:</strong> {selectedTenant.gender}
+                </div>
+              </div>
             </div>
-            <div className="space-y-1 text-sm">
-              <div>
-                <strong>Name:</strong> {selectedTenant.fullName}
-              </div>
-              <div>
-                <strong>Email:</strong> {selectedTenant.email}
-              </div>
-              <div>
-                <strong>Phone:</strong> {selectedTenant.phone || "N/A"}
-              </div>
-              <div>
-                <strong>Age:</strong> {selectedTenant.age} •
-                <strong> Gender:</strong> {selectedTenant.gender}
-              </div>
+            <div className="bg-red-50 p-3 rounded text-sm mt-4">
+              Selected: <strong>{selectedTenant.fullName}</strong>
             </div>
           </div>
         )}

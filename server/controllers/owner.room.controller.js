@@ -141,8 +141,8 @@ export const getRoomDetail = async (req, res) => {
       tenants: room.Tenant,
 
       contract: {
-        start: room.constractStart,
-        end: room.constractEnd,
+        start: room.contractStart,
+        end: room.contractEnd,
       },
 
       paymentStatus: invoice?.status ?? "NO_INVOICE",
@@ -269,8 +269,8 @@ export const updateRoom = async (req, res) => {
       electricMeterAfter,
       waterMeterNow,
       waterMeterAfter,
-      constractStart,
-      constractEnd,
+      contractStart,
+      contractEnd,
       isLocked,
     } = req.body;
 
@@ -309,11 +309,11 @@ export const updateRoom = async (req, res) => {
             ? Number(waterMeterAfter)
             : room.waterMeterAfter,
 
-        constractStart: constractStart
-          ? new Date(constractStart)
-          : room.constractStart,
+        contractStart: contractStart
+          ? new Date(contractStart)
+          : room.contractStart,
 
-        constractEnd: constractEnd ? new Date(constractEnd) : room.constractEnd,
+        contractEnd: contractEnd ? new Date(contractEnd) : room.contractEnd,
 
         isLocked: isLocked ?? room.isLocked,
       },
@@ -328,7 +328,6 @@ export const updateRoom = async (req, res) => {
 /* =====================================================
     ADD TENANT TO ROOM
     ===================================================== */
-
 export const addTenantToRoom = async (req, res) => {
   try {
     const roomId = Number(req.params.roomId);
@@ -391,7 +390,6 @@ export const searchAvailableTenants = async (req, res) => {
 
     const where = {};
 
-    // MySQL case-insensitive search (MySQL collation mặc định đã case-insensitive)
     if (query && query.trim()) {
       where.OR = [
         {
@@ -427,6 +425,93 @@ export const searchAvailableTenants = async (req, res) => {
     res.json(tenants);
   } catch (err) {
     console.error("Search tenants error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+/* =====================================================
+    REMOVE TENANT FROM ROOM
+    ===================================================== */
+export const removeTenantFromRoom = async (req, res) => {
+  try {
+    const roomId = Number(req.params.roomId);
+    const tenantId = Number(req.params.tenantId);
+
+    if (isNaN(roomId) || isNaN(tenantId)) {
+      return res.status(400).json({ message: "Invalid roomId or tenantId" });
+    }
+
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: tenantId },
+    });
+
+    if (!tenant || tenant.roomId !== roomId) {
+      return res.status(400).json({ message: "Tenant not in this room" });
+    }
+
+    // 1️⃣ Remove tenant khỏi phòng
+    await prisma.tenant.update({
+      where: { id: tenantId },
+      data: {
+        roomId: null,
+      },
+    });
+
+    // 2️⃣ End rental contract (nếu có)
+    await prisma.rentalContract.updateMany({
+      where: {
+        roomId,
+        tenantId,
+        endDate: null,
+      },
+      data: {
+        endDate: new Date(),
+      },
+    });
+
+    res.json({ message: "Tenant removed from room successfully" });
+  } catch (err) {
+    console.error("removeTenantFromRoom:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const searchTenantsInRoom = async (req, res) => {
+  try {
+    const roomId = Number(req.params.roomId);
+    const { query } = req.query;
+
+    if (!roomId) {
+      return res.status(400).json({ message: "Room ID is required" });
+    }
+
+    const where = {
+      roomId: roomId,
+    };
+
+    if (query && query.trim()) {
+      where.OR = [
+        { fullName: { contains: query.trim() } },
+        { email: { contains: query.trim() } },
+      ];
+    }
+
+    const tenants = await prisma.tenant.findMany({
+      where,
+      select: {
+        id: true,
+        fullName: true,
+        email: true,
+        phone: true,
+        age: true,
+        gender: true,
+      },
+      orderBy: { fullName: "asc" },
+      take: 10,
+    });
+
+    res.json(tenants);
+  } catch (err) {
+    console.error("searchTenantsInRoom error:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
