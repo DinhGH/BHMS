@@ -12,7 +12,7 @@ import {
 
 import { AiFillSetting } from "react-icons/ai";
 
-export default function AdminSidebar({ user }) {
+export default function AdminSidebar({ user, onLogout }) {
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState(2);
   const [search, setSearch] = useState("");
@@ -130,7 +130,12 @@ export default function AdminSidebar({ user }) {
 
       {/* Footer */}
       <div className="p-4 border-t border-gray-200">
-        <button className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg">
+        <button
+          onClick={() => {
+            if (onLogout) onLogout();
+          }}
+          className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg"
+        >
           <CiLogout className="w-6 h-6" />{" "}
           <span className="font-medium text-lg">Log out</span>
         </button>
