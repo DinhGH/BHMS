@@ -67,9 +67,7 @@ export default function RemoveTenantModal({
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
       <div className="bg-white p-6 rounded-lg w-full max-w-md space-y-4">
-        <h2 className="text-lg font-semibold text-red-600">
-          Remove Tenant From Room
-        </h2>
+        <h2 className="text-lg font-semibold ">Remove Tenant From Room</h2>
 
         <input
           value={searchQuery}
@@ -114,7 +112,7 @@ export default function RemoveTenantModal({
           <button
             onClick={handleSubmit}
             disabled={!selectedTenant || loading}
-            className="bg-red-600 text-white px-4 py-2 rounded"
+            className="bg-amber-500 text-white hover:bg-amber-600 focus:ring-amber-400 active:bg-amber-700 border border-amber-500 px-4 py-2 rounded"
           >
             {loading ? "Removing..." : "Remove"}
           </button>

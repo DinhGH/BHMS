@@ -109,6 +109,11 @@ export const getRoomDetail = async (req, res) => {
           take: 1,
           orderBy: { createdAt: "desc" },
         },
+        roomServices: {
+          include: {
+            service: true,
+          },
+        },
       },
     });
 
@@ -159,7 +164,7 @@ export const getRoomDetail = async (req, res) => {
    ===================================================== */
 export const createRoom = async (req, res) => {
   try {
-    const { houseId, name, price, image, constractStart, constractEnd } =
+    const { houseId, name, price, image, contractStart, contractEnd } =
       req.body;
 
     if (!houseId || !name || !price) {
@@ -172,9 +177,9 @@ export const createRoom = async (req, res) => {
         price: Number(price),
         imageUrl: image || null,
 
-        constractStart: constractStart ? new Date(constractStart) : null,
+        contractStart: contractStart ? new Date(contractStart) : null,
 
-        constractEnd: constractEnd ? new Date(constractEnd) : null,
+        contractEnd: contractEnd ? new Date(contractEnd) : null,
 
         // 🔥 BẮT BUỘC
         house: {
@@ -513,5 +518,249 @@ export const searchTenantsInRoom = async (req, res) => {
   } catch (err) {
     console.error("searchTenantsInRoom error:", err);
     res.status(500).json({ message: "Server error" });
+  }
+};
+/* =====================================================
+   ADD TO ROOM
+   ===================================================== */
+export const getAllServices = async (req, res) => {
+  try {
+    const services = await prisma.service.findMany({
+      where: { isActive: true },
+      orderBy: { name: "asc" },
+    });
+
+    res.json(services);
+  } catch (err) {
+    console.error("getAllServices:", err);
+    res.status(500).json({ message: "Fetch services failed" });
+  }
+};
+
+// owner.room.controller.js
+
+export const addServiceToRoom = async (req, res) => {
+  try {
+    const roomId = Number(req.params.roomId);
+    const { serviceId, price, quantity } = req.body;
+
+    // Validation
+    if (!roomId || isNaN(roomId)) {
+      return res.status(400).json({ message: "Invalid room ID" });
+    }
+
+    if (!serviceId || isNaN(Number(serviceId))) {
+      return res.status(400).json({ message: "Invalid service ID" });
+    }
+
+    if (
+      price === undefined ||
+      price === null ||
+      isNaN(Number(price)) ||
+      Number(price) < 0
+    ) {
+      return res.status(400).json({ message: "Invalid price" });
+    }
+
+    // Check room exists
+    const room = await prisma.room.findUnique({
+      where: { id: roomId },
+    });
+
+    if (!room) {
+      return res.status(404).json({ message: "Room not found" });
+    }
+
+    // Check service exists
+    const service = await prisma.service.findUnique({
+      where: { id: Number(serviceId) },
+    });
+
+    if (!service) {
+      return res.status(404).json({ message: "Service not found" });
+    }
+
+    if (!service.isActive) {
+      return res.status(400).json({ message: "This service is not active" });
+    }
+
+    // Validate quantity based on priceType
+    let finalQuantity = 1; // Default for FIXED
+    if (service.priceType === "UNIT_BASED") {
+      if (!quantity || quantity < 1) {
+        return res.status(400).json({
+          message: "Quantity is required for unit-based services",
+        });
+      }
+      finalQuantity = Number(quantity);
+    }
+
+    // Calculate total price
+    const totalPrice = Number(price) * finalQuantity;
+
+    // Use upsert - update if exists, create if not
+    const roomService = await prisma.roomService.upsert({
+      where: {
+        roomId_serviceId: {
+          roomId,
+          serviceId: Number(serviceId),
+        },
+      },
+      update: {
+        price: Number(price),
+        quantity: finalQuantity,
+        totalPrice: totalPrice,
+      },
+      create: {
+        roomId,
+        serviceId: Number(serviceId),
+        price: Number(price),
+        quantity: finalQuantity,
+        totalPrice: totalPrice,
+      },
+      include: {
+        service: true,
+      },
+    });
+
+    res.json(roomService);
+  } catch (err) {
+    console.error("addServiceToRoom:", err);
+    res.status(500).json({
+      message: "Add service failed",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
+    });
+  }
+};
+
+export const getServicesOfRoom = async (req, res) => {
+  try {
+    const roomId = Number(req.params.roomId);
+
+    if (!roomId || isNaN(roomId)) {
+      return res.status(400).json({ message: "Invalid room ID" });
+    }
+
+    const room = await prisma.room.findUnique({
+      where: { id: roomId },
+    });
+
+    if (!room) {
+      return res.status(404).json({ message: "Room not found" });
+    }
+
+    const services = await prisma.roomService.findMany({
+      where: { roomId },
+      include: {
+        service: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            price: true,
+            priceType: true,
+            unit: true,
+            isActive: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    res.json(services);
+  } catch (err) {
+    console.error("getServicesOfRoom:", err);
+    res.status(500).json({ message: "Fetch services failed" });
+  }
+};
+
+export const updateServiceQuantity = async (req, res) => {
+  try {
+    const roomId = Number(req.params.roomId);
+    const serviceId = Number(req.params.serviceId);
+    const { quantity, price } = req.body;
+
+    if (!roomId || !serviceId) {
+      return res.status(400).json({ message: "Invalid IDs" });
+    }
+
+    const roomService = await prisma.roomService.findUnique({
+      where: {
+        roomId_serviceId: { roomId, serviceId },
+      },
+      include: { service: true },
+    });
+
+    if (!roomService) {
+      return res.status(404).json({
+        message: "Service not found in this room",
+      });
+    }
+
+    // Only allow quantity update for UNIT_BASED services
+    if (roomService.service.priceType !== "UNIT_BASED" && quantity) {
+      return res.status(400).json({
+        message: "Cannot update quantity for fixed-price services",
+      });
+    }
+
+    const finalPrice = price !== undefined ? Number(price) : roomService.price;
+    const finalQuantity =
+      quantity !== undefined ? Number(quantity) : roomService.quantity;
+
+    if (finalQuantity < 1) {
+      return res.status(400).json({ message: "Quantity must be at least 1" });
+    }
+
+    const updated = await prisma.roomService.update({
+      where: {
+        roomId_serviceId: { roomId, serviceId },
+      },
+      data: {
+        price: finalPrice,
+        quantity: finalQuantity,
+        totalPrice: finalPrice * finalQuantity,
+      },
+      include: { service: true },
+    });
+
+    res.json(updated);
+  } catch (err) {
+    console.error("updateServiceQuantity:", err);
+    res.status(500).json({ message: "Update service failed" });
+  }
+};
+
+export const removeServiceFromRoom = async (req, res) => {
+  try {
+    const roomId = Number(req.params.roomId);
+    const serviceId = Number(req.params.serviceId);
+
+    if (!roomId || !serviceId) {
+      return res.status(400).json({ message: "Invalid IDs" });
+    }
+
+    const existed = await prisma.roomService.findUnique({
+      where: {
+        roomId_serviceId: { roomId, serviceId },
+      },
+    });
+
+    if (!existed) {
+      return res
+        .status(404)
+        .json({ message: "Service not found in this room" });
+    }
+
+    await prisma.roomService.delete({
+      where: {
+        roomId_serviceId: { roomId, serviceId },
+      },
+    });
+
+    res.json({ message: "Service removed from room" });
+  } catch (err) {
+    console.error("removeServiceFromRoom:", err);
+    res.status(500).json({ message: "Remove service failed" });
   }
 };

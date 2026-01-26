@@ -17,6 +17,11 @@ import {
   searchAvailableTenants,
   removeTenantFromRoom,
   searchTenantsInRoom,
+  addServiceToRoom,
+  getServicesOfRoom,
+  removeServiceFromRoom,
+  getAllServices,
+  updateServiceQuantity,
 } from "../controllers/owner.room.controller.js";
 import { makeInvoice } from "../controllers/invoice.controller.js";
 import { authOwner } from "../middlewares/owner.middleware.js";
@@ -40,5 +45,11 @@ router.post("/rooms/:roomId/add-tenant", addTenantToRoom);
 router.get("/tenants/search", searchAvailableTenants);
 router.delete("/rooms/:roomId/tenants/:tenantId", removeTenantFromRoom);
 router.get("/rooms/:roomId/tenants/search", searchTenantsInRoom);
+//service
+router.get("/services", getAllServices);
+router.post("/rooms/:roomId/services", addServiceToRoom);
+router.get("/rooms/:roomId/services", getServicesOfRoom);
+router.put("/rooms/:roomId/services/:serviceId", updateServiceQuantity);
+router.delete("/rooms/:roomId/services/:serviceId", removeServiceFromRoom);
 
 export default router;

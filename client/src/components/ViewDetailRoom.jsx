@@ -6,6 +6,11 @@ import { FaUsers } from "react-icons/fa";
 import EditRoomModal from "../components/EditRoomModal";
 import AddTenantModal from "../components/AddTenantModal";
 import RemoveTenantModal from "../components/RemoveTenantModal";
+import {
+  getRoomServicesApi,
+  removeServiceFromRoomApi,
+} from "../server/roomServiceApi";
+import AddServiceModal from "./AddServiceModal";
 import api from "../server/api";
 import { toast } from "react-hot-toast";
 
@@ -16,11 +21,14 @@ export default function ViewDetailRoom({ roomId, onBack }) {
   const [showEdit, setShowEdit] = useState(false);
   const [showAddTenant, setShowAddTenant] = useState(false);
   const [showRemoveTenant, setShowRemoveTenant] = useState(false);
+  const [roomServices, setRoomServices] = useState([]);
+  const [showAddService, setShowAddService] = useState(false);
 
   /* ================= FETCH ================= */
 
   useEffect(() => {
     if (roomId) fetchRoomDetail();
+    fetchRoomServices();
   }, [roomId]);
 
   const fetchRoomDetail = async () => {
@@ -36,7 +44,14 @@ export default function ViewDetailRoom({ roomId, onBack }) {
     }
   };
 
-  /* ================= UTIL ================= */
+  const fetchRoomServices = async () => {
+    try {
+      const res = await getRoomServicesApi(roomId);
+      setRoomServices(res);
+    } catch {
+      toast.error("Failed to load services");
+    }
+  };
 
   const renderInvoiceStatus = (status) => {
     switch (status) {
@@ -75,8 +90,19 @@ export default function ViewDetailRoom({ roomId, onBack }) {
     return (after - now) * fee;
   };
 
+  const calcServiceCost = () => {
+    return roomServices.reduce((sum, s) => {
+      const totalPrice = s.totalPrice || Number(s.price) * (s.quantity || 1);
+      return sum + totalPrice;
+    }, 0);
+  };
   const calcTotalCost = () => {
-    return Number(room.price ?? 0) + calcElectricCost() + calcWaterCost();
+    return (
+      Number(room.price ?? 0) +
+      calcElectricCost() +
+      calcWaterCost() +
+      calcServiceCost()
+    );
   };
 
   /* ================= ACTIONS ================= */
@@ -201,6 +227,11 @@ export default function ViewDetailRoom({ roomId, onBack }) {
             />
 
             <InfoBox
+              label="Service Cost"
+              value={`${calcServiceCost().toLocaleString()}$`}
+            />
+
+            <InfoBox
               label="Total Estimated Cost"
               value={`${calcTotalCost().toLocaleString()}$`}
             />
@@ -225,19 +256,137 @@ export default function ViewDetailRoom({ roomId, onBack }) {
           )}
         </div>
       </div>
+      {/* SERVICE SECTION */}
+      <div className="bg-white rounded-xl shadow p-6 space-y-4">
+        <div className="flex justify-between items-center">
+          <h3 className="font-semibold">Room Services</h3>
+        </div>
+
+        {roomServices.length > 0 ? (
+          <div className="space-y-2">
+            {roomServices.map((s) => {
+              const isUnitBased = s.service.priceType === "UNIT_BASED";
+              const totalPrice = s.totalPrice || s.price * (s.quantity || 1);
+
+              return (
+                <div
+                  key={s.id}
+                  className="flex justify-between items-start bg-slate-50 px-4 py-3 rounded-md hover:bg-slate-100 transition-colors border border-slate-200"
+                >
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <div className="font-medium">{s.service.name}</div>
+                    </div>
+
+                    {/* Price breakdown */}
+                    <div className="text-sm text-gray-600 mt-1">
+                      {isUnitBased ? (
+                        <>
+                          {Number(s.price).toLocaleString()}$ ×{" "}
+                          {s.quantity || 1} {s.service.unit || "units"}
+                          {" = "}
+                          <span className="font-semibold text-gray-800">
+                            {totalPrice.toLocaleString()}$
+                          </span>
+                        </>
+                      ) : (
+                        <span className="font-semibold text-gray-800">
+                          {Number(s.price).toLocaleString()}$ / room
+                        </span>
+                      )}
+                    </div>
+
+                    {s.service.description && (
+                      <div className="text-xs text-gray-400 mt-1">
+                        {s.service.description}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex gap-2">
+                    {isUnitBased && (
+                      <button
+                        onClick={() => {
+                          // TODO: Open edit quantity modal
+                          console.log("Edit quantity for service:", s.id);
+                        }}
+                        className="text-blue-500 text-sm hover:underline px-2 py-1 hover:bg-blue-50 rounded"
+                      >
+                        Edit Quantity
+                      </button>
+                    )}
+
+                    <button
+                      onClick={async () => {
+                        const confirmed = window.confirm(
+                          `Remove "${s.service.name}" from this room?`,
+                        );
+                        if (!confirmed) return;
+
+                        try {
+                          await removeServiceFromRoomApi(roomId, s.serviceId);
+                          toast.success("Service removed successfully");
+                          fetchRoomServices();
+                        } catch (err) {
+                          toast.error(
+                            err?.response?.data?.message ||
+                              "Failed to remove service",
+                          );
+                        }
+                      }}
+                      className="text-red-500 text-sm hover:underline px-2 py-1 hover:bg-red-50 rounded"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Total Services Cost */}
+            <div className="border-t pt-3 flex justify-between items-center font-semibold">
+              <span>Total Services Cost:</span>
+              <span className="text-lg text-blue-600">
+                {calcServiceCost().toLocaleString()}đ
+              </span>
+            </div>
+          </div>
+        ) : (
+          <div className="text-center py-8 text-gray-400">
+            <div className="text-4xl mb-2">📋</div>
+            <div className="italic text-sm">No services added yet</div>
+          </div>
+        )}
+      </div>
 
       {/* ACTIONS */}
       <div className="flex justify-center gap-4">
+        {/* Make Invoice */}
         <ActionButton
           label="Make Invoice"
-          className="hover:bg-green-600"
+          variant="success"
           disabled={!isOccupied}
           onClick={handleMakeInvoice}
         />
+        {/* Add Services */}
+        <ActionButton
+          label="Add Services"
+          variant="info"
+          onClick={() => setShowAddService(true)}
+        />
+        {showAddService && (
+          <AddServiceModal
+            roomId={room.id}
+            onClose={() => setShowAddService(false)}
+            onAdded={fetchRoomServices}
+          />
+        )}
+
         {/* ADD TENANT */}
         <>
           <ActionButton
             label="Add Tenant"
+            variant="success"
             onClick={() => setShowAddTenant(true)}
           />
           {showAddTenant && (
@@ -254,7 +403,7 @@ export default function ViewDetailRoom({ roomId, onBack }) {
         <>
           <ActionButton
             label="Remove Tenant"
-            danger
+            variant="warning"
             disabled={!room.tenants || room.tenants.length === 0}
             onClick={() => setShowRemoveTenant(true)}
           />
@@ -268,11 +417,15 @@ export default function ViewDetailRoom({ roomId, onBack }) {
           )}
         </>
 
-        <ActionButton label="Edit" onClick={() => setShowEdit(true)} />
+        <ActionButton
+          label="Edit"
+          variant="info"
+          onClick={() => setShowEdit(true)}
+        />
 
         <ActionButton
           label={deleting ? "Deleting..." : "Delete"}
-          danger
+          variant="danger"
           disabled={deleting}
           onClick={handleDeleteRoom}
         />
