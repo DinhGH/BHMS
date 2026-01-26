@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createReportAdmin } from "../services/api";
-import { useAuth } from "../hooks/useAuth";
+import { useAuth } from "../contexts/AuthContext";
 
 const TARGET_OPTIONS = [
   "Account / Sign in",
@@ -21,7 +21,11 @@ function ReportIssue() {
   const [images, setImages] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [status, setStatus] = useState({ type: "idle", message: "" });
-  const [popup, setPopup] = useState({ open: false, type: "success", message: "" });
+  const [popup, setPopup] = useState({
+    open: false,
+    type: "success",
+    message: "",
+  });
 
   const isValid = target.trim() && content.trim().length >= 20 && user?.id;
 
@@ -46,7 +50,7 @@ function ReportIssue() {
     }
 
     const oversizedFiles = imageFiles.filter(
-      (file) => file.size > MAX_IMAGE_SIZE_BYTES
+      (file) => file.size > MAX_IMAGE_SIZE_BYTES,
     );
     if (oversizedFiles.length) {
       setPopup({
@@ -57,7 +61,7 @@ function ReportIssue() {
     }
 
     const validImages = imageFiles.filter(
-      (file) => file.size <= MAX_IMAGE_SIZE_BYTES
+      (file) => file.size <= MAX_IMAGE_SIZE_BYTES,
     );
     if (!validImages.length) {
       event.target.value = "";
@@ -67,7 +71,8 @@ function ReportIssue() {
     const readFile = (file) =>
       new Promise((resolve) => {
         const reader = new FileReader();
-        reader.onload = () => resolve({ name: file.name, dataUrl: reader.result });
+        reader.onload = () =>
+          resolve({ name: file.name, dataUrl: reader.result });
         reader.readAsDataURL(file);
       });
 
@@ -109,12 +114,14 @@ function ReportIssue() {
     } catch {
       setStatus({
         type: "error",
-        message: "Failed to submit report. Please check your inputs and try again.",
+        message:
+          "Failed to submit report. Please check your inputs and try again.",
       });
       setPopup({
         open: true,
         type: "error",
-        message: "Failed to submit report. Please check your inputs and try again.",
+        message:
+          "Failed to submit report. Please check your inputs and try again.",
       });
     } finally {
       setIsSubmitting(false);

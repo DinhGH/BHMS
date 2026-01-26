@@ -1,4 +1,5 @@
-const API_BASE_URL = "http://localhost:3000/api";
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
 
 const defaultHeaders = { "Content-Type": "application/json" };
 
@@ -58,7 +59,7 @@ const applyServiceFilters = (list, filters = {}) => {
 export const getServices = async (filters) => {
   const token = localStorage.getItem("token");
   const headers = token ? { Authorization: `Bearer ${token}` } : {};
-  const response = await fetch(`${API_BASE_URL}/services`, { headers });
+  const response = await fetch(`${API_BASE_URL}/api/services`, { headers });
   if (!response.ok) throw new Error("Failed to fetch services");
   const data = await response.json();
   return filters
@@ -72,7 +73,7 @@ export const createService = async (serviceData) => {
     "Content-Type": "application/json",
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
-  const response = await fetch(`${API_BASE_URL}/services`, {
+  const response = await fetch(`${API_BASE_URL}/api/services`, {
     method: "POST",
     headers,
     body: JSON.stringify(serviceData),
@@ -87,7 +88,7 @@ export const updateService = async (serviceId, serviceData) => {
     "Content-Type": "application/json",
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
-  const response = await fetch(`${API_BASE_URL}/services/${serviceId}`, {
+  const response = await fetch(`${API_BASE_URL}/api/services/${serviceId}`, {
     method: "PUT",
     headers,
     body: JSON.stringify(serviceData),
@@ -99,7 +100,7 @@ export const updateService = async (serviceId, serviceData) => {
 export const deleteService = async (serviceId) => {
   const token = localStorage.getItem("token");
   const headers = token ? { Authorization: `Bearer ${token}` } : {};
-  const response = await fetch(`${API_BASE_URL}/services/${serviceId}`, {
+  const response = await fetch(`${API_BASE_URL}/api/services/${serviceId}`, {
     method: "DELETE",
     headers,
   });
@@ -111,7 +112,7 @@ export const deleteService = async (serviceId) => {
 export const getNotifications = async () => {
   const token = localStorage.getItem("token");
   const headers = token ? { Authorization: `Bearer ${token}` } : {};
-  const res = await fetch(`${API_BASE_URL}/notifications`, { headers });
+  const res = await fetch(`${API_BASE_URL}/api/notifications`, { headers });
   if (!res.ok) throw new Error("Failed to fetch notifications");
   return res.json();
 };
@@ -196,14 +197,14 @@ export async function getReports({
   if (orderBy) params.set("orderBy", orderBy);
   if (order) params.set("order", order);
 
-  const url = `${API_BASE_URL}/reports?${params.toString()}`;
+  const url = `${API_BASE_URL}/api/reports?${params.toString()}`;
   const res = await fetch(url, { credentials: "include" });
   if (!res.ok) throw new Error("Failed to fetch reports");
   return await res.json();
 }
 
 export async function updateReportStatus(reportId, status) {
-  const res = await fetch(`${API_BASE_URL}/reports/${reportId}/status`, {
+  const res = await fetch(`${API_BASE_URL}/api/reports/${reportId}/status`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
@@ -215,7 +216,7 @@ export async function updateReportStatus(reportId, status) {
 }
 
 export async function createReportAdmin(payload) {
-  const res = await fetch(`${API_BASE_URL}/report-admins`, {
+  const res = await fetch(`${API_BASE_URL}/api/report-admins`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
@@ -227,7 +228,7 @@ export async function createReportAdmin(payload) {
 }
 
 export async function getPayments() {
-  const res = await fetch(`${API_BASE_URL}/payments`, {
+  const res = await fetch(`${API_BASE_URL}/api/payments`, {
     credentials: "include",
   });
 
@@ -236,7 +237,7 @@ export async function getPayments() {
 }
 // Tenant Management APIs
 export async function getTenants() {
-  const res = await fetch(`${API_BASE_URL}/tenants`, {
+  const res = await fetch(`${API_BASE_URL}/api/tenants`, {
     credentials: "include",
   });
 
@@ -245,7 +246,7 @@ export async function getTenants() {
 }
 
 export async function getTenant(id) {
-  const res = await fetch(`${API_BASE_URL}/tenants/${id}`, {
+  const res = await fetch(`${API_BASE_URL}/api/tenants/${id}`, {
     credentials: "include",
   });
 
@@ -254,7 +255,7 @@ export async function getTenant(id) {
 }
 
 export async function createTenant(data) {
-  const res = await fetch(`${API_BASE_URL}/tenants`, {
+  const res = await fetch(`${API_BASE_URL}/api/tenants`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
@@ -269,7 +270,7 @@ export async function createTenant(data) {
 }
 
 export async function updateTenant(id, data) {
-  const res = await fetch(`${API_BASE_URL}/tenants/${id}`, {
+  const res = await fetch(`${API_BASE_URL}/api/tenants/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
@@ -284,7 +285,7 @@ export async function updateTenant(id, data) {
 }
 
 export async function deleteTenant(id) {
-  const res = await fetch(`${API_BASE_URL}/tenants/${id}`, {
+  const res = await fetch(`${API_BASE_URL}/api/tenants/${id}`, {
     method: "DELETE",
     credentials: "include",
   });

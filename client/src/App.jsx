@@ -25,7 +25,14 @@ function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/admin" element={<AdminLayout />}>
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute roles={["ADMIN"]}>
+              <AdminLayout />
+            </ProtectedRoute>
+          }
+        >
           <Route index element={<Dashboard />} />
           <Route path="users" element={<AdminUser />} />
           <Route path="report" element={<ReportAdmin />} />
@@ -56,7 +63,14 @@ function App() {
           }
         />
         <Route path="/" element={<LandingPage />} />
-        <Route path="/owner" element={<HomePageOwner />} />
+        <Route
+          path="/owner"
+          element={
+            <ProtectedRoute roles={["OWNER"]}>
+              <HomePageOwner />
+            </ProtectedRoute>
+          }
+        />
 
         <Route path="/services" element={<ServiceManagement />} />
         <Route path="/reports" element={<ReportManagement />} />

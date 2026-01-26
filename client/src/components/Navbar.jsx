@@ -2,13 +2,13 @@ import { FaUserCircle, FaBell, FaBars, FaTimes } from "react-icons/fa";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 
-function Navbar({ onMenuClick, onBellClick, onAvatarClick }) {
+function Navbar({ onMenuClick, onBellClick, onAvatarClick, user }) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  const user = {
-    name: "Nguyễn Văn A",
-    avatar: null,
-  };
+  const displayName = user?.fullName || user?.name || "User";
+  const displayRole = user?.role
+    ? user.role.charAt(0) + user.role.slice(1).toLowerCase()
+    : "";
 
   const handleAvatarClick = () => {
     setIsDropdownOpen(!isDropdownOpen);
@@ -44,9 +44,6 @@ function Navbar({ onMenuClick, onBellClick, onAvatarClick }) {
                 </span>
                 <span className="sm:hidden">BHMS</span>
               </p>
-              <span className="hidden sm:block text-xs text-slate-500">
-                Back to Landing
-              </span>
             </div>
           </div>
 
@@ -73,10 +70,10 @@ function Navbar({ onMenuClick, onBellClick, onAvatarClick }) {
                 className="flex items-center gap-2 focus:outline-none p-1 rounded-lg hover:bg-blue-50 transition-colors"
                 onClick={handleAvatarClick}
               >
-                {user.avatar ? (
+                {user?.avatar ? (
                   <img
                     src={user.avatar}
-                    alt={user.name}
+                    alt={displayName}
                     className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full border-2 border-blue-400 object-cover"
                   />
                 ) : (
@@ -87,9 +84,11 @@ function Navbar({ onMenuClick, onBellClick, onAvatarClick }) {
               {/* User Info */}
               <div className="hidden md:block text-right min-w-0">
                 <p className="text-xs md:text-sm font-semibold text-slate-900 truncate">
-                  {user.name}
+                  {displayName}
                 </p>
-                <p className="text-xs text-slate-500">Owner</p>
+                {displayRole && (
+                  <p className="text-xs text-slate-500">{displayRole}</p>
+                )}
               </div>
             </div>
           </div>

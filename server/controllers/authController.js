@@ -1,22 +1,4 @@
 import { authService } from "../services/authService.js";
-
-<<<<<<< HEAD
-export const logout = async (req, res) => {
-  try {
-    const { userId } = req.body;
-
-    const result = await authService.logoutUser(userId);
-
-    return res.status(200).json({
-      success: true,
-      message: result.message,
-    });
-  } catch (error) {
-    console.error("Logout error:", error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Logout failed",
-=======
 export const register = async (req, res) => {
   try {
     const { email, password, passwordConfirm } = req.body;
@@ -59,7 +41,6 @@ export const login = async (req, res) => {
     return res.status(401).json({
       success: false,
       message: error.message || "Login failed",
->>>>>>> i-sprint1-1-admin-owner
     });
   }
 };

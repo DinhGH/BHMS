@@ -2,7 +2,7 @@ import { fetchApi } from "../../services/api";
 
 export const loginUser = async (email, password) => {
   try {
-    return await fetchApi("/auth/login", {
+    return await fetchApi("/api/auth/login", {
       method: "POST",
       body: { email, password },
     });
@@ -13,7 +13,7 @@ export const loginUser = async (email, password) => {
 
 export const registerUser = async (email, password, passwordConfirm) => {
   try {
-    return await fetchApi("/auth/register", {
+    return await fetchApi("/api/auth/register", {
       method: "POST",
       body: { email, password, passwordConfirm },
     });
@@ -24,7 +24,7 @@ export const registerUser = async (email, password, passwordConfirm) => {
 
 export const forgotPassword = async (email) => {
   try {
-    return await fetchApi("/user/forgot-password", {
+    return await fetchApi("/api/user/forgot-password", {
       method: "POST",
       body: { email },
     });
@@ -35,7 +35,7 @@ export const forgotPassword = async (email) => {
 
 export const verifyOtp = async (email, otp) => {
   try {
-    return await fetchApi("/user/verify-otp", {
+    return await fetchApi("/api/user/verify-otp", {
       method: "POST",
       body: { email, otp },
     });
@@ -49,7 +49,7 @@ export const verifyOtp = async (email, otp) => {
 
 export const resetPassword = async (email, otp, newPassword) => {
   try {
-    return await fetchApi("/user/reset-password", {
+    return await fetchApi("/api/user/reset-password", {
       method: "POST",
       body: { email, otp, newPassword },
     });

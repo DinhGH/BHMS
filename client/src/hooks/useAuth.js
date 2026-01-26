@@ -35,11 +35,6 @@ export function useAuth() {
     }
   }, []);
 
-  const logout = () => {
-    localStorage.removeItem("user");
-    setUser(null);
-  };
-
   const setCurrentUser = (userData) => {
     localStorage.setItem("user", JSON.stringify(userData));
     setUser(userData);
@@ -49,7 +44,6 @@ export function useAuth() {
     user,
     loading,
     error,
-    logout,
     setCurrentUser,
   };
 }

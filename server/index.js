@@ -34,7 +34,7 @@ app.use("/api/user", userRoutes);
 app.use("/api/services", serviceRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/tenants", tenantRoutes);
-app.use("/owner", ownerRoute);
+app.use("/api/owner", ownerRoute);
 
 // 404 handler for unmatched routes
 app.use((req, res) => {
