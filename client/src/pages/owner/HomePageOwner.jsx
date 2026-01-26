@@ -10,11 +10,12 @@ import ReportManagement from "../../components/ReportManagement";
 import ReportIssue from "../../components/ReportIssue";
 import PaymentManagement from "../../components/PaymentManagement";
 import ServiceManagement from "../../components/ServiceManagement";
-import { useAuth } from "../../hooks/useAuth";
+import { useAuth } from "../../contexts/AuthContext";
 import { getNotifications } from "../../services/api";
+// import { getNotifications } from "../../services/api";
 
 function HomePageOwner() {
-  const { user, logout } = useAuth();
+  const { user, loading, logout } = useAuth();
   const [activeSection, setActiveSection] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -59,10 +60,18 @@ function HomePageOwner() {
     });
   }, [notifications, searchQuery]);
 
-  if (!user) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
         Loading...
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center h-screen text-red-600 font-semibold">
+        Không tìm thấy thông tin người dùng
       </div>
     );
   }
@@ -114,7 +123,9 @@ function HomePageOwner() {
         onMenuClick={() => setSidebarOpen(!sidebarOpen)}
         onBellClick={toggleNotifications}
         onAvatarClick={toggleProfile}
+        onLogout={logout}
         sidebarOpen={sidebarOpen}
+        user={user}
       />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar
@@ -122,8 +133,15 @@ function HomePageOwner() {
           setActiveSection={setActiveSection}
           isOpen={sidebarOpen}
           setIsOpen={setSidebarOpen}
+          onLogout={logout}
         />
-        <main className="flex-1 overflow-y-auto bg-gray-50 p-3 sm:p-4 md:p-6">
+        <main
+          className={`flex-1 overflow-y-auto bg-gray-50 ${
+            activeSection === "reports" || activeSection === "report-issue"
+              ? "p-0"
+              : "p-3 sm:p-4 md:p-6"
+          }`}
+        >
           {renderContent()}
         </main>
       </div>
@@ -234,15 +252,6 @@ function HomePageOwner() {
                 Settings
               </button>
             </div>
-            <button
-              onClick={() => {
-                logout();
-                setShowProfile(false);
-              }}
-              className="w-full flex items-center justify-center gap-2 bg-slate-900 hover:bg-black text-white font-semibold py-2 rounded-lg transition"
-            >
-              Logout
-            </button>
           </div>
         </div>
       </div>

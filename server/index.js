@@ -3,11 +3,21 @@ dotenv.config();
 
 import express from "express";
 import cors from "cors";
-import { prisma } from "./lib/prisma.js";
+
+import authRoutes from "./routes/authRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
 import serviceRoutes from "./routes/services.js";
+import paymentRoutes from "./routes/paymentRoutes.js";
+import tenantRoutes from "./routes/tenantRoutes.js";
+import reportRoutes from "./routes/reportRoutes.js";
+import reportAdminRoutes from "./routes/reportAdminRoutes.js";
+
+import ownerRoute from "./routes/owner.route.js";
+import adminRoutes from "./src/routers/admin.routes.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
 app.use(
   cors({
     origin: true,
@@ -16,8 +26,21 @@ app.use(
 );
 app.use(express.json());
 
+// Health check
+app.get("/", (req, res) => {
+  res.json({ message: "Backend is running successfully 🚀" });
+});
+
 // Routes
+app.use("/api/auth", authRoutes);
+app.use("/api/user", userRoutes);
 app.use("/api/services", serviceRoutes);
+app.use("/api/payments", paymentRoutes);
+app.use("/api/tenants", tenantRoutes);
+app.use("/api/reports", reportRoutes);
+app.use("/api/report-admins", reportAdminRoutes);
+app.use("/api/owner", ownerRoute);
+app.use("/api/users", adminRoutes);
 
 // 404 handler for unmatched routes
 app.use((req, res) => {

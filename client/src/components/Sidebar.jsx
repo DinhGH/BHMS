@@ -12,38 +12,20 @@ import {
   FaWrench,
 } from "react-icons/fa";
 
-function Sidebar({ activeSection, setActiveSection, isOpen, setIsOpen }) {
+function Sidebar({
+  activeSection,
+  setActiveSection,
+  isOpen,
+  setIsOpen,
+  onLogout,
+}) {
   const menuItems = [
-    {
-      id: "dashboard",
-      label: "Dashboard",
-      icon: <FaTachometerAlt />,
-    },
-    {
-      id: "boarding-house",
-      label: "Boarding House",
-      icon: <FaBuilding />,
-    },
-    {
-      id: "rooms",
-      label: "Room Management",
-      icon: <FaDoorOpen />,
-    },
-    {
-      id: "services",
-      label: "Services",
-      icon: <FaWrench />,
-    },
-    {
-      id: "tenants",
-      label: "Tenants",
-      icon: <FaUsers />,
-    },
-    {
-      id: "notifications",
-      label: "Notifications",
-      icon: <FaBell />,
-    },
+    { id: "dashboard", label: "Dashboard", icon: <FaTachometerAlt /> },
+    { id: "boarding-house", label: "Boarding House", icon: <FaBuilding /> },
+    { id: "rooms", label: "Room Management", icon: <FaDoorOpen /> },
+    { id: "services", label: "Services", icon: <FaWrench /> },
+    { id: "tenants", label: "Tenants", icon: <FaUsers /> },
+    { id: "notifications", label: "Notifications", icon: <FaBell /> },
     {
       id: "reports",
       label: "Report Management",
@@ -54,21 +36,12 @@ function Sidebar({ activeSection, setActiveSection, isOpen, setIsOpen }) {
       label: "Report Issue",
       icon: <FaExclamationCircle />,
     },
-    {
-      id: "payments",
-      label: "Payments",
-      icon: <FaCreditCard />,
-    },
+    { id: "payments", label: "Payments", icon: <FaCreditCard /> },
   ];
 
   const handleMenuClick = (id) => {
     setActiveSection(id);
-    setIsOpen(false); // Close sidebar on mobile after selection
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    window.location.href = "/login";
+    setIsOpen(false); // mobile: đóng sidebar sau khi chọn
   };
 
   return (
@@ -77,66 +50,71 @@ function Sidebar({ activeSection, setActiveSection, isOpen, setIsOpen }) {
       <aside
         className={`${
           isOpen ? "translate-x-0" : "-translate-x-full"
-        } lg:translate-x-0 fixed lg:relative z-40 h-full bg-white border-r border-gray-300 transition-transform duration-300 w-64 lg:w-64`}
+        } lg:translate-x-0 fixed lg:relative z-40
+        top-16 lg:top-0 h-[calc(100vh-4rem)] lg:h-full w-64 bg-white border-r border-gray-300
+        transition-transform duration-300 flex flex-col left-0`}
       >
-        <div className="flex flex-col h-full">
-          {/* Logo/Header */}
-          <div className="p-4 sm:p-5 md:p-6 border-b border-gray-300 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <FaBuilding className="text-xl sm:text-2xl text-black shrink-0" />
-              <span className="text-lg sm:text-xl font-bold text-black tracking-wider">
-                BHMS
+        {/* Header / Logo */}
+        <div className="p-4 sm:p-5 md:p-6 border-b border-gray-300 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-3">
+            <FaBuilding className="text-xl sm:text-2xl text-black shrink-0" />
+            <span className="text-lg sm:text-xl font-bold text-black tracking-wider">
+              BHMS
+            </span>
+          </div>
+
+          <button
+            className="lg:hidden text-gray-600 hover:text-black"
+            onClick={() => setIsOpen(false)}
+          >
+            <FaTimes className="text-xl" />
+          </button>
+        </div>
+
+        {/* Menu */}
+        <nav className="flex-1 p-2 sm:p-3 space-y-1 overflow-y-auto min-h-0">
+          {menuItems.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => handleMenuClick(item.id)}
+              className={`w-full flex items-center gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg
+              transition-all duration-200 text-left ${
+                activeSection === item.id
+                  ? "bg-gray-200 text-black shadow-md border-l-4 border-black"
+                  : "text-gray-600 hover:bg-gray-100 hover:text-black"
+              }`}
+            >
+              <span className="text-base sm:text-lg shrink-0">{item.icon}</span>
+              <span className="text-xs sm:text-sm font-medium truncate">
+                {item.label}
               </span>
-            </div>
-            <button
-              className="lg:hidden text-gray-600 hover:text-black"
-              onClick={() => setIsOpen(false)}
-            >
-              <FaTimes className="text-xl" />
             </button>
-          </div>
+          ))}
+        </nav>
 
-          {/* Navigation Menu */}
-          <nav className="flex-1 p-2 sm:p-3 space-y-1 overflow-y-auto">
-            {menuItems.map((item) => (
-              <button
-                key={item.id}
-                className={`w-full flex items-center gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg transition-all duration-200 text-left ${
-                  activeSection === item.id
-                    ? "bg-gray-200 text-black shadow-md border-l-4 border-black"
-                    : "text-gray-600 hover:bg-gray-100 hover:text-black"
-                }`}
-                onClick={() => handleMenuClick(item.id)}
-              >
-                <span className="text-base sm:text-lg shrink-0">
-                  {item.icon}
-                </span>
-                <span className="text-xs sm:text-sm font-medium truncate">
-                  {item.label}
-                </span>
-              </button>
-            ))}
-          </nav>
-
-          {/* Logout Button */}
-          <div className="p-2 sm:p-3 border-t border-gray-300">
-            <button
-              className="w-full flex items-center gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg text-gray-600 hover:bg-red-100 hover:text-red-800 transition-all duration-200"
-              onClick={handleLogout}
-            >
-              <FaSignOutAlt className="text-base sm:text-lg shrink-0" />
-              <span className="text-xs sm:text-sm font-medium">Log Out</span>
-            </button>
-          </div>
+        {/* Logout - Always visible at bottom */}
+        <div className="p-2 sm:p-3 border-t border-gray-300 shrink-0">
+          <button
+            onClick={() => {
+              if (onLogout) onLogout();
+              setIsOpen(false);
+            }}
+            className="w-full flex items-center gap-3 px-3 sm:px-4 py-2.5 sm:py-3
+            rounded-lg text-gray-600 hover:bg-red-100 hover:text-red-800
+            transition-all duration-200"
+          >
+            <FaSignOutAlt className="text-base sm:text-lg shrink-0" />
+            <span className="text-xs sm:text-sm font-medium">Log Out</span>
+          </button>
         </div>
       </aside>
 
-      {/* Mobile Overlay */}
+      {/* Overlay mobile */}
       {isOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-40 z-30 lg:hidden"
           onClick={() => setIsOpen(false)}
-        ></div>
+        />
       )}
     </>
   );

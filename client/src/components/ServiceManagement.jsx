@@ -192,7 +192,7 @@ function ServiceManagement() {
         {/* Form Section */}
         {showForm && (
           <div className="mb-8 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-            <div className="bg-gradient-to-r from-gray-700 to-gray-600 px-6 py-4">
+            <div className="bg-linear-to-r from-gray-700 to-gray-600 px-6 py-4">
               <h2 className="text-xl font-bold text-white">
                 {editingService ? "Edit Service" : "Create New Service"}
               </h2>
@@ -362,7 +362,7 @@ function ServiceManagement() {
                 className="bg-white rounded-xl shadow-md border border-gray-200 hover:shadow-xl transition-all duration-300 overflow-hidden group"
               >
                 {/* Card Header */}
-                <div className="bg-gradient-to-r from-gray-600 to-gray-500 p-5">
+                <div className="bg-linear-to-r from-gray-600 to-gray-500 p-5">
                   <h3 className="text-xl font-bold text-white truncate mb-2">
                     {service.name}
                   </h3>
@@ -391,7 +391,7 @@ function ServiceManagement() {
                   </div>
 
                   <div className="mb-5">
-                    <p className="text-gray-600 text-sm line-clamp-3 min-h-[60px]">
+                    <p className="text-gray-600 text-sm line-clamp-3 min-h-15">
                       {service.description || "No description provided."}
                     </p>
                   </div>
