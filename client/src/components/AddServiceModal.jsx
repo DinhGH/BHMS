@@ -19,7 +19,7 @@ export default function AddServiceModal({ roomId, onClose, onAdded }) {
   const fetchServices = async () => {
     try {
       setLoadingServices(true);
-      const data = await api.get("/owner/services");
+      const data = await api.get("/api/owner/services");
       const activeServices = Array.isArray(data)
         ? data.filter((s) => s.isActive)
         : [];

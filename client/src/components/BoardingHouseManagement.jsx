@@ -35,7 +35,7 @@ export default function BoardingHouseManagement({ ownerId }) {
     try {
       setLoading(true);
       const query = search ? `?search=${encodeURIComponent(search)}` : "";
-      const data = await api.get(`/owner/boarding-houses${query}`);
+      const data = await api.get(`/api/owner/boarding-houses${query}`);
       setHouses(data);
     } catch (error) {
       console.error("Fetch boarding houses error", error);
@@ -59,7 +59,7 @@ export default function BoardingHouseManagement({ ownerId }) {
 
     try {
       await api.delete(
-        `/owner/boarding-houses?name=${encodeURIComponent(houseName)}`,
+        `/api/owner/boarding-houses?name=${encodeURIComponent(houseName)}`,
       );
 
       alert("Deleted successfully");

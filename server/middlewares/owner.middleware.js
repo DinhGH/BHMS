@@ -1,6 +1,7 @@
+import { prisma } from "../lib/prisma.js";
 import jwt from "jsonwebtoken";
 
-export const authOwner = (req, res, next) => {
+export const authOwner = async (req, res, next) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader?.startsWith("Bearer ")) {
@@ -16,7 +17,18 @@ export const authOwner = (req, res, next) => {
       return res.status(403).json({ message: "Forbidden" });
     }
 
-    req.ownerId = decoded.id;
+    // 🔥 LẤY OWNER TỪ USER ID
+    const owner = await prisma.owner.findUnique({
+      where: { userId: decoded.id },
+    });
+
+    if (!owner) {
+      return res.status(403).json({ message: "Owner profile not found" });
+    }
+
+    req.userId = decoded.id; // user.id
+    req.ownerId = owner.id; // owner.id (dùng cho FK)
+
     next();
   } catch (err) {
     return res.status(401).json({ message: "Invalid token" });

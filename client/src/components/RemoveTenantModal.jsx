@@ -23,7 +23,7 @@ export default function RemoveTenantModal({
     const timer = setTimeout(async () => {
       try {
         setSearching(true);
-        const res = await api.get(`/owner/rooms/${roomId}/tenants/search`, {
+        const res = await api.get(`/api/owner/rooms/${roomId}/tenants/search`, {
           params: { query: searchQuery },
         });
         setSuggestions(res);
@@ -51,7 +51,9 @@ export default function RemoveTenantModal({
 
     try {
       setLoading(true);
-      await api.delete(`/owner/rooms/${roomId}/tenants/${selectedTenant.id}`);
+      await api.delete(
+        `/api/owner/rooms/${roomId}/tenants/${selectedTenant.id}`,
+      );
       toast.success(`${selectedTenant.fullName} removed from room`);
       onRemoved();
       onClose();

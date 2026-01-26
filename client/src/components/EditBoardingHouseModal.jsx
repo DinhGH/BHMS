@@ -36,7 +36,7 @@ export default function EditBoardingHouseModal({
 
   const handleSubmit = async () => {
     try {
-      await api.put(`/owner/boarding-houses/${house.id}`, form);
+      await api.put(`/api/owner/boarding-houses/${house.id}`, form);
       alert("Updated successfully");
       onSuccess();
       onClose();
