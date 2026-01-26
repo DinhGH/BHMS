@@ -1,5 +1,6 @@
 import { authService } from "../services/authService.js";
 
+//xu ly logout
 export const logout = async (req, res) => {
   try {
     const { userId } = req.body;
