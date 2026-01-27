@@ -73,14 +73,14 @@ export default function AddNewBoardingHouseModal({ open, onClose, onSuccess }) {
       };
 
       const existed = await api.get(
-        `/owner/boarding-houses/check?name=${encodeURIComponent(payload.name)}`,
+        `/api/owner/boarding-houses/check?name=${encodeURIComponent(payload.name)}`,
       );
 
       if (existed?.id) {
-        await api.put(`/owner/boarding-houses/${existed.id}`, payload);
+        await api.put(`/api/owner/boarding-houses/${existed.id}`, payload);
         toast.success("Boarding house updated successfully");
       } else {
-        await api.post("/owner/boarding-houses", payload);
+        await api.post("/api/owner/boarding-houses", payload);
         toast.success("Boarding house added successfully");
       }
 

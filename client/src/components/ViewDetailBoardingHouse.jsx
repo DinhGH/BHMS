@@ -59,10 +59,16 @@ export default function ViewDetailBoardingHouse({ house, onBack }) {
         params.paymentStatus = filters.paymentStatus;
       }
 
-      const data = await api.get(`/owner/boarding-houses/${house.id}/rooms`, {
-        params,
-      });
+      console.log("Fetching with params:", params); // Debug log
 
+      const data = await api.get(
+        `/api/owner/boarding-houses/${house.id}/rooms`,
+        {
+          params,
+        },
+      );
+
+      console.log("Received rooms:", data); // Debug log
       setRooms(data);
     } catch (err) {
       console.error("Fetch rooms error", err);
@@ -71,10 +77,12 @@ export default function ViewDetailBoardingHouse({ house, onBack }) {
     }
   };
 
+  // Fetch when filters change
   useEffect(() => {
+    console.log("Filters changed:", filters); // Debug log
     fetchRooms();
     setCurrentPage(1);
-  }, [house.id, filters]);
+  }, [filters, house.id]);
 
   /* ================= SEARCH (CLIENT) ================= */
   const filteredRooms = useMemo(() => {
@@ -131,10 +139,14 @@ export default function ViewDetailBoardingHouse({ house, onBack }) {
         />
 
         <div className="flex gap-4">
-          <RoomFilter filters={filters} setFilters={setFilters} />
+          <RoomFilter
+            key={`${filters.priceRange?.min}-${filters.roomStatus}-${filters.paymentStatus}`}
+            filters={filters}
+            setFilters={setFilters}
+          />
           <button
             onClick={() => setOpenAddRoom(true)}
-            className="px-4 py-2 text-sm bg-gray-300 hover:bg-blue-500 text-white rounded-md"
+            className="px-4 py-2 text-sm bg-blue-500 hover:bg-blue-600 text-white rounded-md"
           >
             Add New
           </button>
@@ -147,6 +159,16 @@ export default function ViewDetailBoardingHouse({ house, onBack }) {
           onSuccess={fetchRooms}
         />
       </div>
+
+      {/* DEBUG INFO
+      <div className="text-xs text-gray-500 p-2 bg-gray-50 rounded">
+        Active filters: Price:{" "}
+        {filters.priceRange
+          ? `${filters.priceRange.min}-${filters.priceRange.max}`
+          : "All"}{" "}
+        | Status: {filters.roomStatus} | Payment: {filters.paymentStatus} |
+        Results: {filteredRooms.length} rooms
+      </div> */}
 
       {/* CONTENT */}
       {loading ? (

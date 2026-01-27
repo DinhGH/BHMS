@@ -39,7 +39,11 @@ export const authService = {
         role: "OWNER",
       },
     });
-
+    await prisma.owner.create({
+      data: {
+        userId: newUser.id,
+      },
+    });
     // Generate JWT token
     const token = jwt.sign(
       { id: newUser.id, email: newUser.email, role: newUser.role },

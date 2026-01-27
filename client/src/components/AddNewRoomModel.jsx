@@ -8,13 +8,15 @@ export default function AddNewRoomModal({ open, onClose, houseId, onSuccess }) {
     name: "",
     price: "",
     image: "",
+    constractStart: "",
+    constractEnd: "",
   });
 
   const [errors, setErrors] = useState({});
   const [isValid, setIsValid] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const validateForm = () => {
+  useEffect(() => {
     const newErrors = {};
 
     if (!form.name.trim()) {
@@ -34,69 +36,54 @@ export default function AddNewRoomModal({ open, onClose, houseId, onSuccess }) {
       }
     }
 
+    if (form.constractStart && form.constractEnd) {
+      if (new Date(form.constractEnd) <= new Date(form.constractStart)) {
+        newErrors.constractEnd = "Contract end date must be after start date";
+      }
+    }
+
     setErrors(newErrors);
     setIsValid(Object.keys(newErrors).length === 0);
-  };
-
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  useEffect(() => {
-    validateForm();
   }, [form]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  // const checkRoomNameExists = async () => {
-  //   if (!houseId || !form.name.trim()) return false;
-
-  //   try {
-  //     const res = await api.get("/owner/rooms/check-name", {
-  //       params: {
-  //         houseId,
-  //         name: form.name.trim(),
-  //       },
-  //     });
-  //     return res.data.exists;
-  //   } catch (err) {
-  //     if (err.response?.status === 400) return false;
-  //     throw err;
-  //   }
-  // };
-
+  /* ================= SUBMIT ================= */
   const handleSubmit = async () => {
-    if (!isValid) return;
+    if (!isValid || loading) return;
 
     try {
       setLoading(true);
-
-      // const existed = await checkRoomNameExists();
-      // if (existed) {
-      //   setErrors({ name: "Room name already exists in this house" });
-      //   toast.error("Room name already exists");
-      //   return;
-      // }
 
       const payload = {
         houseId,
         name: form.name.trim(),
         price: Number(form.price),
-        image: form.image?.trim() || null,
+        image: form.image ? form.image.trim() : null,
+        constractStart: form.constractStart
+          ? new Date(form.constractStart)
+          : null,
+        constractEnd: form.constractEnd ? new Date(form.constractEnd) : null,
       };
 
-      await api.post("/owner/rooms", payload);
+      await api.post("/api/owner/rooms", payload);
 
       toast.success("Room added successfully");
-      onSuccess();
+      onSuccess?.();
       onClose();
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      console.error(error);
       toast.error("Failed to add room");
     } finally {
       setLoading(false);
     }
   };
+
   if (!open) return null;
+
+  /* ================= UI ================= */
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
       <div className="bg-white w-full max-w-lg p-6 rounded-lg">
@@ -144,6 +131,33 @@ export default function AddNewRoomModal({ open, onClose, houseId, onSuccess }) {
           )}
         </div>
 
+        {/* Contract Start */}
+        <div className="mb-4">
+          <label className="block mb-1 font-medium">Contract start date</label>
+          <input
+            type="date"
+            name="constractStart"
+            value={form.constractStart}
+            onChange={handleChange}
+            className="w-full border p-2 rounded"
+          />
+        </div>
+
+        {/* Contract End */}
+        <div className="mb-4">
+          <label className="block mb-1 font-medium">Contract end date</label>
+          <input
+            type="date"
+            name="constractEnd"
+            value={form.constractEnd}
+            onChange={handleChange}
+            className="w-full border p-2 rounded"
+          />
+          {errors.constractEnd && (
+            <p className="text-sm text-red-500 mt-1">{errors.constractEnd}</p>
+          )}
+        </div>
+
         {/* Image */}
         <div className="mb-6">
           <label className="block mb-1 font-medium">Image URL</label>
@@ -164,12 +178,11 @@ export default function AddNewRoomModal({ open, onClose, houseId, onSuccess }) {
           <button
             disabled={!isValid || loading}
             onClick={handleSubmit}
-            className={`px-4 py-2 rounded text-white
-              ${
-                isValid && !loading
-                  ? "bg-blue-600 hover:bg-blue-700"
-                  : "bg-gray-400 cursor-not-allowed"
-              }`}
+            className={`px-4 py-2 rounded text-white ${
+              isValid && !loading
+                ? "bg-blue-600 hover:bg-blue-700"
+                : "bg-gray-400 cursor-not-allowed"
+            }`}
           >
             {loading ? "Saving..." : "Save"}
           </button>

@@ -12,7 +12,7 @@ import tenantRoutes from "./routes/tenantRoutes.js";
 import reportRoutes from "./routes/reportRoutes.js";
 import reportAdminRoutes from "./routes/reportAdminRoutes.js";
 
-import ownerRoute from "./routers/owner.route.js";
+import ownerRoute from "./routes/owner.route.js";
 import adminRoutes from "./src/routers/admin.routes.js";
 
 const app = express();
