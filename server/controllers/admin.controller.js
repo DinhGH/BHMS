@@ -613,7 +613,7 @@ export const getAdminDashboard = async (req, res) => {
         createdAt: subscription.purchasedAt,
       })),
       ...recentPayments.map((payment) => ({
-        title: `Payment ${payment.amount.toLocaleString("vi-VN")} VND for room ${payment.invoice.Room?.name ?? ""}`,
+        title: `Payment ${payment.amount.toLocaleString("vi-VN")} VND for room ${payment.invoice?.Room?.name ?? ""}`,
         createdAt: payment.createdAt,
       })),
       ...recentInvoices.map((invoice) => ({
