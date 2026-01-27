@@ -95,8 +95,8 @@ function TenantsManagement() {
   // Save tenant (create or update)
   const handleSave = async () => {
     try {
-      if (!formData.fullName || !formData.email || !formData.roomId) {
-        alert("Please fill in required fields: Name, Email, Room");
+      if (!formData.fullName || !formData.email) {
+        alert("Please fill in required fields: Name, Email");
         return;
       }
 
@@ -106,7 +106,7 @@ function TenantsManagement() {
         phone: formData.phone,
         gender: formData.gender,
         age: parseInt(formData.age) || 0,
-        roomId: parseInt(formData.roomId),
+        roomId: formData.roomId ? parseInt(formData.roomId) : null,
         startDate: formData.startDate,
       };
 
@@ -340,13 +340,13 @@ function TenantsManagement() {
 
             {/* Room ID */}
             <div>
-              <label className="block text-sm font-semibold mb-1">Room *</label>
+              <label className="block text-sm font-semibold mb-1">Room</label>
               <input
                 type="number"
                 name="roomId"
                 value={formData.roomId}
                 onChange={handleFormChange}
-                placeholder="1"
+                placeholder="1 (optional)"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>

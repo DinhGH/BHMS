@@ -3,7 +3,7 @@ import { prisma } from "../lib/prisma.js";
 export async function listTenants() {
   const tenants = await prisma.tenant.findMany({
     include: {
-      invoices: {
+      Invoice: {
         select: {
           id: true,
           status: true,
@@ -13,7 +13,7 @@ export async function listTenants() {
         select: {
           id: true,
           name: true,
-          house: {
+          BoardingHouse: {
             select: {
               id: true,
               name: true,
@@ -38,7 +38,7 @@ export async function listTenants() {
     createdAt: tenant.createdAt,
     startDate: tenant.startDate,
     endDate: tenant.endDate,
-    invoiceCount: tenant.invoices?.length || 0,
+    invoiceCount: tenant.Invoice?.length || 0,
     roomId: tenant.roomId,
     room: tenant.Room,
     imageUrl: tenant.imageUrl,
@@ -49,19 +49,19 @@ export async function getTenantById(id) {
   const tenant = await prisma.tenant.findUnique({
     where: { id: parseInt(id, 10) },
     include: {
-      invoices: {
+      Invoice: {
         include: {
-          room: {
+          Room: {
             include: {
-              house: true,
+              BoardingHouse: true,
             },
           },
-          payments: true,
+          Payment: true,
         },
       },
       Room: {
         include: {
-          house: true,
+          BoardingHouse: true,
         },
       },
     },
@@ -73,9 +73,8 @@ export async function getTenantById(id) {
 export async function createTenant(data) {
   const { email, fullName, phone, gender, age, roomId, startDate } = data;
 
-  const roomIdNumber = parseInt(roomId, 10);
-  if (!email || !fullName || Number.isNaN(roomIdNumber)) {
-    const error = new Error("Email, fullName và roomId là bắt buộc");
+  if (!email || !fullName) {
+    const error = new Error("Email và fullName là bắt buộc");
     error.status = 400;
     throw error;
   }
@@ -87,11 +86,20 @@ export async function createTenant(data) {
     throw error;
   }
 
-  const room = await prisma.room.findUnique({ where: { id: roomIdNumber } });
-  if (!room) {
-    const error = new Error("Phòng không tồn tại");
-    error.status = 404;
-    throw error;
+  let roomIdNumber = null;
+  if (roomId) {
+    roomIdNumber = parseInt(roomId, 10);
+    if (Number.isNaN(roomIdNumber)) {
+      const error = new Error("Room ID không hợp lệ");
+      error.status = 400;
+      throw error;
+    }
+    const room = await prisma.room.findUnique({ where: { id: roomIdNumber } });
+    if (!room) {
+      const error = new Error("Phòng không tồn tại");
+      error.status = 404;
+      throw error;
+    }
   }
 
   const existingTenant = await prisma.tenant.findFirst({ where: { email } });
@@ -112,10 +120,10 @@ export async function createTenant(data) {
       startDate: startDateValue,
     },
     include: {
-      invoices: true,
+      Invoice: true,
       Room: {
         include: {
-          house: true,
+          BoardingHouse: true,
         },
       },
     },
@@ -155,16 +163,16 @@ export async function updateTenant(id, data) {
     data: {
       ...(fullName && { fullName }),
       ...(email && { email }),
-      ...(phone && { phone }),
+      ...(phone !== undefined && { phone }),
       ...(gender && { gender }),
-      ...(age && { age }),
+      ...(age !== undefined && { age: parseInt(age) || 0 }),
       ...(endDate && { endDate: new Date(endDate) }),
     },
     include: {
-      invoices: true,
+      Invoice: true,
       Room: {
         include: {
-          house: true,
+          BoardingHouse: true,
         },
       },
     },
