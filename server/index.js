@@ -8,12 +8,14 @@ import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import serviceRoutes from "./routes/services.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
+import invoiceRoutes from "./routes/invoiceRoutes.js";
 import tenantRoutes from "./routes/tenantRoutes.js";
 import reportRoutes from "./routes/reportRoutes.js";
 import reportAdminRoutes from "./routes/reportAdminRoutes.js";
 
 import ownerRoute from "./routes/owner.route.js";
 import adminRoutes from "./routes/admin.routes.js";
+import { startInvoiceOverdueJob } from "./jobs/invoiceOverdueJob.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -36,6 +38,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/services", serviceRoutes);
 app.use("/api/payments", paymentRoutes);
+app.use("/api/invoices", invoiceRoutes);
 app.use("/api/tenants", tenantRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/report-admins", reportAdminRoutes);
@@ -59,3 +62,5 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
+startInvoiceOverdueJob();

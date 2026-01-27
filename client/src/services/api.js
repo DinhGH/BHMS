@@ -269,6 +269,31 @@ export async function getPayments() {
   if (!res.ok) throw new Error("Failed to fetch payments");
   return await res.json();
 }
+
+export async function deletePayment(paymentId) {
+  const res = await fetch(`${API_BASE_URL}/api/payments/${paymentId}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+
+  if (!res.ok) throw new Error("Failed to delete payment");
+  return await res.json();
+}
+
+export async function updateInvoice(invoiceId, payload) {
+  const res = await fetch(`${API_BASE_URL}/api/invoices/${invoiceId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(payload || {}),
+  });
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.message || "Failed to update invoice");
+  }
+  return await res.json();
+}
 // Tenant Management APIs
 export async function getTenants() {
   const res = await fetch(`${API_BASE_URL}/api/tenants`, {

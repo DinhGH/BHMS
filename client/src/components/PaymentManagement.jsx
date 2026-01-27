@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { getPayments } from '../services/api';
+import { deletePayment, getPayments, updateInvoice } from '../services/api';
 
 const formatAmount = (amount) => {
   const value = Number(amount || 0);
@@ -10,7 +10,6 @@ const formatAmount = (amount) => {
 };
 
 const mapStatus = (invoiceStatus, confirmed) => {
-  if (confirmed) return 'Paid';
   if (invoiceStatus === 'PAID') return 'Paid';
   if (invoiceStatus === 'OVERDUE') return 'Overdue';
   return 'Pending';
@@ -91,6 +90,24 @@ function PaymentManagement() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedPayment, setSelectedPayment] = useState(null);
+  const [openMenuId, setOpenMenuId] = useState(null);
+  const [editInvoice, setEditInvoice] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [invoiceForm, setInvoiceForm] = useState({
+    roomId: '',
+    tenantId: '',
+    month: '',
+    year: '',
+    roomPrice: '',
+    electricCost: '',
+    waterCost: '',
+    serviceCost: '',
+    totalAmount: '',
+    status: 'PENDING',
+  });
+  const [actionLoading, setActionLoading] = useState(false);
+  const [actionError, setActionError] = useState('');
+  const [actionSuccess, setActionSuccess] = useState('');
   
   const itemsPerPage = 5;
   
@@ -134,6 +151,7 @@ function PaymentManagement() {
             : '-',
           amount: formatAmount(payment.amount),
           status: mapStatus(payment.invoiceStatus, payment.confirmed),
+          invoiceStatus: payment.invoiceStatus || 'PENDING',
           method: formatMethod(payment.method),
           imageUrl: payment.img || '',
           invoiceId: payment.invoiceId,
@@ -186,6 +204,85 @@ function PaymentManagement() {
         setError(err?.message || 'Failed to load payments');
         setLoading(false);
       });
+  };
+
+  const handleInvoiceFieldChange = (field, value) => {
+    setInvoiceForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const openEditInvoice = (payment) => {
+    setActionError('');
+    setActionSuccess('');
+    setEditInvoice(payment);
+    const invoice = payment.invoice || {};
+    setInvoiceForm({
+      roomId: invoice.roomId ?? '',
+      tenantId: invoice.tenantId ?? '',
+      month: invoice.month ?? '',
+      year: invoice.year ?? '',
+      roomPrice: invoice.roomPrice ?? '',
+      electricCost: invoice.electricCost ?? '',
+      waterCost: invoice.waterCost ?? '',
+      serviceCost: invoice.serviceCost ?? '',
+      totalAmount: invoice.totalAmount ?? '',
+      status: invoice.status || payment.invoiceStatus || 'PENDING',
+    });
+  };
+
+  const handleUpdateInvoice = async (e) => {
+    e.preventDefault();
+    if (!editInvoice?.invoiceId) {
+      setActionError('This payment has no invoice to update.');
+      return;
+    }
+
+    setActionError('');
+    setActionSuccess('');
+    setActionLoading(true);
+    try {
+      const payload = {
+        roomId: Number(invoiceForm.roomId || 0),
+        tenantId: Number(invoiceForm.tenantId || 0),
+        month: Number(invoiceForm.month || 0),
+        year: Number(invoiceForm.year || 0),
+        roomPrice: Number(invoiceForm.roomPrice || 0),
+        electricCost: Number(invoiceForm.electricCost || 0),
+        waterCost: Number(invoiceForm.waterCost || 0),
+        serviceCost: Number(invoiceForm.serviceCost || 0),
+        totalAmount: Number(invoiceForm.totalAmount || 0),
+        status: invoiceForm.status || 'PENDING',
+      };
+
+      const result = await updateInvoice(editInvoice.invoiceId, payload);
+      setActionSuccess(
+        result?.email?.sent
+          ? 'Invoice updated and email sent.'
+          : 'Invoice updated successfully.'
+      );
+      setEditInvoice(null);
+      handleRefresh();
+    } catch (err) {
+      setActionError(err?.message || 'Failed to update invoice');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDeletePayment = async () => {
+    if (!deleteTarget) return;
+    setActionError('');
+    setActionSuccess('');
+    setActionLoading(true);
+    try {
+      await deletePayment(deleteTarget.id);
+      setActionSuccess('Payment deleted successfully.');
+      setDeleteTarget(null);
+      handleRefresh();
+    } catch (err) {
+      setActionError(err?.message || 'Failed to delete payment');
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const getPageNumbers = () => {
@@ -334,6 +431,12 @@ function PaymentManagement() {
         {error && (
           <div className="mb-4 text-sm text-red-600">{error}</div>
         )}
+        {actionError && (
+          <div className="mb-4 text-sm text-red-600">{actionError}</div>
+        )}
+        {actionSuccess && (
+          <div className="mb-4 text-sm text-green-600">{actionSuccess}</div>
+        )}
         {!loading && !error && (
           <div className="mb-4 text-sm text-gray-600">
             Showing {startIndex + 1} - {Math.min(endIndex, filteredPayments.length)} of {filteredPayments.length} results
@@ -411,17 +514,52 @@ function PaymentManagement() {
                           </span>
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <button
-                            onClick={() => setSelectedPayment(payment)}
-                            className="inline-flex items-center justify-center w-10 h-10 rounded-md border border-gray-200 bg-white text-gray-700 shadow-sm hover:bg-gray-50 hover:shadow focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-1 active:scale-[0.98]"
-                            aria-label="View payment details"
-                          >
-                            <svg className="w-5 h-5 block" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-                              <circle cx="5" cy="10" r="1.6" />
-                              <circle cx="10" cy="10" r="1.6" />
-                              <circle cx="15" cy="10" r="1.6" />
-                            </svg>
-                          </button>
+                          <div className="relative inline-flex">
+                            <button
+                              onClick={() =>
+                                setOpenMenuId((prev) => (prev === payment.id ? null : payment.id))
+                              }
+                              className="inline-flex items-center justify-center w-9 h-9 rounded-md border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+                              aria-label="Actions"
+                            >
+                              <svg className="w-5 h-5 block" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                                <circle cx="5" cy="10" r="1.6" />
+                                <circle cx="10" cy="10" r="1.6" />
+                                <circle cx="15" cy="10" r="1.6" />
+                              </svg>
+                            </button>
+                            {openMenuId === payment.id && (
+                              <div className="absolute right-0 mt-2 w-36 rounded-md border border-gray-200 bg-white shadow-lg z-20">
+                                <button
+                                  onClick={() => {
+                                    setSelectedPayment(payment);
+                                    setOpenMenuId(null);
+                                  }}
+                                  className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+                                >
+                                  View
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    openEditInvoice(payment);
+                                    setOpenMenuId(null);
+                                  }}
+                                  className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setDeleteTarget(payment);
+                                    setOpenMenuId(null);
+                                  }}
+                                  className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-gray-100"
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -466,19 +604,54 @@ function PaymentManagement() {
                       </div>
                     </div>
 
-                    <button
-                      onClick={() => setSelectedPayment(payment)}
-                      className="mt-3 inline-flex items-center gap-2 text-sm text-gray-700 hover:text-gray-900"
-                    >
-                      <span className="inline-flex items-center justify-center w-10 h-10 rounded-md border border-gray-200 bg-white text-gray-700 shadow-sm hover:bg-gray-50 hover:shadow active:scale-[0.98]">
-                        <svg className="w-5 h-5 block" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-                          <circle cx="5" cy="10" r="1.6" />
-                          <circle cx="10" cy="10" r="1.6" />
-                          <circle cx="15" cy="10" r="1.6" />
-                        </svg>
-                      </span>
-                      <span>Details</span>
-                    </button>
+                    <div className="mt-3">
+                      <div className="relative inline-flex">
+                        <button
+                          onClick={() =>
+                            setOpenMenuId((prev) => (prev === payment.id ? null : payment.id))
+                          }
+                          className="inline-flex items-center justify-center w-10 h-10 rounded-md border border-gray-200 bg-white text-gray-700"
+                          aria-label="Actions"
+                        >
+                          <svg className="w-5 h-5 block" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                            <circle cx="5" cy="10" r="1.6" />
+                            <circle cx="10" cy="10" r="1.6" />
+                            <circle cx="15" cy="10" r="1.6" />
+                          </svg>
+                        </button>
+                        {openMenuId === payment.id && (
+                          <div className="absolute left-0 mt-2 w-36 rounded-md border border-gray-200 bg-white shadow-lg z-20">
+                            <button
+                              onClick={() => {
+                                setSelectedPayment(payment);
+                                setOpenMenuId(null);
+                              }}
+                              className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+                            >
+                              View
+                            </button>
+                            <button
+                              onClick={() => {
+                                openEditInvoice(payment);
+                                setOpenMenuId(null);
+                              }}
+                              className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => {
+                                setDeleteTarget(payment);
+                                setOpenMenuId(null);
+                              }}
+                              className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-gray-100"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
 
                     {payment.imageUrl ? (
                       <img
@@ -544,6 +717,13 @@ function PaymentManagement() {
           </div>
         )}
       </div>
+
+      {openMenuId && (
+        <div
+          className="fixed inset-0 z-10"
+          onClick={() => setOpenMenuId(null)}
+        ></div>
+      )}
 
       {selectedPayment && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -633,6 +813,178 @@ function PaymentManagement() {
                     ))
                   )}
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {editInvoice && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={() => setEditInvoice(null)}
+          ></div>
+          <div className="relative bg-white w-full sm:max-w-2xl mx-2 sm:mx-4 rounded-xl shadow-xl border border-gray-200 overflow-hidden">
+            <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-200 bg-white">
+              <div>
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900">Edit Invoice</h3>
+                <div className="mt-0.5 text-xs sm:text-sm text-gray-500">{editInvoice.paymentId}</div>
+              </div>
+              <button
+                onClick={() => setEditInvoice(null)}
+                className="inline-flex items-center justify-center w-9 h-9 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                aria-label="Close"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <form onSubmit={handleUpdateInvoice} className="px-4 sm:px-6 py-5 space-y-4 max-h-[75vh] overflow-y-auto">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm text-gray-600">Room ID</label>
+                  <input
+                    type="number"
+                    value={invoiceForm.roomId}
+                    onChange={(e) => handleInvoiceFieldChange('roomId', e.target.value)}
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-gray-600">Tenant ID</label>
+                  <input
+                    type="number"
+                    value={invoiceForm.tenantId}
+                    onChange={(e) => handleInvoiceFieldChange('tenantId', e.target.value)}
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-gray-600">Month</label>
+                  <input
+                    type="number"
+                    value={invoiceForm.month}
+                    onChange={(e) => handleInvoiceFieldChange('month', e.target.value)}
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-gray-600">Year</label>
+                  <input
+                    type="number"
+                    value={invoiceForm.year}
+                    onChange={(e) => handleInvoiceFieldChange('year', e.target.value)}
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-gray-600">Room Price</label>
+                  <input
+                    type="number"
+                    value={invoiceForm.roomPrice}
+                    onChange={(e) => handleInvoiceFieldChange('roomPrice', e.target.value)}
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-gray-600">Electric Cost</label>
+                  <input
+                    type="number"
+                    value={invoiceForm.electricCost}
+                    onChange={(e) => handleInvoiceFieldChange('electricCost', e.target.value)}
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-gray-600">Water Cost</label>
+                  <input
+                    type="number"
+                    value={invoiceForm.waterCost}
+                    onChange={(e) => handleInvoiceFieldChange('waterCost', e.target.value)}
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-gray-600">Service Cost</label>
+                  <input
+                    type="number"
+                    value={invoiceForm.serviceCost}
+                    onChange={(e) => handleInvoiceFieldChange('serviceCost', e.target.value)}
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-gray-600">Total Amount</label>
+                  <input
+                    type="number"
+                    value={invoiceForm.totalAmount}
+                    onChange={(e) => handleInvoiceFieldChange('totalAmount', e.target.value)}
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-gray-600">Status</label>
+                  <select
+                    value={invoiceForm.status}
+                    onChange={(e) => handleInvoiceFieldChange('status', e.target.value)}
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  >
+                    <option value="PENDING">Pending</option>
+                    <option value="PAID">Paid</option>
+                    <option value="OVERDUE">Overdue</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setEditInvoice(null)}
+                  className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={actionLoading}
+                  className="px-5 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {actionLoading ? 'Saving...' : 'Save'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={() => setDeleteTarget(null)}
+          ></div>
+          <div className="relative bg-white w-full sm:max-w-md mx-2 sm:mx-4 rounded-xl shadow-xl border border-gray-200 overflow-hidden">
+            <div className="px-4 sm:px-6 py-5 space-y-4">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900">Delete Payment</h3>
+              <p className="text-sm text-gray-600">Are you sure you want to delete {deleteTarget.paymentId}?</p>
+              <div className="flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setDeleteTarget(null)}
+                  className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeletePayment}
+                  disabled={actionLoading}
+                  className="px-5 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {actionLoading ? 'Deleting...' : 'Delete'}
+                </button>
               </div>
             </div>
           </div>

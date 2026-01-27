@@ -114,3 +114,9 @@ export async function getAllPayments() {
     throw error;
   }
 }
+
+export async function deletePaymentById(paymentId) {
+  return prisma.payment.delete({
+    where: { id: paymentId },
+  });
+}
