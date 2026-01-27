@@ -9,7 +9,7 @@ export async function listTenants() {
           status: true,
         },
       },
-      room: {
+      Room: {
         select: {
           id: true,
           name: true,
@@ -40,7 +40,7 @@ export async function listTenants() {
     endDate: tenant.endDate,
     invoiceCount: tenant.invoices?.length || 0,
     roomId: tenant.roomId,
-    room: tenant.room,
+    room: tenant.Room,
     imageUrl: tenant.imageUrl,
   }));
 }
@@ -56,10 +56,10 @@ export async function getTenantById(id) {
               house: true,
             },
           },
-          payment: true,
+          payments: true,
         },
       },
-      room: {
+      Room: {
         include: {
           house: true,
         },
@@ -67,7 +67,7 @@ export async function getTenantById(id) {
     },
   });
 
-  return tenant;
+  return tenant ? { ...tenant, room: tenant.Room } : null;
 }
 
 export async function createTenant(data) {
@@ -113,7 +113,7 @@ export async function createTenant(data) {
     },
     include: {
       invoices: true,
-      room: {
+      Room: {
         include: {
           house: true,
         },
@@ -162,7 +162,7 @@ export async function updateTenant(id, data) {
     },
     include: {
       invoices: true,
-      room: {
+      Room: {
         include: {
           house: true,
         },

@@ -33,7 +33,7 @@ export default function AdminUsers() {
 
   const fetchUsers = async () => {
     try {
-      const res = await api.get("/users");
+      const res = await api.get("/api/users");
 
       const usersData = Array.isArray(res) ? res : res?.data;
 
@@ -91,7 +91,7 @@ export default function AdminUsers() {
     if (!window.confirm(`Delete ${ids.length} user(s)?`)) return;
 
     try {
-      await api.delete("/users", { ids });
+      await api.delete("/api/users", { ids });
 
       setUsers((prev) => prev.filter((u) => !ids.includes(u.id)));
       alert("Deleted successfully");
@@ -115,9 +115,21 @@ export default function AdminUsers() {
     if (!editingId) {
       const strongPwd =
         /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9])[^\s]{8,}$/;
-      if (!strongPwd.test(form.password)) {
+      if (!form.password) {
+        newErrors.password = "Password is required";
+      } else if (!strongPwd.test(form.password)) {
         newErrors.password =
           "Password ≥ 8 chars, include upper, lower, number & special char";
+      }
+    } else {
+      // Khi edit: nếu có nhập password mới thì validate
+      if (form.password) {
+        const strongPwd =
+          /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9])[^\s]{8,}$/;
+        if (!strongPwd.test(form.password)) {
+          newErrors.password =
+            "Password ≥ 8 chars, include upper, lower, number & special char";
+        }
       }
     }
 
@@ -146,13 +158,16 @@ export default function AdminUsers() {
 
     try {
       const payload = { ...form };
+
+      // Khi edit: nếu không nhập password mới thì xóa field password khỏi payload
       if (editingId && !payload.password) {
         delete payload.password;
       }
+
       if (editingId) {
-        await api.put(`/users/${editingId}`, payload);
+        await api.put(`/api/users/${editingId}`, payload);
       } else {
-        await api.post("/users/add", payload);
+        await api.post("/api/users/add", payload);
       }
 
       setOpen(false);
