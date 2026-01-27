@@ -200,3 +200,109 @@ export const createReportAdmin = async (req, res) => {
     return res.status(500).json({ message: "Failed to create report" });
   }
 };
+/**
+ * GET /api/report-admins/:id
+ * Lấy chi tiết một report của admin
+ */
+export const getReportAdmin = async (req, res) => {
+  try {
+    const reportId = Number(req.params.id);
+    if (isNaN(reportId)) {
+      return res.status(400).json({ message: "Invalid report ID" });
+    }
+
+    const report = await prisma.reportAdmin.findUnique({
+      where: { id: reportId },
+    });
+
+    if (!report) {
+      return res.status(404).json({ message: "Report not found" });
+    }
+
+    const owner = await prisma.owner.findUnique({
+      where: { id: report.senderId },
+      select: {
+        id: true,
+        user: { select: { email: true } },
+      },
+    });
+
+    res.json({
+      ...report,
+      sender: owner ? { id: owner.id, email: owner.user?.email } : null,
+    });
+  } catch (error) {
+    console.error("getReportAdmin error:", error);
+    res.status(500).json({ message: "Failed to fetch report" });
+  }
+};
+
+/**
+ * PATCH /api/report-admins/:id/status
+ * Cập nhật status của report
+ */
+export const updateReportAdminStatus = async (req, res) => {
+  try {
+    const reportId = Number(req.params.id);
+    const { status } = req.body;
+
+    if (isNaN(reportId)) {
+      return res.status(400).json({ message: "Invalid report ID" });
+    }
+
+    const validStatuses = ["PENDING", "PROCESSING", "RESOLVED", "REVIEWING", "FIXING"];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({
+        message: `Invalid status. Must be one of: ${validStatuses.join(", ")}`,
+      });
+    }
+
+    const report = await prisma.reportAdmin.findUnique({
+      where: { id: reportId },
+    });
+
+    if (!report) {
+      return res.status(404).json({ message: "Report not found" });
+    }
+
+    const updatedReport = await prisma.reportAdmin.update({
+      where: { id: reportId },
+      data: { status },
+    });
+
+    res.json(updatedReport);
+  } catch (error) {
+    console.error("updateReportAdminStatus error:", error);
+    res.status(500).json({ message: "Failed to update report status" });
+  }
+};
+
+/**
+ * DELETE /api/report-admins/:id
+ * Xóa một report
+ */
+export const deleteReportAdmin = async (req, res) => {
+  try {
+    const reportId = Number(req.params.id);
+    if (isNaN(reportId)) {
+      return res.status(400).json({ message: "Invalid report ID" });
+    }
+
+    const report = await prisma.reportAdmin.findUnique({
+      where: { id: reportId },
+    });
+
+    if (!report) {
+      return res.status(404).json({ message: "Report not found" });
+    }
+
+    await prisma.reportAdmin.delete({
+      where: { id: reportId },
+    });
+
+    res.json({ message: "Report deleted successfully" });
+  } catch (error) {
+    console.error("deleteReportAdmin error:", error);
+    res.status(500).json({ message: "Failed to delete report" });
+  }
+};

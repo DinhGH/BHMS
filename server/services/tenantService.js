@@ -9,7 +9,7 @@ export async function listTenants() {
           status: true,
         },
       },
-      room: {
+      Room: {
         select: {
           id: true,
           name: true,
@@ -40,7 +40,7 @@ export async function listTenants() {
     endDate: tenant.endDate,
     invoiceCount: tenant.invoices?.length || 0,
     roomId: tenant.roomId,
-    room: tenant.room,
+    room: tenant.Room,
     imageUrl: tenant.imageUrl,
   }));
 }
@@ -51,7 +51,7 @@ export async function getTenantById(id) {
     include: {
       invoices: {
         include: {
-          room: {
+          Room: {
             include: {
               house: true,
             },
@@ -59,7 +59,7 @@ export async function getTenantById(id) {
           payment: true,
         },
       },
-      room: {
+      Room: {
         include: {
           house: true,
         },
@@ -76,6 +76,21 @@ export async function createTenant(data) {
   const roomIdNumber = parseInt(roomId, 10);
   if (!email || !fullName || Number.isNaN(roomIdNumber)) {
     const error = new Error("Email, fullName và roomId là bắt buộc");
+    error.status = 400;
+    throw error;
+  }
+
+  // Validate age >= 18
+  const ageNumber = parseInt(age, 10);
+  if (!Number.isNaN(ageNumber) && ageNumber < 18) {
+    const error = new Error("Age must be at least 18 years old");
+    error.status = 400;
+    throw error;
+  }
+
+  // Validate roomId >= 1
+  if (roomIdNumber < 1) {
+    const error = new Error("Please select a valid room");
     error.status = 400;
     throw error;
   }
@@ -113,7 +128,7 @@ export async function createTenant(data) {
     },
     include: {
       invoices: true,
-      room: {
+      Room: {
         include: {
           house: true,
         },
@@ -134,6 +149,16 @@ export async function updateTenant(id, data) {
     const error = new Error("Tenant not found");
     error.status = 404;
     throw error;
+  }
+
+  // Validate age >= 18
+  if (age !== undefined && age !== null) {
+    const ageNumber = parseInt(age, 10);
+    if (!Number.isNaN(ageNumber) && ageNumber < 18) {
+      const error = new Error("Age must be at least 18 years old");
+      error.status = 400;
+      throw error;
+    }
   }
 
   if (email && email !== tenant.email) {
@@ -162,7 +187,7 @@ export async function updateTenant(id, data) {
     },
     include: {
       invoices: true,
-      room: {
+      Room: {
         include: {
           house: true,
         },

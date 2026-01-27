@@ -170,6 +170,12 @@ const api = {
       body: JSON.stringify(data),
     }),
 
+  patch: (url, data) =>
+    request(url, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
+
   delete: (url, data) =>
     request(url, {
       method: "DELETE",
