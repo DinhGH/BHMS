@@ -119,8 +119,6 @@ export const getCurrentUser = async (req, res) => {
         email: true,
         fullName: true,
         role: true,
-        phone: true,
-        gender: true,
         status: true,
         active: true,
         createdAt: true,
@@ -146,7 +144,7 @@ export const updateUserStatus = async (req, res) => {
   const userId = Number(req.params.id);
   const { status } = req.body;
 
-  if (!["ACTIVE"].includes(status)) {
+  if (!["ACTIVE", "BLOCKED"].includes(status)) {
     return res.status(400).json({
       message: "Status không hợp lệ",
     });
@@ -218,10 +216,8 @@ export const addUser = async (req, res) => {
       password,
       fullName,
       provider,
-      phone,
-      gender = "MALE",
       role = "TENANT",
-      status = "RENTING",
+      status = "ACTIVE",
       active = "YES",
     } = req.body;
 
@@ -290,8 +286,6 @@ export const addUser = async (req, res) => {
         passwordHash,
         fullName,
         provider,
-        phone,
-        gender,
         role: role || "TENANT",
         status: status || "RENTING",
         active: active || "YES",
@@ -300,9 +294,6 @@ export const addUser = async (req, res) => {
         id: true,
         email: true,
         fullName: true,
-        role: true,
-        phone: true,
-        gender: true,
         status: true,
         active: true,
         createdAt: true,
@@ -333,10 +324,8 @@ export const updateUser = async (req, res) => {
       password,
       fullName,
       provider,
-      phone,
-      gender = "MALE",
       role = "TENANT",
-      status = "RENTING",
+      status = "ACTIVE",
       active = "YES",
     } = req.body;
 
@@ -361,8 +350,6 @@ export const updateUser = async (req, res) => {
 
     if (fullName) data.fullName = fullName;
     if (provider) data.provider = provider;
-    if (phone) data.phone = phone;
-    if (gender) data.gender = gender;
     if (role) data.role = role;
     if (status) data.status = status;
     if (active) data.active = active;
@@ -386,9 +373,7 @@ export const updateUser = async (req, res) => {
         id: true,
         email: true,
         fullName: true,
-        role: true,
-        phone: true,
-        gender: true,
+
         status: true,
         active: true,
         createdAt: true,
@@ -425,19 +410,15 @@ export const getAdminDashboard = async (req, res) => {
     const startOfToday = new Date(
       now.getFullYear(),
       now.getMonth(),
-      now.getDate()
+      now.getDate(),
     );
     const startOfTomorrow = new Date(
       now.getFullYear(),
       now.getMonth(),
-      now.getDate() + 1
+      now.getDate() + 1,
     );
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const startOfNextMonth = new Date(
-      now.getFullYear(),
-      now.getMonth() + 1,
-      1
-    );
+    const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
     const startOfYear = new Date(now.getFullYear(), 0, 1);
     const endOfYear = new Date(now.getFullYear() + 1, 0, 1);
 
@@ -475,7 +456,7 @@ export const getAdminDashboard = async (req, res) => {
 
     const totalUsers = userCounts.reduce(
       (sum, item) => sum + item._count._all,
-      0
+      0,
     );
     const activeUsers =
       userCounts.find((item) => item.status === "ACTIVE")?._count._all ?? 0;
@@ -519,16 +500,15 @@ export const getAdminDashboard = async (req, res) => {
 
     const totalAnnualRevenue = revenueByMonth.reduce(
       (sum, item) => sum + item.value,
-      0
+      0,
     );
 
     const totalReports = reportCounts.reduce(
       (sum, item) => sum + item._count._all,
-      0
+      0,
     );
     const resolvedReports =
-      reportCounts.find((item) => item.status === "RESOLVED")?._count._all ??
-      0;
+      reportCounts.find((item) => item.status === "RESOLVED")?._count._all ?? 0;
 
     const reportAdminStatusCount = (status) =>
       reportAdminCounts.find((item) => item.status === status)?._count?._all ??
@@ -576,18 +556,18 @@ export const getAdminDashboard = async (req, res) => {
         orderBy: { createdAt: "desc" },
         take: 5,
         include: {
-          invoice: { select: { id: true, room: { select: { name: true } } } },
+          invoice: { select: { id: true, Room: { select: { name: true } } } },
         },
       }),
       prisma.invoice.findMany({
         orderBy: { createdAt: "desc" },
         take: 5,
-        include: { room: { select: { name: true } } },
+        include: { Room: { select: { name: true } } },
       }),
       prisma.report.findMany({
         orderBy: { createdAt: "desc" },
         take: 5,
-        include: { sender: { select: { fullName: true } } },
+        include: { User: { select: { fullName: true } } },
       }),
       prisma.notification.findMany({
         orderBy: { createdAt: "desc" },
@@ -602,15 +582,15 @@ export const getAdminDashboard = async (req, res) => {
         createdAt: subscription.purchasedAt,
       })),
       ...recentPayments.map((payment) => ({
-        title: `Payment ${payment.amount.toLocaleString("vi-VN")} VND for invoice #${payment.invoiceId}`,
+        title: `Payment ${payment.amount.toLocaleString("vi-VN")} VND for room ${payment.invoice.Room?.name ?? ""}`,
         createdAt: payment.createdAt,
       })),
       ...recentInvoices.map((invoice) => ({
-        title: `Invoice #${invoice.id} created for room ${invoice.room?.name ?? invoice.roomId}`,
+        title: `Invoice #${invoice.id} created for room ${invoice.Room?.name ?? invoice.roomId}`,
         createdAt: invoice.createdAt,
       })),
       ...recentReports.map((report) => ({
-        title: `Report from ${report.sender?.fullName ?? "user"}`,
+        title: `Report from ${report.User?.fullName ?? "user"}`,
         createdAt: report.createdAt,
       })),
       ...recentNotifications.map((notification) => ({

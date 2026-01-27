@@ -13,7 +13,7 @@ import reportRoutes from "./routes/reportRoutes.js";
 import reportAdminRoutes from "./routes/reportAdminRoutes.js";
 
 import ownerRoute from "./routes/owner.route.js";
-import adminRoutes from "./src/routers/admin.routes.js";
+import adminRoutes from "./routes/admin.routes.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
