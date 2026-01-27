@@ -98,37 +98,6 @@ export default function UserFormModal({
           )}
         </div>
 
-        {/* PHONE */}
-        <div className="mb-4">
-          <label className="block mb-1 font-medium">Phone</label>
-          <input
-            type="text"
-            placeholder="Enter phone"
-            className={`w-full border p-2 rounded ${
-              errors?.phone ? "border-red-500" : ""
-            }`}
-            value={form.phone}
-            onChange={(e) => setForm({ ...form, phone: e.target.value })}
-          />
-          {errors?.phone && (
-            <p className="text-red-500 text-xs mt-1">{errors.phone}</p>
-          )}
-        </div>
-
-        {/* GENDER */}
-        <div className="mb-4">
-          <label className="block mb-1 font-medium">GENDER</label>
-          <select
-            className="w-full border p-2 rounded"
-            value={form.gender || "MALE"}
-            onChange={(e) => setForm({ ...form, gender: e.target.value })}
-          >
-            <option value="LOCAL">MALE</option>
-            <option value="GOOGLE">FEMALE</option>
-            <option value="FACEBOOK">OTHER</option>
-          </select>
-        </div>
-
         {/* PROVIDER */}
         <div className="mb-4">
           <label className="block mb-1 font-medium">Provider</label>
@@ -153,7 +122,6 @@ export default function UserFormModal({
           >
             <option value="OWNER">OWNER</option>
             <option value="ADMIN">ADMIN</option>
-            <option value="TENANT">TENANT</option>
           </select>
         </div>
 
@@ -162,11 +130,11 @@ export default function UserFormModal({
           <label className="block mb-1 font-medium">Status</label>
           <select
             className="w-full border p-2 rounded"
-            value={form.status || "RENTING"}
+            value={form.status || "ACTIVE"}
             onChange={(e) => setForm({ ...form, status: e.target.value })}
           >
-            <option value="NO_RENTING">NO_RENTING</option>
-            <option value="RENTING">RENTING</option>
+            <option value="BLOCKED">BLOCKED</option>
+            <option value="ACTIVE">ACTIVE</option>
           </select>
         </div>
 

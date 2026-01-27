@@ -25,7 +25,7 @@ export default function AdminUsers() {
     phone: "",
     provider: "LOCAL",
     role: "TENANT",
-    status: "NO_RENTING",
+    status: "ACTIVE",
     active: "YES",
   });
 
@@ -56,8 +56,8 @@ export default function AdminUsers() {
   // Pagination
   const filteredUsers = users
     .filter((u) => {
-      if (filter === "renting") return u.status === "RENTING";
-      if (filter === "noRenting") return u.status === "NO_RENTING";
+      if (filter === "active") return u.status === "ACTIVE";
+      if (filter === "blocked") return u.status === "BLOCKED";
 
       if (filter === "inactive") {
         const sixMonthsAgo = new Date();
@@ -98,7 +98,11 @@ export default function AdminUsers() {
       setSelected([]);
     } catch (err) {
       console.error("Delete error:", err);
-      alert("Delete failed: " + (err.message || "Unknown error"));
+
+      const msg =
+        err?.response?.data?.message || err.message || "Delete failed";
+
+      alert(msg);
     }
   };
   const handleSubmit = async () => {
@@ -140,13 +144,6 @@ export default function AdminUsers() {
       newErrors.fullName = "Full name contains invalid characters";
     }
 
-    // PHONE
-    if (!form.phone?.trim()) {
-      newErrors.phone = "Phone number is required";
-    } else if (!/^\d{10}$/.test(form.phone)) {
-      newErrors.phone = "Phone number must be exactly 10 digits";
-    }
-
     // Nếu có lỗi → dừng
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -186,11 +183,9 @@ export default function AdminUsers() {
       email: user.email || "",
       password: "",
       fullName: user.fullName || "",
-      gender: user.gender || "MALE",
-      phone: user.phone || "",
       provider: user.provider || "LOCAL",
       role: user.role || "TENANT",
-      status: user.status || "NO_RENTING",
+      status: user.status || "ACTIVE",
       active: user.active || "YES",
     });
     setEditingId(user.id);
@@ -344,7 +339,7 @@ export default function AdminUsers() {
                 : "bg-red-600 text-white"
             }`}
             disabled={selected.length === 0}
-            onClick={handleDelete}
+            onClick={() => handleDelete()}
           >
             Delete
           </button>

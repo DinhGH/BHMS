@@ -188,20 +188,51 @@ export const updateUserStatus = async (req, res) => {
  */
 export const deleteUsers = async (req, res) => {
   const { ids } = req.body;
+  const currentUserId = req.user.id;
 
   if (!ids || ids.length === 0) {
     return res.status(400).json({ message: "No users selected" });
   }
 
-  try {
-    await prisma.user.deleteMany({
-      where: {
-        id: { in: ids },
+  // Chặn xóa chính mình
+  if (ids.includes(currentUserId)) {
+    return res.status(400).json({
+      message: "You cannot delete your own account while logged in",
+    });
+  }
+  const ownersWithHouses = await prisma.owner.findMany({
+    where: {
+      userId: { in: ids },
+      houses: {
+        some: {}, // có ít nhất 1 nhà
       },
+    },
+    select: {
+      userId: true,
+      user: { select: { fullName: true } },
+    },
+  });
+
+  if (ownersWithHouses.length > 0) {
+    return res.status(400).json({
+      message: "Cannot delete owner who still has boarding houses",
+      owners: ownersWithHouses,
+    });
+  }
+
+  try {
+    await prisma.notification.deleteMany({ where: { userId: { in: ids } } });
+    await prisma.report.deleteMany({ where: { senderId: { in: ids } } });
+    await prisma.licenseKey.deleteMany({ where: { userId: { in: ids } } });
+    await prisma.owner.deleteMany({ where: { userId: { in: ids } } });
+
+    await prisma.user.deleteMany({
+      where: { id: { in: ids } },
     });
 
     return res.json({ message: "Delete users success" });
   } catch (err) {
+    console.error("DELETE USER ERROR:", err);
     return res.status(500).json({ message: "Delete failed" });
   }
 };

@@ -8,10 +8,8 @@ import {
   getCurrentUser,
   getAdminDashboard,
 } from "../controllers/admin.controller.js";
-
+import { requireAuth } from "../middlewares/auth.middleware.js";
 const router = express.Router();
-
-// router.use(protectedRoute(["ADMIN"]));
 
 router.get("/me", getCurrentUser);
 router.get("/dashboard", getAdminDashboard);
@@ -21,7 +19,7 @@ router.get("/", getUsers);
 router.patch("/:id", updateUserStatus);
 router.put("/:id", updateUser);
 
-router.delete("/", deleteUsers);
+router.delete("/", requireAuth, deleteUsers);
 
 router.post("/add", addUser);
 
