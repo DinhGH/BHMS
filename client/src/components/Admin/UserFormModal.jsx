@@ -9,6 +9,7 @@ export default function UserFormModal({
   form,
   setForm,
   errors,
+  nameModal,
 }) {
   const [showPassword, setShowPassword] = useState(false);
   if (!open) return null;
@@ -24,7 +25,7 @@ export default function UserFormModal({
           <span className="font-semibold text-lg">Back</span>
         </div>
 
-        <h2 className="text-2xl font-semibold mb-6 text-center">Add User</h2>
+        <h2 className="text-2xl font-semibold mb-6 text-center">{nameModal}</h2>
 
         {/* EMAIL */}
         <div className="mb-4">

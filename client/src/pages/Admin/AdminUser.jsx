@@ -353,6 +353,7 @@ export default function AdminUsers() {
           form={form}
           setForm={setForm}
           errors={errors}
+          nameModal={editingId ? "Edit User" : "Add User"}
         />
 
         {/* Pagination */}
