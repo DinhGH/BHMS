@@ -140,6 +140,7 @@ model Invoice {
   status       InvoiceStatus @default(PENDING)
   month        Int
   year         Int
+  imageUrl     String?
   createdAt    DateTime      @default(now())
   Room         Room          @relation(fields: [roomId], references: [id])
   Tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -179,7 +180,7 @@ model Report {
   senderId  Int
   target    String
   content   String
-  images    Json?
+  images    String?
   status    Report_status @default(PENDING)
   createdAt DateTime      @default(now())
   User      User          @relation(fields: [senderId], references: [id])
