@@ -142,7 +142,7 @@ model Invoice {
   year         Int
   createdAt    DateTime      @default(now())
   Room         Room          @relation(fields: [roomId], references: [id])
-  Tenant       Tenant        @relation(fields: [tenantId], references: [id])
+  Tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   payment      Payment[]
 
   @@unique([roomId, month, year])
@@ -157,7 +157,7 @@ model Payment {
   proofImage String?
   confirmed  Boolean        @default(false)
   createdAt  DateTime       @default(now())
-  invoice    Invoice        @relation(fields: [invoiceId], references: [id])
+  invoice    Invoice        @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 
   @@index([invoiceId], map: "Payment_invoiceId_fkey")
 }
@@ -209,7 +209,7 @@ model RentalContract {
   terms     String?
   createdAt DateTime  @default(now())
   Room      Room      @relation(fields: [roomId], references: [id])
-  Tenant    Tenant    @relation(fields: [tenantId], references: [id])
+  Tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([roomId])
   @@index([tenantId])
