@@ -24,7 +24,7 @@ function LandingPage() {
             {/* Logo */}
             <div className="flex items-center gap-2 sm:gap-3 shrink-0">
               <img
-                src="/images/icon.png"
+                src="https://res.cloudinary.com/dfez8v1fj/image/upload/v1769906103/icon_xwr5av.png"
                 alt="Logo"
                 className="h-8 w-8 sm:h-10 sm:w-10"
               />
@@ -157,7 +157,7 @@ function LandingPage() {
         </div>
         <div className="flex-1 flex justify-center w-full px-0">
           <img
-            src="/images/hr-bnr.webp"
+            src="https://res.cloudinary.com/dfez8v1fj/image/upload/v1769906103/hr-bnr_x3nga5.webp"
             alt="Dashboard Preview"
             className="w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-xl rounded-2xl shadow-2xl border border-slate-200/50 hover:shadow-3xl transition-shadow duration-300"
           />
@@ -171,19 +171,19 @@ function LandingPage() {
       {
         title: "Admin Features",
         desc: "Centralized dashboard to oversee the entire system, manage users, and view comprehensive statistics.",
-        img: "/images/admin.webp",
+        img: "https://res.cloudinary.com/dfez8v1fj/image/upload/v1769906102/admin_zzb2ib.webp",
         icon: "📊",
       },
       {
         title: "Owner Features",
         desc: "Manage properties efficiently with AI OCR for meter readings, automated billing, and online contracts.",
-        img: "/images/boarding-house.jpg",
+        img: "https://res.cloudinary.com/dfez8v1fj/image/upload/v1769906102/boarding-house_mz8a4k.jpg",
         icon: "🏠",
       },
       {
         title: "Tenant Features",
         desc: "Convenient portal to view rooms, pay bills online, chat directly with landlords, and report issues.",
-        img: "/images/tenant.webp",
+        img: "https://res.cloudinary.com/dfez8v1fj/image/upload/v1769906104/tenant_afalpp.webp",
         icon: "👥",
       },
     ];
@@ -372,7 +372,7 @@ function LandingPage() {
           </p>
           <div className="flex flex-col lg:flex-row items-center justify-center gap-8 sm:gap-12 lg:gap-16 mt-12 sm:mt-16">
             <img
-              src="/images/team.avif"
+              src="https://res.cloudinary.com/dfez8v1fj/image/upload/v1769906103/team_vmm125.avif"
               alt="Company Images"
               className="w-full max-w-xs sm:max-w-sm md:max-w-md rounded-2xl shadow-2xl border border-slate-200/50 hover:shadow-3xl transition-shadow duration-300"
             />
@@ -424,7 +424,7 @@ function LandingPage() {
     const reviews = [
       {
         id: 1,
-        img: "/images/avatarht.jpg",
+        img: "https://res.cloudinary.com/dfez8v1fj/image/upload/v1769906102/avatartd_rqa9fx.jpg",
         name: "Ngo Huu Thuan",
         location: "Pleiku, Gia Lai",
         rating: "4.5/5",
@@ -433,7 +433,7 @@ function LandingPage() {
       },
       {
         id: 2,
-        img: "/images/avatardh.jpg",
+        img: "https://res.cloudinary.com/dfez8v1fj/image/upload/v1769906102/avatardh_xqx2z1.jpg",
         name: "Tran Dieu Huyen",
         location: "Bo Trach, Quang Binh",
         rating: "4.7/5",
@@ -442,7 +442,7 @@ function LandingPage() {
       },
       {
         id: 3,
-        img: "/images/avatartd.jpg",
+        img: "https://res.cloudinary.com/dfez8v1fj/image/upload/v1769906102/avatarht_h0rzcz.jpg",
         name: "Huynh Tan Dinh",
         location: "Thang Binh, Quang Nam",
         rating: "4.6/5",
@@ -451,7 +451,7 @@ function LandingPage() {
       },
       {
         id: 4,
-        img: "/images/avatarht.jpg",
+        img: "https://res.cloudinary.com/dfez8v1fj/image/upload/v1769906102/avatarht_h0rzcz.jpg",
         name: "Nguyen Duy Quy",
         location: "Thanh Khe, Da Nang",
         rating: "4.8/5",
@@ -460,7 +460,7 @@ function LandingPage() {
       },
       {
         id: 5,
-        img: "/images/avatardh.jpg",
+        img: "https://res.cloudinary.com/dfez8v1fj/image/upload/v1769906102/avatardh_xqx2z1.jpg",
         name: "Tran Cong Danh",
         location: "Thanh Khe, Da Nang",
         rating: "4.7/5",
@@ -469,7 +469,7 @@ function LandingPage() {
       },
       {
         id: 6,
-        img: "/images/avatarht.jpg",
+        img: "https://res.cloudinary.com/dfez8v1fj/image/upload/v1769906102/avatarht_h0rzcz.jpg",
         name: "Le Minh Tuan",
         location: "Hai Chau, Da Nang",
         rating: "4.9/5",
@@ -478,7 +478,7 @@ function LandingPage() {
       },
       {
         id: 7,
-        img: "/images/avatardh.jpg",
+        img: "https://res.cloudinary.com/dfez8v1fj/image/upload/v1769906102/avatardh_xqx2z1.jpg",
         name: "Ly Quoc Phong",
         location: "Ninh Kieu, Can Tho",
         rating: "4.8/5",
@@ -487,7 +487,7 @@ function LandingPage() {
       },
       {
         id: 8,
-        img: "/images/avatarht.jpg",
+        img: "https://res.cloudinary.com/dfez8v1fj/image/upload/v1769906102/avatarht_h0rzcz.jpg",
         name: "Tran Minh Hieu",
         location: "Dong Da, Ha Noi",
         rating: "4.7/5",
@@ -496,7 +496,7 @@ function LandingPage() {
       },
       {
         id: 9,
-        img: "/images/avatartd.jpg",
+        img: "https://res.cloudinary.com/dfez8v1fj/image/upload/v1769906102/avatartd_rqa9fx.jpg",
         name: "Nguyen Luong Tinh",
         location: "Quan 1, Ho Chi Minh",
         rating: "4.9/5",
@@ -624,7 +624,7 @@ function LandingPage() {
             <div className="flex flex-col items-start gap-4 sm:gap-6 w-full md:w-auto">
               <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-4">
                 <img
-                  src="/images/icon.png"
+                  src="https://res.cloudinary.com/dfez8v1fj/image/upload/v1769906103/icon_xwr5av.png"
                   alt="Logo"
                   className="h-12 sm:h-14 w-12 sm:w-14"
                 />
