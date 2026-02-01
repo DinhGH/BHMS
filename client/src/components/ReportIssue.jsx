@@ -374,16 +374,7 @@ function ReportIssue() {
         </div>
       )}
       <div className="mx-auto w-full max-w-none">
-        <div className="mb-6 flex flex-col gap-2 sm:mb-8 sm:gap-3">
-
-          <h1 className="text-2xl font-semibold text-slate-900 sm:text-4xl">
-            Report Issue
-          </h1>
-          <p className="max-w-2xl text-sm text-slate-600 sm:text-base">
-            Report system incidents or improvement requests. The information
-            will be sent directly to admin for handling.
-          </p>
-        </div>
+       
 
         <div className="grid gap-6 lg:grid-cols-[1.05fr_1fr] lg:items-start">
           <form
