@@ -103,7 +103,7 @@ const Register = () => {
           className="flex items-center justify-center gap-3 mb-6 group"
         >
           <img
-            src="/images/icon.png"
+            src="https://res.cloudinary.com/dfez8v1fj/image/upload/v1769906103/icon_xwr5av.png"
             alt="BHMS Logo"
             className="h-12 w-12 transition-transform group-hover:scale-110"
           />

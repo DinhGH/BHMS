@@ -33,7 +33,7 @@ function Navbar({ onMenuClick, onBellClick, onAvatarClick, user }) {
             {/* Logo + Brand */}
 
             <img
-              src="/images/icon.png"
+              src="https://res.cloudinary.com/dfez8v1fj/image/upload/v1769906103/icon_xwr5av.png"
               alt="BHMS Logo"
               className="h-8 w-8 sm:h-9 sm:w-9 rounded-md transition-transform group-hover:scale-105"
             />
