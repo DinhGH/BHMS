@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
-import api from "../server/api.js";
+import { getRoomsByHouse } from "../services/boardingHouse.js";
 import SearchInput from "./ui/SearchInput.jsx";
 import Pagination from "./ui/Pagination.jsx";
 import ViewDetailRoom from "./ViewDetailRoom.jsx";
@@ -62,12 +62,7 @@ export default function ViewDetailBoardingHouse({ house, onBack }) {
 
       console.log("Fetching with params:", params); // Debug log
 
-      const data = await api.get(
-        `/api/owner/boarding-houses/${house.id}/rooms`,
-        {
-          params,
-        },
-      );
+      const data = await getRoomsByHouse(house.id, params);
 
       console.log("Received rooms:", data); // Debug log
       setRooms(data);

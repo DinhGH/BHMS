@@ -1,7 +1,7 @@
 import { FaBed } from "react-icons/fa";
 import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
-import api from "../server/api.js";
+import { createRoom, updateRoomDetails } from "../services/boardingHouse";
 
 export default function RoomFormModal({
   open,
@@ -79,14 +79,10 @@ export default function RoomFormModal({
 
       if (isEdit) {
         // Use the new endpoint
-        await api.put(`/api/owner/rooms/${roomData.id}/details`, formData, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
+        await updateRoomDetails(roomData.id, formData);
         toast.success("Room updated successfully");
       } else {
-        await api.post("/api/owner/rooms", formData, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
+        await createRoom(formData);
         toast.success("Room added successfully");
       }
 
@@ -174,7 +170,7 @@ export default function RoomFormModal({
           <button
             disabled={!isValid || loading}
             onClick={handleSubmit}
-            className={`px-4 py-2 rounded text-white ${isValid ? "bg-blue-600" : "bg-gray-400"}`}
+            className={`px-4 py-2 rounded text-white ${isValid ? "bg-blue-600" : "bg-blue-500"}`}
           >
             {loading ? "Saving..." : isEdit ? "Update" : "Save"}
           </button>

@@ -9,10 +9,14 @@ import RemoveTenantModal from "../components/RemoveTenantModal";
 import {
   getRoomServicesApi,
   removeServiceFromRoomApi,
-} from "../server/roomServiceApi";
+} from "../services/roomServiceApi";
+import {
+  getRoomDetail,
+  deleteRoom,
+  createInvoice,
+} from "../services/boardingHouse";
 import EditQuantityModal from "../components/EditQuantityModal";
 import AddServiceModal from "./AddServiceModal";
-import api from "../server/api";
 import { toast } from "react-hot-toast";
 
 export default function ViewDetailRoom({ roomId, onBack }) {
@@ -37,7 +41,7 @@ export default function ViewDetailRoom({ roomId, onBack }) {
   const fetchRoomDetail = async () => {
     try {
       setLoading(true);
-      const res = await api.get(`/api/owner/rooms/${roomId}`);
+      const res = await getRoomDetail(roomId);
       setRoom(res);
     } catch (err) {
       console.error(err);
@@ -121,7 +125,7 @@ export default function ViewDetailRoom({ roomId, onBack }) {
 
     try {
       setDeleting(true);
-      await api.delete(`/api/owner/rooms/${room.id}`);
+      await deleteRoom(room.id);
       toast.success(`Room "${room.name}" deleted successfully`);
       onBack(true);
     } catch (err) {
@@ -136,7 +140,7 @@ export default function ViewDetailRoom({ roomId, onBack }) {
 
   const handleMakeInvoice = async () => {
     try {
-      await api.post(`/api/owner/rooms/${room.id}/invoice`);
+      await createInvoice(room.id);
       toast.success("Invoice created successfully");
       fetchRoomDetail();
     } catch (err) {

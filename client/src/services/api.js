@@ -124,18 +124,32 @@ async function request(url, options = {}) {
     ...(options.headers || {}),
   };
 
+  // ✅ QUAN TRỌNG: Không set Content-Type cho FormData
+  // Browser tự động set với boundary đúng
   if (!(options.body instanceof FormData)) {
     headers["Content-Type"] = "application/json";
+  } else {
+    // ✅ Xóa Content-Type nếu có để browser tự set
+    delete headers["Content-Type"];
   }
 
   if (token) {
     headers.Authorization = `Bearer ${token}`;
   }
 
-  const res = await fetch(`${API_BASE_URL}${url}`, {
+  const config = {
     ...options,
     headers,
+  };
+
+  console.log("🌐 API Request:", {
+    url: `${API_BASE_URL}${url}`,
+    method: config.method,
+    isFormData: options.body instanceof FormData,
+    headers: config.headers,
   });
+
+  const res = await fetch(`${API_BASE_URL}${url}`, config);
 
   if (!res.ok) {
     let errorData = {};
@@ -145,6 +159,7 @@ async function request(url, options = {}) {
       // ignore JSON parse error
     }
 
+    console.error("❌ API Error:", errorData);
     throw {
       status: res.status,
       message: errorData.message || "Unauthorized",
@@ -156,24 +171,53 @@ async function request(url, options = {}) {
 }
 
 const api = {
-  get: (url) => request(url),
+  get: (url, config = {}) => {
+    let finalUrl = url;
+    if (config.params) {
+      const params = new URLSearchParams();
+      Object.keys(config.params).forEach((key) => {
+        const value = config.params[key];
+        if (value !== undefined && value !== null) {
+          params.append(key, value);
+        }
+      });
 
-  post: (url, data) =>
-    request(url, {
+      const queryString = params.toString();
+      if (queryString) {
+        finalUrl = `${url}?${queryString}`;
+      }
+    }
+
+    return request(finalUrl, {
+      method: "GET",
+      ...config,
+    });
+  },
+
+  post: (url, data, config = {}) => {
+    const isFormData = data instanceof FormData;
+
+    return request(url, {
       method: "POST",
-      body: JSON.stringify(data),
-    }),
+      body: isFormData ? data : JSON.stringify(data),
+      ...config,
+    });
+  },
 
-  put: (url, data) =>
-    request(url, {
+  put: (url, data, config = {}) => {
+    const isFormData = data instanceof FormData;
+
+    return request(url, {
       method: "PUT",
-      body: JSON.stringify(data),
-    }),
+      body: isFormData ? data : JSON.stringify(data),
+      ...config,
+    });
+  },
 
   delete: (url, data) =>
     request(url, {
       method: "DELETE",
-      body: JSON.stringify(data),
+      body: data ? JSON.stringify(data) : undefined,
     }),
 };
 

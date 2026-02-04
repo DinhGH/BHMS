@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import api from "../server/api";
+import { updateContract } from "../services/boardingHouse";
 import { toast } from "react-hot-toast";
 
 export default function EditRoomModal({ open, room, onClose, onUpdated }) {
@@ -36,14 +36,22 @@ export default function EditRoomModal({ open, room, onClose, onUpdated }) {
   const handleSubmit = async () => {
     try {
       setLoading(true);
-      await api.put(`/api/owner/rooms/${room.id}/contract`, {
-        electricMeterNow: Number(form.electricMeterNow) || 0,
-        electricMeterAfter: Number(form.electricMeterAfter) || 0,
-        waterMeterNow: Number(form.waterMeterNow) || 0,
-        waterMeterAfter: Number(form.waterMeterAfter) || 0,
-        contractStart: form.contractStart || null,
-        contractEnd: form.contractEnd || null,
-      });
+      const payload = {};
+
+      const electricNow = Number(form.electricMeterNow);
+      const electricAfter = Number(form.electricMeterAfter);
+      const waterNow = Number(form.waterMeterNow);
+      const waterAfter = Number(form.waterMeterAfter);
+
+      if (!isNaN(electricNow)) payload.electricMeterNow = electricNow;
+      if (!isNaN(electricAfter)) payload.electricMeterAfter = electricAfter;
+      if (!isNaN(waterNow)) payload.waterMeterNow = waterNow;
+      if (!isNaN(waterAfter)) payload.waterMeterAfter = waterAfter;
+
+      if (form.contractStart) payload.contractStart = form.contractStart;
+      if (form.contractEnd) payload.contractEnd = form.contractEnd;
+
+      await updateContract(payload, room.id);
       setLoading(false);
       toast.success("Room updated successfully");
       onUpdated();

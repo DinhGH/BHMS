@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import SearchInput from "./ui/SearchInput.jsx";
 import Pagination from "./ui/Pagination.jsx";
-import api from "../server/api.js";
+import {
+  getBoardingHouses,
+  deleteBoardingHouseByName,
+} from "../services/boardingHouse.js";
 import AddNewBoardingHouseModal from "./AddNewBoardingHouseModal.jsx";
 import RoomManagement from "./ViewDetailBoardingHouse.jsx";
 import DeleteHouseModal from "./DeleteHouseModal.jsx";
@@ -34,8 +37,7 @@ export default function BoardingHouseManagement({ ownerId }) {
   const fetchHouses = async () => {
     try {
       setLoading(true);
-      const query = search ? `?search=${encodeURIComponent(search)}` : "";
-      const data = await api.get(`/api/owner/boarding-houses${query}`);
+      const data = await getBoardingHouses(search);
       setHouses(data);
     } catch (error) {
       console.error("Fetch boarding houses error", error);
@@ -58,9 +60,7 @@ export default function BoardingHouseManagement({ ownerId }) {
     if (!confirmed) return;
 
     try {
-      await api.delete(
-        `/api/owner/boarding-houses?name=${encodeURIComponent(houseName)}`,
-      );
+      await deleteBoardingHouseByName(houseName);
 
       alert("Deleted successfully");
       fetchHouses();

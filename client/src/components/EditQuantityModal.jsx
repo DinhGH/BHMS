@@ -1,5 +1,5 @@
 import { useState } from "react";
-import api from "../server/api";
+import { updateRoomServiceQuantity } from "../services/roomServiceApi";
 import { toast } from "react-hot-toast";
 
 export default function EditQuantityModal({
@@ -16,12 +16,7 @@ export default function EditQuantityModal({
 
     try {
       setLoading(true);
-      await api.put(
-        `/api/owner/rooms/${roomId}/services/${service.serviceId}`,
-        {
-          quantity: Number(quantity),
-        },
-      );
+      await updateRoomServiceQuantity(roomId, service.id, quantity);
 
       toast.success("Quantity updated successfully");
       onUpdated(); // reload list

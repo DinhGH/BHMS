@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import api from "../server/api";
+import { updateBoardingHouse } from "../services/boardingHouse";
 
 export default function EditBoardingHouseModal({
   open,
@@ -15,6 +15,7 @@ export default function EditBoardingHouseModal({
     image: null,
     preview: "",
   });
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (house) {
@@ -58,8 +59,8 @@ export default function EditBoardingHouseModal({
       if (form.image) {
         formData.append("image", form.image);
       }
-
-      await api.put(`/api/owner/boarding-houses/${house.id}`, formData);
+      setLoading(true);
+      await updateBoardingHouse(house.id, formData);
 
       alert("Updated successfully");
       onSuccess();
@@ -67,6 +68,8 @@ export default function EditBoardingHouseModal({
     } catch (err) {
       console.error(err);
       alert("Update failed");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -133,9 +136,9 @@ export default function EditBoardingHouseModal({
           </button>
           <button
             onClick={handleSubmit}
-            className="px-4 py-2 bg-blue-500 text-white rounded"
+            className="bg-blue-600 text-white px-4 py-2 rounded"
           >
-            Save
+            {loading ? "Saving..." : "Save"}
           </button>
         </div>
       </div>

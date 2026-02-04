@@ -1,7 +1,11 @@
 import { FaHome } from "react-icons/fa";
 import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
-import api from "../server/api.js";
+import {
+  checkBoardingHouseByName,
+  createBoardingHouse,
+  updateBoardingHouse,
+} from "../services/boardingHouse";
 
 export default function AddNewBoardingHouseModal({ open, onClose, onSuccess }) {
   const [form, setForm] = useState({
@@ -76,17 +80,13 @@ export default function AddNewBoardingHouseModal({ open, onClose, onSuccess }) {
         console.log(`  ${key}:`, value);
       }
 
-      const existed = await api.get(
-        `/api/owner/boarding-houses/check?name=${encodeURIComponent(form.name.trim())}`,
-      );
+      const existed = await checkBoardingHouseByName(form.name.trim());
 
       if (existed?.id) {
-        // ✅ KHÔNG truyền headers - để api.js tự xử lý
-        await api.put(`/api/owner/boarding-houses/${existed.id}`, formData);
+        await updateBoardingHouse(existed.id, formData);
         toast.success("Boarding house updated successfully");
       } else {
-        // ✅ KHÔNG truyền headers - để api.js tự xử lý
-        await api.post("/api/owner/boarding-houses", formData);
+        await createBoardingHouse(formData);
         toast.success("Boarding house added successfully");
       }
 
@@ -195,7 +195,7 @@ export default function AddNewBoardingHouseModal({ open, onClose, onSuccess }) {
             className={`px-4 py-2 rounded text-white ${
               isValid && !loading
                 ? "bg-blue-600 hover:bg-blue-700"
-                : "bg-gray-400 cursor-not-allowed"
+                : "bg-blue-500 cursor-not-allowed"
             }`}
           >
             {loading ? "Saving..." : "Save"}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { addServiceToRoomApi } from "../server/roomServiceApi.js";
-import api from "../server/api";
+import { addServiceToRoomApi } from "../services/roomServiceApi.js";
+import { getServices } from "../services/roomServiceApi.js";
 import { toast } from "react-hot-toast";
 
 export default function AddServiceModal({ roomId, onClose, onAdded }) {
@@ -19,7 +19,7 @@ export default function AddServiceModal({ roomId, onClose, onAdded }) {
   const fetchServices = async () => {
     try {
       setLoadingServices(true);
-      const data = await api.get("/api/owner/services");
+      const data = await getServices();
       const activeServices = Array.isArray(data)
         ? data.filter((s) => s.isActive)
         : [];

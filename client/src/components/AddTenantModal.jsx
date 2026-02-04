@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import api from "../server/api";
+import { searchTenants, addTenantToRoom } from "../services/boardingHouse.js";
 import { toast } from "react-hot-toast";
 
 export default function AddTenantModal({ open, roomId, onClose, onAdded }) {
@@ -19,9 +19,7 @@ export default function AddTenantModal({ open, roomId, onClose, onAdded }) {
     const timer = setTimeout(async () => {
       try {
         setSearching(true);
-        const tenants = await api.get("/api/owner/tenants/search", {
-          params: { query: searchQuery },
-        });
+        const tenants = await searchTenants(searchQuery.trim());
         setSuggestions(tenants);
       } catch (err) {
         console.error("Search error:", err);
@@ -50,9 +48,7 @@ export default function AddTenantModal({ open, roomId, onClose, onAdded }) {
     try {
       setLoading(true);
 
-      await api.post(`/api/owner/rooms/${roomId}/add-tenant`, {
-        tenantId: selectedTenant.id,
-      });
+      await addTenantToRoom(roomId, selectedTenant.id);
 
       toast.success(`${selectedTenant.fullName} added to room successfully`);
       onAdded();
