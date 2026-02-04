@@ -12,7 +12,8 @@ export default function EditBoardingHouseModal({
     address: "",
     electricFee: "",
     waterFee: "",
-    imageUrl: "",
+    image: null,
+    preview: "",
   });
 
   useEffect(() => {
@@ -23,7 +24,8 @@ export default function EditBoardingHouseModal({
         address: house.address,
         electricFee: house.electricFee,
         waterFee: house.waterFee,
-        imageUrl: house.imageUrl || "",
+        image: null,
+        preview: house.imageUrl || "",
       });
     }
   }, [house]);
@@ -33,10 +35,32 @@ export default function EditBoardingHouseModal({
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setForm({
+        ...form,
+        image: file,
+        preview: URL.createObjectURL(file),
+      });
+    }
+  };
 
   const handleSubmit = async () => {
     try {
-      await api.put(`/api/owner/boarding-houses/${house.id}`, form);
+      const formData = new FormData();
+      formData.append("name", form.name);
+      formData.append("address", form.address);
+      formData.append("electricFee", form.electricFee);
+      formData.append("waterFee", form.waterFee);
+
+      // 👇 chỉ gửi file nếu người dùng chọn ảnh mới
+      if (form.image) {
+        formData.append("image", form.image);
+      }
+
+      await api.put(`/api/owner/boarding-houses/${house.id}`, formData);
+
       alert("Updated successfully");
       onSuccess();
       onClose();
@@ -85,13 +109,23 @@ export default function EditBoardingHouseModal({
           className="w-full border px-3 py-2 rounded"
         />
 
-        <input
-          name="imageUrl"
-          value={form.imageUrl}
-          onChange={handleChange}
-          placeholder="Image URL"
-          className="w-full border px-3 py-2 rounded"
-        />
+        <div>
+          <label className="block mb-1 font-medium">Boarding House Image</label>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleImageChange}
+            className="w-full border px-3 py-2 rounded bg-white"
+          />
+
+          {form.preview && (
+            <img
+              src={form.preview}
+              alt="preview"
+              className="mt-3 w-full h-40 object-cover rounded"
+            />
+          )}
+        </div>
 
         <div className="flex justify-end gap-3">
           <button onClick={onClose} className="px-4 py-2 border rounded">

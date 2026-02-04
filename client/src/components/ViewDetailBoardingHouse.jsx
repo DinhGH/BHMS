@@ -3,7 +3,7 @@ import api from "../server/api.js";
 import SearchInput from "./ui/SearchInput.jsx";
 import Pagination from "./ui/Pagination.jsx";
 import ViewDetailRoom from "./ViewDetailRoom.jsx";
-import AddNewRoomModal from "./AddNewRoomModel.jsx";
+import RoomFormModal from "./RoomFormModel.jsx";
 import RoomFilter from "./RoomFilter.jsx";
 
 export default function ViewDetailBoardingHouse({ house, onBack }) {
@@ -13,6 +13,7 @@ export default function ViewDetailBoardingHouse({ house, onBack }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedRoomId, setSelectedRoomId] = useState(null);
   const [openAddRoom, setOpenAddRoom] = useState(false);
+  const [editingRoom, setEditingRoom] = useState(null);
 
   const [filters, setFilters] = useState({
     priceRange: null,
@@ -152,10 +153,14 @@ export default function ViewDetailBoardingHouse({ house, onBack }) {
           </button>
         </div>
 
-        <AddNewRoomModal
+        <RoomFormModal
           open={openAddRoom}
           houseId={house.id}
-          onClose={() => setOpenAddRoom(false)}
+          roomData={editingRoom}
+          onClose={() => {
+            setOpenAddRoom(false);
+            setEditingRoom(null);
+          }}
           onSuccess={fetchRooms}
         />
       </div>
@@ -221,13 +226,23 @@ export default function ViewDetailBoardingHouse({ house, onBack }) {
                         </span>
                       </div>
                     </div>
-
-                    <button
-                      onClick={() => setSelectedRoomId(room.id)}
-                      className="text-sm font-medium hover:underline"
-                    >
-                      View Detail →
-                    </button>
+                    <div className="flex justify-between">
+                      <button
+                        onClick={() => setSelectedRoomId(room.id)}
+                        className="text-sm font-medium hover:underline"
+                      >
+                        View Detail →
+                      </button>
+                      <button
+                        onClick={() => {
+                          setEditingRoom(room);
+                          setOpenAddRoom(true);
+                        }}
+                        className="px-4 py-2 text-sm font-medium hover:underline rounded-md ml-2"
+                      >
+                        Edit Room
+                      </button>
+                    </div>
                   </div>
                 </div>
               );

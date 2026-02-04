@@ -9,7 +9,7 @@ export default function AddNewBoardingHouseModal({ open, onClose, onSuccess }) {
     address: "",
     electricFee: "",
     waterFee: "",
-    imageUrl: "",
+    image: null,
   });
 
   const [errors, setErrors] = useState({});
@@ -40,13 +40,6 @@ export default function AddNewBoardingHouseModal({ open, onClose, onSuccess }) {
       newErrors.waterFee = "Water price must be greater than 0";
     }
 
-    if (form.imageUrl) {
-      const urlRegex = /^(https?:\/\/)/i;
-      if (!urlRegex.test(form.imageUrl.trim())) {
-        newErrors.imageUrl = "Invalid image URL";
-      }
-    }
-
     setErrors(newErrors);
     setIsValid(Object.keys(newErrors).length === 0);
   };
@@ -64,31 +57,44 @@ export default function AddNewBoardingHouseModal({ open, onClose, onSuccess }) {
     try {
       setLoading(true);
 
-      const payload = {
-        name: form.name.trim(),
-        address: form.address.trim(),
-        electricFee: form.electricFee ? Number(form.electricFee) : 0,
-        waterFee: form.waterFee ? Number(form.waterFee) : 0,
-        imageUrl: form.imageUrl?.trim() || null,
-      };
+      const formData = new FormData();
+      formData.append("name", form.name.trim());
+      formData.append("address", form.address.trim());
+      formData.append(
+        "electricFee",
+        form.electricFee ? Number(form.electricFee) : 0,
+      );
+      formData.append("waterFee", form.waterFee ? Number(form.waterFee) : 0);
+
+      if (form.image) {
+        formData.append("image", form.image);
+      }
+
+      // ✅ DEBUG: Xem FormData
+      console.log("📦 FormData contents:");
+      for (let [key, value] of formData.entries()) {
+        console.log(`  ${key}:`, value);
+      }
 
       const existed = await api.get(
-        `/api/owner/boarding-houses/check?name=${encodeURIComponent(payload.name)}`,
+        `/api/owner/boarding-houses/check?name=${encodeURIComponent(form.name.trim())}`,
       );
 
       if (existed?.id) {
-        await api.put(`/api/owner/boarding-houses/${existed.id}`, payload);
+        // ✅ KHÔNG truyền headers - để api.js tự xử lý
+        await api.put(`/api/owner/boarding-houses/${existed.id}`, formData);
         toast.success("Boarding house updated successfully");
       } else {
-        await api.post("/api/owner/boarding-houses", payload);
+        // ✅ KHÔNG truyền headers - để api.js tự xử lý
+        await api.post("/api/owner/boarding-houses", formData);
         toast.success("Boarding house added successfully");
       }
 
       onSuccess();
       onClose();
     } catch (err) {
-      console.error(err);
-      toast.error("Something went wrong. Please try again.");
+      console.error("❌ Submit error:", err);
+      toast.error(err.message || "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -107,7 +113,7 @@ export default function AddNewBoardingHouseModal({ open, onClose, onSuccess }) {
         </div>
 
         <h2 className="text-2xl font-semibold mb-6 text-center">
-          Add / Update Boarding House
+          Add Boarding House
         </h2>
 
         {/* Name */}
@@ -170,15 +176,15 @@ export default function AddNewBoardingHouseModal({ open, onClose, onSuccess }) {
 
         {/* Image */}
         <div className="mb-6">
-          <label className="block mb-1 font-medium">Image URL</label>
+          <label className="block mb-1 font-medium">Boarding House Image</label>
           <input
-            name="imageUrl"
-            value={form.imageUrl}
-            onChange={handleChange}
-            className="w-full border p-2 rounded"
+            type="file"
+            accept="image/*"
+            onChange={(e) => setForm({ ...form, image: e.target.files[0] })}
+            className="w-full border p-2 rounded bg-white"
           />
-          {errors.imageUrl && (
-            <p className="text-red-500 text-sm">{errors.imageUrl}</p>
+          {errors.image && (
+            <p className="text-red-500 text-sm">{errors.image}</p>
           )}
         </div>
 

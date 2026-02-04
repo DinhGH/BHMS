@@ -4,32 +4,27 @@ import { toast } from "react-hot-toast";
 
 export default function EditRoomModal({ open, room, onClose, onUpdated }) {
   const [form, setForm] = useState({
-    name: "",
-    price: "",
     electricMeterNow: "",
     electricMeterAfter: "",
     waterMeterNow: "",
     waterMeterAfter: "",
     contractStart: "",
     contractEnd: "",
-    imageUrl: "",
   });
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (room) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setForm({
-        name: room.name || "",
-        price: room.price || "",
-        electricMeterNow: room.electricMeterNow || "",
-        electricMeterAfter: room.electricMeterAfter || "",
-        waterMeterNow: room.waterMeterNow || "",
-        waterMeterAfter: room.waterMeterAfter || "",
-        contractStart: room.contractStart
-          ? room.contractStart.slice(0, 10)
-          : "",
-        contractEnd: room.contractEnd ? room.contractEnd.slice(0, 10) : "",
-        imageUrl: room.imageUrl || "",
+        electricMeterNow: room.electricMeterAfter ?? 0,
+        waterMeterNow: room.waterMeterAfter ?? 0,
+
+        electricMeterAfter: "",
+        waterMeterAfter: "",
+
+        contractStart: room.contractStart?.slice(0, 10) || "",
+        contractEnd: room.contractEnd?.slice(0, 10) || "",
       });
     }
   }, [room]);
@@ -40,18 +35,16 @@ export default function EditRoomModal({ open, room, onClose, onUpdated }) {
 
   const handleSubmit = async () => {
     try {
-      await api.put(`/api/owner/rooms/${room.id}`, {
-        name: form.name.trim(),
-        price: Number(form.price),
+      setLoading(true);
+      await api.put(`/api/owner/rooms/${room.id}/contract`, {
         electricMeterNow: Number(form.electricMeterNow) || 0,
         electricMeterAfter: Number(form.electricMeterAfter) || 0,
         waterMeterNow: Number(form.waterMeterNow) || 0,
         waterMeterAfter: Number(form.waterMeterAfter) || 0,
         contractStart: form.contractStart || null,
         contractEnd: form.contractEnd || null,
-        imageUrl: form.imageUrl || null,
       });
-
+      setLoading(false);
       toast.success("Room updated successfully");
       onUpdated();
       onClose();
@@ -68,30 +61,10 @@ export default function EditRoomModal({ open, room, onClose, onUpdated }) {
       <div className="bg-white rounded-lg w-full max-w-lg max-h-[90vh] flex flex-col">
         {/* HEADER */}
         <div className="px-6 py-4 border-b">
-          <h2 className="text-xl font-semibold">Edit Room</h2>
+          <h2 className="text-xl font-semibold">Edit Contract</h2>
         </div>
 
-        {/* BODY (SCROLL) */}
         <div className="px-6 py-4 overflow-y-auto space-y-3">
-          {/* Room name */}
-          <label className="block font-medium">Room Name</label>
-          <input
-            name="name"
-            value={form.name}
-            onChange={handleChange}
-            className="w-full border p-2 rounded"
-          />
-
-          {/* Price */}
-          <label className="block font-medium">Price</label>
-          <input
-            type="number"
-            name="price"
-            value={form.price}
-            onChange={handleChange}
-            className="w-full border p-2 rounded"
-          />
-
           {/* Electric */}
           <label className="block font-medium">Electric Meter (Current)</label>
           <input
@@ -148,15 +121,6 @@ export default function EditRoomModal({ open, room, onClose, onUpdated }) {
             onChange={handleChange}
             className="w-full border p-2 rounded"
           />
-
-          {/* Image */}
-          <label className="block font-medium">Image URL</label>
-          <input
-            name="imageUrl"
-            value={form.imageUrl}
-            onChange={handleChange}
-            className="w-full border p-2 rounded"
-          />
         </div>
 
         {/* FOOTER */}
@@ -168,7 +132,7 @@ export default function EditRoomModal({ open, room, onClose, onUpdated }) {
             onClick={handleSubmit}
             className="bg-blue-600 text-white px-4 py-2 rounded"
           >
-            Save
+            {loading ? "Saving..." : "Save"}
           </button>
         </div>
       </div>

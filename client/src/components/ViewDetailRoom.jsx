@@ -10,6 +10,7 @@ import {
   getRoomServicesApi,
   removeServiceFromRoomApi,
 } from "../server/roomServiceApi";
+import EditQuantityModal from "../components/EditQuantityModal";
 import AddServiceModal from "./AddServiceModal";
 import api from "../server/api";
 import { toast } from "react-hot-toast";
@@ -23,6 +24,8 @@ export default function ViewDetailRoom({ roomId, onBack }) {
   const [showRemoveTenant, setShowRemoveTenant] = useState(false);
   const [roomServices, setRoomServices] = useState([]);
   const [showAddService, setShowAddService] = useState(false);
+  const [showEditQuantity, setShowEditQuantity] = useState(false);
+  const [editingService, setEditingService] = useState(null);
 
   /* ================= FETCH ================= */
 
@@ -302,20 +305,27 @@ export default function ViewDetailRoom({ roomId, onBack }) {
                       </div>
                     )}
                   </div>
-
+                  {/* Edit Quantity */}
                   <div className="flex gap-2">
                     {isUnitBased && (
                       <button
                         onClick={() => {
-                          // TODO: Open edit quantity modal
-                          console.log("Edit quantity for service:", s.id);
+                          setEditingService(s);
+                          setShowEditQuantity(true);
                         }}
                         className="text-blue-500 text-sm hover:underline px-2 py-1 hover:bg-blue-50 rounded"
                       >
                         Edit Quantity
                       </button>
                     )}
-
+                    {showEditQuantity && editingService && (
+                      <EditQuantityModal
+                        service={editingService}
+                        roomId={room.id}
+                        onClose={() => setShowEditQuantity(false)}
+                        onUpdated={fetchRoomServices}
+                      />
+                    )}
                     <button
                       onClick={async () => {
                         const confirmed = window.confirm(
@@ -418,7 +428,7 @@ export default function ViewDetailRoom({ roomId, onBack }) {
         </>
 
         <ActionButton
-          label="Edit"
+          label="Edit Contract"
           variant="info"
           onClick={() => setShowEdit(true)}
         />

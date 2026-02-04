@@ -1,4 +1,5 @@
 import { prisma } from "../lib/prisma.js";
+import { uploadSingle, deleteImage } from "../lib/uploadToCloudinary.js";
 
 /* =====================================================
    GET ROOMS BY BOARDING HOUSE
@@ -164,24 +165,29 @@ export const getRoomDetail = async (req, res) => {
    ===================================================== */
 export const createRoom = async (req, res) => {
   try {
-    const { houseId, name, price, image, contractStart, contractEnd } =
-      req.body;
+    const { houseId, name, price } = req.body;
 
     if (!houseId || !name || !price) {
       return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    let imageUrl = null;
+    if (req.file) {
+      try {
+        imageUrl = await uploadSingle(req.file.buffer, "rooms");
+      } catch (uploadErr) {
+        console.error("Image upload error:", uploadErr);
+        return res.status(400).json({
+          message: "Failed to upload image: " + uploadErr.message,
+        });
+      }
     }
 
     const room = await prisma.room.create({
       data: {
         name: name.trim(),
         price: Number(price),
-        imageUrl: image || null,
-
-        contractStart: contractStart ? new Date(contractStart) : null,
-
-        contractEnd: contractEnd ? new Date(contractEnd) : null,
-
-        // 🔥 BẮT BUỘC
+        imageUrl,
         house: {
           connect: { id: Number(houseId) },
         },
@@ -191,10 +197,67 @@ export const createRoom = async (req, res) => {
     return res.json(room);
   } catch (err) {
     console.error("CREATE ROOM ERROR:", err);
-    return res.status(500).json({ message: "Create room failed" });
+    return res
+      .status(500)
+      .json({ message: "Create room failed: " + err.message });
   }
 };
+/* =====================================================
+   UPDATE ROOM
+    ===================================================== */
+export const updateRoom = async (req, res) => {
+  try {
+    const roomId = Number(req.params.id);
+    const { name, price } = req.body;
 
+    if (isNaN(roomId)) {
+      return res.status(400).json({ message: "Invalid room id" });
+    }
+
+    const room = await prisma.room.findUnique({
+      where: { id: roomId },
+    });
+
+    if (!room) {
+      return res.status(404).json({ message: "Room not found" });
+    }
+
+    let imageUrl = room.imageUrl;
+
+    // ✅ Nếu upload ảnh mới, xóa ảnh cũ
+    if (req.file) {
+      try {
+        imageUrl = await uploadSingle(req.file.buffer, "rooms");
+
+        // Xóa ảnh cũ
+        if (room.imageUrl) {
+          await deleteImage(room.imageUrl);
+        }
+      } catch (uploadErr) {
+        console.error("Image upload error:", uploadErr);
+        return res.status(400).json({
+          message: "Failed to upload image: " + uploadErr.message,
+        });
+      }
+    }
+
+    const updatedRoom = await prisma.room.update({
+      where: { id: roomId },
+      data: {
+        name: name?.trim() || room.name,
+        price: price ? Number(price) : room.price,
+        imageUrl,
+      },
+    });
+
+    return res.json(updatedRoom);
+  } catch (err) {
+    console.error("UPDATE ROOM ERROR:", err);
+    return res
+      .status(500)
+      .json({ message: "Update room failed: " + err.message });
+  }
+};
 /* =====================================================
    CHECK ROOM NAME
    ===================================================== */
@@ -245,6 +308,14 @@ export const deleteRoom = async (req, res) => {
       });
     }
 
+    // ✅ Chỉ xóa ảnh của phòng
+    if (room.imageUrl) {
+      deleteImage(room.imageUrl).catch((err) => {
+        console.error("Error deleting room image:", err);
+      });
+    }
+
+    // ✅ Xóa room (cascade sẽ xóa tenants, nhưng không xóa ảnh của tenants)
     await prisma.room.delete({
       where: { id: roomId },
     });
@@ -252,14 +323,14 @@ export const deleteRoom = async (req, res) => {
     return res.json({ message: "Room deleted successfully" });
   } catch (err) {
     console.error("DELETE ROOM ERROR:", err);
-    return res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ message: "Server error: " + err.message });
   }
 };
 
 /* =====================================================
-   UPDATE ROOM
+   UPDATE ROOM CONTRACT
    ===================================================== */
-export const updateRoom = async (req, res) => {
+export const updateContract = async (req, res) => {
   try {
     const roomId = Number(req.params.id);
     if (isNaN(roomId)) {
@@ -267,9 +338,6 @@ export const updateRoom = async (req, res) => {
     }
 
     const {
-      name,
-      price,
-      imageUrl,
       electricMeterNow,
       electricMeterAfter,
       waterMeterNow,
@@ -290,10 +358,6 @@ export const updateRoom = async (req, res) => {
     const updatedRoom = await prisma.room.update({
       where: { id: roomId },
       data: {
-        name: name?.trim() ?? room.name,
-        price: price !== undefined ? Number(price) : room.price,
-        imageUrl: imageUrl ?? room.imageUrl,
-
         electricMeterNow:
           electricMeterNow !== undefined
             ? Number(electricMeterNow)
@@ -330,6 +394,7 @@ export const updateRoom = async (req, res) => {
     res.status(500).json({ message: "Update room failed" });
   }
 };
+
 /* =====================================================
     ADD TENANT TO ROOM
     ===================================================== */
@@ -433,6 +498,7 @@ export const searchAvailableTenants = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
 /* =====================================================
     REMOVE TENANT FROM ROOM
     ===================================================== */
@@ -521,7 +587,7 @@ export const searchTenantsInRoom = async (req, res) => {
   }
 };
 /* =====================================================
-   ADD TO ROOM
+   SERVICE IN ROOM
    ===================================================== */
 export const getAllServices = async (req, res) => {
   try {
@@ -536,8 +602,6 @@ export const getAllServices = async (req, res) => {
     res.status(500).json({ message: "Fetch services failed" });
   }
 };
-
-// owner.room.controller.js
 
 export const addServiceToRoom = async (req, res) => {
   try {
@@ -762,5 +826,93 @@ export const removeServiceFromRoom = async (req, res) => {
   } catch (err) {
     console.error("removeServiceFromRoom:", err);
     res.status(500).json({ message: "Remove service failed" });
+  }
+};
+
+/* =====================================================
+   UPLOAD ROOM IMAGE
+   ===================================================== */
+export const uploadRoomImage = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "No file provided" });
+    }
+
+    const roomId = Number(req.params.id);
+
+    // Verify room exists
+    const room = await prisma.room.findUnique({
+      where: { id: roomId },
+    });
+
+    if (!room) {
+      return res.status(404).json({ message: "Room not found" });
+    }
+
+    try {
+      const imageUrl = await uploadSingle(req.file.buffer, "rooms");
+
+      const updated = await prisma.room.update({
+        where: { id: roomId },
+        data: { imageUrl },
+      });
+
+      res.json(updated);
+    } catch (uploadErr) {
+      console.error("Image upload error:", uploadErr);
+      return res.status(400).json({
+        message: "Failed to upload image: " + uploadErr.message,
+      });
+    }
+  } catch (err) {
+    console.error("uploadRoomImage error:", err);
+    res.status(500).json({ message: "Server error: " + err.message });
+  }
+};
+
+/* =====================================================
+   UPLOAD TENANT AVATAR
+   ===================================================== */
+export const uploadTenantAvatar = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "No file provided" });
+    }
+
+    const roomId = Number(req.params.roomId);
+
+    // Verify room exists
+    const room = await prisma.room.findUnique({
+      where: { id: roomId },
+      include: { Tenant: true },
+    });
+
+    if (!room) {
+      return res.status(404).json({ message: "Room not found" });
+    }
+
+    if (room.Tenant.length === 0) {
+      return res.status(404).json({ message: "No tenant in this room" });
+    }
+
+    try {
+      const avatarUrl = await uploadSingle(req.file.buffer, "tenants");
+
+      // Update the first tenant (or you can specify by tenantId if needed)
+      const updatedTenant = await prisma.tenant.update({
+        where: { id: room.Tenant[0].id },
+        data: { avatar: avatarUrl },
+      });
+
+      res.json(updatedTenant);
+    } catch (uploadErr) {
+      console.error("Avatar upload error:", uploadErr);
+      return res.status(400).json({
+        message: "Failed to upload avatar: " + uploadErr.message,
+      });
+    }
+  } catch (err) {
+    console.error("uploadTenantAvatar error:", err);
+    res.status(500).json({ message: "Server error: " + err.message });
   }
 };

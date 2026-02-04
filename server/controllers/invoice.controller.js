@@ -1,5 +1,6 @@
 import { prisma } from "../lib/prisma.js";
-
+//create invoice for a room
+import { uploadSingle } from "../lib/uploadToCloudinary.js";
 export const makeInvoice = async (req, res) => {
   try {
     const roomId = Number(req.params.id);
@@ -86,5 +87,21 @@ export const makeInvoice = async (req, res) => {
   } catch (error) {
     console.error("MAKE INVOICE ERROR:", error);
     return res.status(500).json({ message: "Create invoice failed" });
+  }
+};
+// Upload invoice image
+export const uploadInvoiceImage = async (req, res) => {
+  try {
+    const invoiceId = Number(req.params.id);
+    const imageUrl = await uploadSingle(req.file.buffer, "invoices");
+
+    const invoice = await prisma.invoice.update({
+      where: { id: invoiceId },
+      data: { imageUrl },
+    });
+
+    res.json(invoice);
+  } catch (err) {
+    res.status(500).json({ message: "Upload invoice image failed" });
   }
 };

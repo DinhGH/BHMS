@@ -1,4 +1,9 @@
 import { prisma } from "../lib/prisma.js";
+import {
+  uploadSingle,
+  deleteImage,
+  deleteMultipleImages,
+} from "../lib/uploadToCloudinary.js";
 
 /* ================= GET ALL ================= */
 export const getAllBoardingHouses = async (req, res) => {
@@ -78,8 +83,8 @@ export const getAllBoardingHouses = async (req, res) => {
 export const createBoardingHouse = async (req, res) => {
   try {
     const ownerId = req.ownerId;
-    const { name, address, electricFee, waterFee, imageUrl } = req.body;
 
+    const { name, address, electricFee, waterFee } = req.body;
     if (!name || !address) {
       return res.status(400).json({ message: "Invalid input data" });
     }
@@ -89,35 +94,44 @@ export const createBoardingHouse = async (req, res) => {
     });
 
     if (existed) {
+      console.log("❌ House already exists");
       return res.status(409).json({
         message: "Boarding house name already exists",
       });
+    }
+
+    let imageUrl = null;
+    if (req.file) {
+      try {
+        imageUrl = await uploadSingle(req.file.buffer, "houses");
+      } catch (uploadErr) {
+        return res.status(400).json({
+          message: "Failed to upload image: " + uploadErr.message,
+        });
+      }
     }
 
     const house = await prisma.boardingHouse.create({
       data: {
         name: name.trim(),
         address: address.trim(),
-        electricFee: Number(electricFee),
-        waterFee: Number(waterFee),
-        imageUrl: imageUrl || null,
-        ownerId: req.ownerId,
+        electricFee: Number(electricFee) || 0,
+        waterFee: Number(waterFee) || 0,
+        imageUrl,
+        ownerId: ownerId,
       },
     });
-
     res.status(201).json(house);
   } catch (err) {
-    console.error("createBoardingHouse:", err);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: "Server error: " + err.message });
   }
 };
-
 /* ================= UPDATE ================= */
 export const updateBoardingHouse = async (req, res) => {
   try {
     const ownerId = req.ownerId;
     const id = Number(req.params.id);
-    const { name, address, electricFee, waterFee, imageUrl } = req.body;
+    const { name, address, electricFee, waterFee } = req.body;
 
     const house = await prisma.boardingHouse.findFirst({
       where: { id, ownerId },
@@ -127,22 +141,52 @@ export const updateBoardingHouse = async (req, res) => {
       return res.status(404).json({ message: "Not found" });
     }
 
+    /* ================= IMAGE ================= */
+    let imageUrl = house.imageUrl;
+
+    if (req.file) {
+      try {
+        imageUrl = await uploadSingle(req.file.buffer, "houses");
+
+        if (house.imageUrl) {
+          await deleteImage(house.imageUrl);
+        }
+      } catch (uploadErr) {
+        console.error("Image upload error:", uploadErr);
+        return res.status(400).json({
+          message: "Failed to upload image: " + uploadErr.message,
+        });
+      }
+    }
+
+    /* ================= VALIDATE PRICE ================= */
+    const parsedElectric = Number(electricFee);
+    const parsedWater = Number(waterFee);
+
+    if (isNaN(parsedElectric) || parsedElectric <= 0) {
+      return res.status(400).json({ message: "Electric fee must be > 0" });
+    }
+
+    if (isNaN(parsedWater) || parsedWater <= 0) {
+      return res.status(400).json({ message: "Water fee must be > 0" });
+    }
+
+    /* ================= UPDATE DATA ================= */
     const updated = await prisma.boardingHouse.update({
       where: { id },
       data: {
-        name: name?.trim(),
-        address: address?.trim(),
-        electricFee:
-          electricFee !== undefined ? Number(electricFee) : house.electricFee,
-        waterFee: waterFee !== undefined ? Number(waterFee) : house.waterFee,
-        imageUrl: imageUrl ?? house.imageUrl,
+        name: name?.trim() || house.name,
+        address: address?.trim() || house.address,
+        electricFee: parsedElectric,
+        waterFee: parsedWater,
+        imageUrl,
       },
     });
 
     res.json(updated);
   } catch (err) {
     console.error("updateBoardingHouse:", err);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: "Server error: " + err.message });
   }
 };
 
@@ -183,7 +227,27 @@ export const deleteBoardingHouseByName = async (req, res) => {
       return res.status(404).json({ message: "Not found" });
     }
 
-    // ❗ Xoá phòng trước (tránh P2003)
+    const imagesToDelete = [];
+
+    if (house.imageUrl) {
+      imagesToDelete.push(house.imageUrl);
+    }
+
+    house.rooms.forEach((room) => {
+      if (room.imageUrl) {
+        imagesToDelete.push(room.imageUrl);
+      }
+
+      room.Tenant.forEach((tenant) => {
+        if (tenant.imageUrl) {
+          imagesToDelete.push(tenant.imageUrl);
+        }
+      });
+    });
+
+    console.log(`Deleting ${imagesToDelete.length} images from Cloudinary...`);
+    deleteMultipleImages(imagesToDelete).catch((err) => {});
+
     await prisma.room.deleteMany({
       where: { houseId: house.id },
     });
@@ -195,6 +259,6 @@ export const deleteBoardingHouseByName = async (req, res) => {
     res.json({ message: "Deleted successfully" });
   } catch (err) {
     console.error("deleteBoardingHouse:", err);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: "Server error: " + err.message });
   }
 };
