@@ -1,0 +1,19 @@
+node_modules
+# Keep environment variables out of version control
+.env
+.env.*
+!.env.example
+
+# Ignore all log files
+*.log
+
+# Ignore all backup files
+*.bak
+*.swp
+*.tmp
+*~
+
+# Ignore all node_modules
+node_modules
+
+/generated/prisma
