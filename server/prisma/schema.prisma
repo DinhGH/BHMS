@@ -152,7 +152,7 @@ model Invoice {
 
 model Payment {
   id         Int            @id @default(autoincrement())
-  invoiceId  Int
+  invoiceId  Int            @unique
   method     Payment_method
   amount     Float
   stripeSessionId String?   @unique 

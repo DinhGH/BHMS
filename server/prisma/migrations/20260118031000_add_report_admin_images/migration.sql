@@ -1,2 +1,2 @@
-ALTER TABLE `ReportAdmin`
-  ADD COLUMN `images` JSON NULL AFTER `content`;
+-- This migration was broken because Report table did not exist
+-- Emptied to allow future migrations

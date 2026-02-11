@@ -322,6 +322,7 @@ export const confirmPayment = async (req, res) => {
       return res.status(404).json({ message: "Invoice not found" });
     }
 
+    let proofImageUrl = null;
     if (req.file && method === "QR_TRANSFER") {
       proofImageUrl = await uploadSingle(req.file.buffer, "payment_proof");
     }
