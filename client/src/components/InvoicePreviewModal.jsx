@@ -5,12 +5,14 @@ import {
   createInvoiceWithQr,
 } from "../services/invoiceApi";
 import toast from "react-hot-toast";
+import { ChevronDown } from "lucide-react";
 
 export default function InvoicePreviewModal({ room, open, onClose }) {
   const [data, setData] = useState(null);
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [warning, setWarning] = useState(null);
+  const [showServices, setShowServices] = useState(false);
 
   useEffect(() => {
     if (open && room?.id) {
@@ -18,6 +20,7 @@ export default function InvoicePreviewModal({ room, open, onClose }) {
         .then(setData)
         .catch(() => toast.error("Failed to load invoice preview"));
       setWarning(null);
+      setShowServices(false);
     }
   }, [open, room]);
 
@@ -31,17 +34,16 @@ export default function InvoicePreviewModal({ room, open, onClose }) {
       } else {
         response = await sendInvoice(room.id);
       }
+
       toast.success("Invoice sent successfully!");
 
-      // Show warning if present
       if (response?.data?.warning) {
         setWarning(response.data.warning);
-        setTimeout(() => onClose(), 2000); // Auto close after 2s
+        setTimeout(() => onClose(), 2000);
       } else {
         onClose();
       }
     } catch (err) {
-      console.error(err);
       toast.error(err?.response?.data?.message || "Failed to send invoice");
     } finally {
       setLoading(false);
@@ -50,10 +52,11 @@ export default function InvoicePreviewModal({ room, open, onClose }) {
 
   if (!open || !data) return null;
 
+  const format = (n) => n.toLocaleString("vi-VN") + "đ";
+
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-      <div className="bg-white w-full max-w-lg rounded-xl shadow-lg p-6 space-y-5 animate-fadeIn">
-        {/* HEADER */}
+      <div className="bg-white w-full max-w-lg rounded-xl shadow-xl p-6 space-y-5 animate-fadeIn">
         <h2 className="text-xl font-semibold text-center border-b pb-3">
           Invoice Preview
         </h2>
@@ -80,24 +83,63 @@ export default function InvoicePreviewModal({ room, open, onClose }) {
         <div className="border rounded-lg divide-y text-sm">
           <div className="flex justify-between p-3">
             <span>Room Price</span>
-            <span>{data.roomPrice.toLocaleString()}đ</span>
+            <span>{format(data.roomPrice)}</span>
           </div>
           <div className="flex justify-between p-3">
             <span>Electric Cost</span>
-            <span>{data.electricCost.toLocaleString()}đ</span>
+            <span>{format(data.electricCost)}</span>
           </div>
           <div className="flex justify-between p-3">
             <span>Water Cost</span>
-            <span>{data.waterCost.toLocaleString()}đ</span>
+            <span>{format(data.waterCost)}</span>
           </div>
-          <div className="flex justify-between p-3">
-            <span>Service Cost</span>
-            <span>{data.serviceCost.toLocaleString()}đ</span>
+
+          {/* SERVICE SECTION */}
+          <div className="p-3">
+            <button
+              onClick={() => setShowServices(!showServices)}
+              className="w-full flex justify-between items-center font-medium"
+            >
+              <span>Service Cost</span>
+              <div className="flex items-center gap-2">
+                <span>{format(data.serviceCost)}</span>
+                <ChevronDown
+                  size={16}
+                  className={`transition-transform ${
+                    showServices ? "rotate-180" : ""
+                  }`}
+                />
+              </div>
+            </button>
+
+            <div
+              className={`overflow-hidden transition-all duration-300 ${
+                showServices ? "max-h-40 mt-2" : "max-h-0"
+              }`}
+            >
+              {data.services?.length > 0 ? (
+                <div className="bg-slate-50 rounded-md p-2 text-xs space-y-1">
+                  {data.services.map((service, index) => (
+                    <div
+                      key={index}
+                      className="flex justify-between text-slate-600"
+                    >
+                      <span>• {service.name}</span>
+                      <span>{format(service.price)}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-xs text-slate-400 mt-2">
+                  No extra services
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="flex justify-between p-3 font-semibold text-blue-600 bg-blue-50">
             <span>Total</span>
-            <span>{data.total.toLocaleString()}đ</span>
+            <span>{format(data.total)}</span>
           </div>
         </div>
 
@@ -122,7 +164,7 @@ export default function InvoicePreviewModal({ room, open, onClose }) {
           )}
         </div>
 
-        {/* ACTION BUTTONS */}
+        {/* ACTIONS */}
         <div className="flex justify-end gap-3 pt-2">
           <button
             onClick={onClose}

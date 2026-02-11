@@ -5,128 +5,199 @@ import { getInvoiceDetails, confirmPayment } from "../services/invoiceApi";
 export default function PaymentMethodModal() {
   const { id } = useParams();
   const [searchParams] = useSearchParams();
-  const preMethod = searchParams.get("method") || null;
+  const preMethod = searchParams.get("method");
 
   const [invoice, setInvoice] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selected, setSelected] = useState(
-    preMethod ? preMethod.toUpperCase() : null,
-  );
+  const [selected, setSelected] = useState(preMethod?.toUpperCase() || "");
   const [proofFile, setProofFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
   const [submitting, setSubmitting] = useState(false);
-  const [message, setMessage] = useState(null);
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
-    let mounted = true;
-    setLoading(true);
     getInvoiceDetails(id)
-      .then((data) => {
-        if (mounted) setInvoice(data);
-      })
+      .then(setInvoice)
       .catch((err) => setError(err.message || "Failed to load invoice"))
-      .finally(() => mounted && setLoading(false));
-    return () => (mounted = false);
+      .finally(() => setLoading(false));
   }, [id]);
 
-  const handleChoose = (method) => {
-    setSelected(method);
-    setMessage(null);
-  };
-
-  const handleFileChange = (e) => {
-    const f = e.target.files && e.target.files[0];
-    setProofFile(f || null);
-  };
+  // Cleanup preview URL tránh leak bộ nhớ
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
 
   const handleSubmit = async () => {
-    if (!selected) return setMessage("Please choose a payment method");
+    if (!selected) return setMessage("Vui lòng chọn phương thức thanh toán");
+
     setSubmitting(true);
+    setMessage("");
+
     try {
       if (selected === "QR_TRANSFER") {
         if (!proofFile)
-          return setMessage("Please upload proof image for QR transfer.");
+          return setMessage("Vui lòng tải lên ảnh minh chứng chuyển khoản");
         await confirmPayment(id, selected, proofFile);
       } else if (selected === "CASH") {
         await confirmPayment(id, selected, null);
-      } else {
-        return setMessage("Unsupported method");
       }
-      setMessage("Payment method recorded. Owner will confirm soon.");
+      setMessage("Đã gửi thông tin thanh toán. Chủ trọ sẽ xác nhận sớm.");
     } catch (err) {
-      setMessage(err.message || "Failed to update payment method");
+      setMessage(err.message || "Thanh toán thất bại");
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (loading) return <div style={{ padding: 20 }}>Loading invoice...</div>;
-  if (error) return <div style={{ padding: 20, color: "red" }}>{error}</div>;
-  if (!invoice) return <div style={{ padding: 20 }}>Invoice not found</div>;
+  if (loading)
+    return (
+      <div className="flex justify-center items-center h-screen text-gray-600">
+        Đang tải...
+      </div>
+    );
+
+  if (error)
+    return (
+      <div className="flex justify-center items-center h-screen text-red-500">
+        {error}
+      </div>
+    );
+
+  if (!invoice)
+    return (
+      <div className="flex justify-center items-center h-screen text-gray-600">
+        Không tìm thấy hóa đơn
+      </div>
+    );
 
   return (
-    <div style={{ padding: 20, maxWidth: 720, margin: "0 auto" }}>
-      <h2>Invoice #{invoice.id}</h2>
-      <p>
-        <strong>Room:</strong> {invoice.Room?.name || "-"} - {invoice.month}/
-        {invoice.year}
-      </p>
-      <p>
-        <strong>Total:</strong> {invoice.totalAmount}
-      </p>
+    <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center p-4">
+      <div className="bg-white w-full max-w-lg rounded-2xl shadow-xl p-6 space-y-5 border border-gray-100">
+        <h2 className="text-2xl font-bold text-center text-gray-800">
+          Hóa đơn #{invoice.id}
+        </h2>
 
-      {invoice.imageUrl && (
-        <div style={{ margin: "1rem 0" }}>
-          <img
-            src={invoice.imageUrl}
-            alt="invoice-qr"
-            style={{ maxWidth: "100%" }}
-          />
+        {/* Thông tin hóa đơn */}
+        <div className="bg-gray-50 rounded-lg p-4 text-sm space-y-1 border">
+          <p>
+            <span className="font-semibold">Phòng:</span> {invoice.Room?.name}
+          </p>
+          <p>
+            <span className="font-semibold">Tháng:</span> {invoice.month}/
+            {invoice.year}
+          </p>
+          <p className="text-lg font-bold text-green-600">
+            Tổng tiền: ${invoice.totalAmount}
+          </p>
         </div>
-      )}
 
-      <div style={{ marginTop: 16 }}>
-        <div>
-          <label>
-            <input
-              type="radio"
-              name="method"
-              checked={selected === "QR_TRANSFER"}
-              onChange={() => handleChoose("QR_TRANSFER")}
+        {/* QR của chủ trọ (nếu có) */}
+        {invoice.imageUrl && (
+          <div className="text-center">
+            <img
+              src={invoice.imageUrl}
+              alt="QR Code"
+              className="mx-auto w-40 rounded-lg border shadow-sm"
             />
-            Pay by QR Transfer (upload proof)
-          </label>
-        </div>
-        <div style={{ marginTop: 8 }}>
-          <label>
-            <input
-              type="radio"
-              name="method"
-              checked={selected === "CASH"}
-              onChange={() => handleChoose("CASH")}
-            />
-            Pay by Cash
-          </label>
-        </div>
-
-        {selected === "QR_TRANSFER" && (
-          <div style={{ marginTop: 12 }}>
-            <input type="file" accept="image/*" onChange={handleFileChange} />
+            <p className="text-xs text-gray-500 mt-2">
+              Quét mã QR để chuyển khoản
+            </p>
           </div>
         )}
 
-        <div style={{ marginTop: 16 }}>
-          <button onClick={handleSubmit} disabled={submitting}>
-            {submitting ? "Submitting..." : "Submit Payment Method"}
-          </button>
+        {/* Chọn phương thức */}
+        <div className="space-y-3">
+          <p className="font-semibold text-gray-700">
+            Chọn phương thức thanh toán
+          </p>
+
+          <label
+            className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition 
+            ${
+              selected === "QR_TRANSFER"
+                ? "border-indigo-500 bg-indigo-50"
+                : "border-gray-200 hover:bg-gray-50"
+            }`}
+          >
+            <input
+              type="radio"
+              checked={selected === "QR_TRANSFER"}
+              onChange={() => setSelected("QR_TRANSFER")}
+            />
+            <span>Chuyển khoản ngân hàng (tải ảnh minh chứng)</span>
+          </label>
+
+          <label
+            className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition 
+            ${
+              selected === "CASH"
+                ? "border-indigo-500 bg-indigo-50"
+                : "border-gray-200 hover:bg-gray-50"
+            }`}
+          >
+            <input
+              type="radio"
+              checked={selected === "CASH"}
+              onChange={() => setSelected("CASH")}
+            />
+            <span>Thanh toán tiền mặt</span>
+          </label>
+
+          {/* Upload ảnh khi chọn chuyển khoản */}
+          {selected === "QR_TRANSFER" && (
+            <div className="space-y-3">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  setProofFile(file);
+
+                  if (file) {
+                    const url = URL.createObjectURL(file);
+                    setPreviewUrl(url);
+                  }
+                }}
+                className="block w-full text-sm text-gray-500
+                           file:mr-4 file:py-2 file:px-4
+                           file:rounded-lg file:border-0
+                           file:text-sm file:font-semibold
+                           file:bg-indigo-50 file:text-indigo-700
+                           hover:file:bg-indigo-100"
+              />
+
+              {previewUrl && (
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">Ảnh minh chứng:</p>
+                  <img
+                    src={previewUrl}
+                    alt="Preview"
+                    className="w-full max-h-64 object-contain rounded-lg border shadow-sm"
+                  />
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
+        {/* Nút submit */}
+        <button
+          onClick={handleSubmit}
+          disabled={submitting}
+          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-lg transition disabled:opacity-50"
+        >
+          {submitting ? "Đang xử lý..." : "Xác nhận thanh toán"}
+        </button>
+
+        {/* Thông báo */}
         {message && (
           <div
-            style={{
-              marginTop: 12,
-              color: message.includes("fail") ? "red" : "green",
-            }}
+            className={`text-center text-sm font-medium ${
+              message.includes("thất") ? "text-red-500" : "text-green-600"
+            }`}
           >
             {message}
           </div>
