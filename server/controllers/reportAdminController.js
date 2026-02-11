@@ -23,7 +23,7 @@ export const listReportAdmins = async (req, res) => {
       const q = search.toString();
       const ownerMatches = await prisma.owner.findMany({
         where: {
-          user: {
+          User: {
             email: { contains: q },
           },
         },
@@ -58,7 +58,7 @@ export const listReportAdmins = async (req, res) => {
           where: { id: { in: senderIds } },
           select: {
             id: true,
-            user: { select: { email: true } },
+            User: { select: { email: true } },
           },
         })
       : [];
@@ -68,7 +68,7 @@ export const listReportAdmins = async (req, res) => {
       return {
         ...report,
         sender: owner
-          ? { id: owner.id, email: owner.user?.email ?? null }
+          ? { id: owner.id, email: owner.User?.email ?? null }
           : null,
       };
     });
@@ -223,13 +223,13 @@ export const getReportAdmin = async (req, res) => {
       where: { id: report.senderId },
       select: {
         id: true,
-        user: { select: { email: true } },
+        User: { select: { email: true } },
       },
     });
 
     res.json({
       ...report,
-      sender: owner ? { id: owner.id, email: owner.user?.email } : null,
+      sender: owner ? { id: owner.id, email: owner.User?.email } : null,
     });
   } catch (error) {
     console.error("getReportAdmin error:", error);
