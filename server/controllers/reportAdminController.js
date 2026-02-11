@@ -39,7 +39,7 @@ export const listReportAdmins = async (req, res) => {
       const q = search.toString();
       const ownerMatches = await prisma.owner.findMany({
         where: {
-          user: {
+          User: {
             email: { contains: q },
           },
         },
@@ -74,7 +74,7 @@ export const listReportAdmins = async (req, res) => {
           where: { id: { in: senderIds } },
           select: {
             id: true,
-            user: { select: { email: true } },
+            User: { select: { email: true } },
           },
         })
       : [];
@@ -84,7 +84,7 @@ export const listReportAdmins = async (req, res) => {
       return {
         ...report,
         sender: owner
-          ? { id: owner.id, email: owner.user?.email ?? null }
+          ? { id: owner.id, email: owner.User?.email ?? null }
           : null,
       };
     });
@@ -275,6 +275,7 @@ export const updateReportAdmin = async (req, res) => {
       where: { id: reportId },
       select: { id: true, senderId: true },
     });
+
     if (!report) {
       return res.status(404).json({ message: "Report not found" });
     }
@@ -306,6 +307,87 @@ export const updateReportAdmin = async (req, res) => {
   }
 };
 
+/**
+ * GET /api/report-admins/:id
+ * Lấy chi tiết một report của admin
+ */
+export const getReportAdmin = async (req, res) => {
+  try {
+    const reportId = Number(req.params.id);
+    if (!Number.isFinite(reportId)) {
+      return res.status(400).json({ message: "Invalid report ID" });
+    }
+
+    const report = await prisma.reportAdmin.findUnique({
+      where: { id: reportId },
+    });
+
+    if (!report) {
+      return res.status(404).json({ message: "Report not found" });
+    }
+
+    const owner = await prisma.owner.findUnique({
+      where: { id: report.senderId },
+      select: {
+        id: true,
+        User: { select: { email: true } },
+      },
+    });
+
+    res.json({
+      ...report,
+      sender: owner ? { id: owner.id, email: owner.User?.email } : null,
+    });
+  } catch (error) {
+    console.error("getReportAdmin error:", error);
+    res.status(500).json({ message: "Failed to fetch report" });
+  }
+};
+
+/**
+ * PATCH /api/report-admins/:id/status
+ * Cập nhật status của report
+ */
+export const updateReportAdminStatus = async (req, res) => {
+  try {
+    const reportId = Number(req.params.id);
+    const { status } = req.body;
+
+    if (!Number.isFinite(reportId)) {
+      return res.status(400).json({ message: "Invalid report ID" });
+    }
+
+    const validStatuses = ["PENDING", "PROCESSING", "RESOLVED", "REVIEWING", "FIXING"];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({
+        message: `Invalid status. Must be one of: ${validStatuses.join(", ")}`,
+      });
+    }
+
+    const report = await prisma.reportAdmin.findUnique({
+      where: { id: reportId },
+    });
+
+    if (!report) {
+      return res.status(404).json({ message: "Report not found" });
+    }
+
+    const updatedReport = await prisma.reportAdmin.update({
+      where: { id: reportId },
+      data: { status },
+    });
+
+    res.json(updatedReport);
+  } catch (error) {
+    console.error("updateReportAdminStatus error:", error);
+    res.status(500).json({ message: "Failed to update report status" });
+  }
+};
+
+/**
+ * DELETE /api/report-admins/:id
+ * Xóa một report
+ */
 export const deleteReportAdmin = async (req, res) => {
   try {
     const reportId = Number(req.params.id);
@@ -318,6 +400,7 @@ export const deleteReportAdmin = async (req, res) => {
       where: { id: reportId },
       select: { id: true, senderId: true },
     });
+
     if (!report) {
       return res.status(404).json({ message: "Report not found" });
     }
@@ -332,10 +415,14 @@ export const deleteReportAdmin = async (req, res) => {
       }
     }
 
-    await prisma.reportAdmin.delete({ where: { id: reportId } });
-    return res.status(204).end();
+    await prisma.reportAdmin.delete({
+      where: { id: reportId },
+    });
+
+    res.json({ message: "Report deleted successfully" });
   } catch (error) {
     console.error("deleteReportAdmin error:", error);
-    return res.status(500).json({ message: "Failed to delete report" });
+    res.status(500).json({ message: "Failed to delete report" });
   }
 };
+

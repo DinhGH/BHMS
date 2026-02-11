@@ -384,15 +384,23 @@ function ReportIssue() {
             className="rounded-3xl border border-slate-200 bg-white p-4 shadow-[0_25px_60px_-40px_rgba(15,23,42,0.45)] sm:p-6"
           >
             <div className="grid gap-4 sm:gap-5 md:grid-cols-2">
-              <div>
+              <div className="flex flex-col gap-2">
                 <label className="text-xs font-semibold text-slate-700 sm:text-sm">
                   Issue category
                 </label>
-                <div className="mt-2">
+                <div className="rounded-2xl border border-slate-200 bg-white px-3 py-3 shadow-sm">
+                  <div className="flex items-center justify-between gap-2 text-[11px] font-medium text-slate-500 sm:text-xs">
+                    <span>Select the area you want to report</span>
+                    {target && (
+                      <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold text-slate-700">
+                        {target}
+                      </span>
+                    )}
+                  </div>
                   <select
                     value={target}
                     onChange={(event) => setTarget(event.target.value)}
-                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 shadow-sm transition focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-200"
+                    className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-800 shadow-[0_10px_30px_-18px_rgba(15,23,42,0.35)] transition focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-200 focus:ring-offset-1"
                   >
                     <option value="">Select a category</option>
                     {TARGET_OPTIONS.map((item) => (
@@ -404,11 +412,11 @@ function ReportIssue() {
                 </div>
               </div>
 
-              <div>
+              <div className="flex flex-col gap-2">
                 <label className="text-xs font-semibold text-slate-700 sm:text-sm">
                   Sender
                 </label>
-                <div className="mt-2 flex flex-col gap-1 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                <div className="flex flex-col gap-1 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
                   <span className="font-semibold text-slate-800">
                     {authLoading ? "Loading..." : user?.name || "Not signed in"}
                   </span>

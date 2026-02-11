@@ -100,6 +100,21 @@ function TenantsManagement() {
         return;
       }
 
+      const age = parseInt(formData.age) || 0;
+      const roomId = parseInt(formData.roomId);
+
+      // Validate age >= 18
+      if (age < 18) {
+        alert("Age must be at least 18 years old");
+        return;
+      }
+
+      // Validate roomId >= 1
+      if (roomId < 1) {
+        alert("Please select a valid room");
+        return;
+      }
+
       const payload = {
         fullName: formData.fullName,
         email: formData.email,

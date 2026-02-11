@@ -79,6 +79,21 @@ export async function createTenant(data) {
     throw error;
   }
 
+  // Validate age >= 18
+  const ageNumber = parseInt(age, 10);
+  if (!Number.isNaN(ageNumber) && ageNumber < 18) {
+    const error = new Error("Age must be at least 18 years old");
+    error.status = 400;
+    throw error;
+  }
+
+  // Validate roomId >= 1
+  if (roomIdNumber < 1) {
+    const error = new Error("Please select a valid room");
+    error.status = 400;
+    throw error;
+  }
+
   const startDateValue = startDate ? new Date(startDate) : new Date();
   if (Number.isNaN(startDateValue.getTime())) {
     const error = new Error("Ngày bắt đầu không hợp lệ");
@@ -142,6 +157,16 @@ export async function updateTenant(id, data) {
     const error = new Error("Tenant not found");
     error.status = 404;
     throw error;
+  }
+
+  // Validate age >= 18
+  if (age !== undefined && age !== null) {
+    const ageNumber = parseInt(age, 10);
+    if (!Number.isNaN(ageNumber) && ageNumber < 18) {
+      const error = new Error("Age must be at least 18 years old");
+      error.status = 400;
+      throw error;
+    }
   }
 
   if (email && email !== tenant.email) {
