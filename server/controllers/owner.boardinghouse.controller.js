@@ -11,14 +11,14 @@ export const getAllBoardingHouses = async (req, res) => {
         ownerId: ownerId,
       },
       include: {
-        rooms: {
+        Room: {
           include: {
             Tenant: true,
             Invoice: {
               orderBy: { createdAt: "desc" },
               take: 1, // invoice mới nhất
               include: {
-                payment: true,
+                Payment: true,
               },
             },
           },
@@ -37,14 +37,14 @@ export const getAllBoardingHouses = async (req, res) => {
         let occupied = 0;
         let available = 0;
 
-        h.rooms.forEach((room) => {
+        h.Room.forEach((room) => {
           const hasTenant = room.Tenant.length > 0;
           const latestInvoice = room.Invoice[0];
 
           const isPaidInvoice =
             latestInvoice &&
             latestInvoice.status === "PAID" &&
-            latestInvoice.payment.some((p) => p.confirmed === true);
+            latestInvoice.Payment.some((p) => p.confirmed === true);
 
           // 🔥 CHỈ OCCUPIED KHI: có người + đã thanh toán
           const isOccupied = hasTenant && isPaidInvoice;
@@ -60,7 +60,7 @@ export const getAllBoardingHouses = async (req, res) => {
           id: h.id,
           name: h.name,
           address: h.address,
-          totalRooms: h.rooms.length,
+          totalRooms: h.Room.length,
           occupied,
           available,
           imageUrl: h.imageUrl,
@@ -176,7 +176,7 @@ export const deleteBoardingHouseByName = async (req, res) => {
 
     const house = await prisma.boardingHouse.findFirst({
       where: { name: name.trim() },
-      include: { rooms: true },
+      include: { Room: true },
     });
 
     if (!house) {

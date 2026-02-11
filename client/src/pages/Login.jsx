@@ -85,7 +85,7 @@ const Login = () => {
           <h2 className="text-3xl font-bold text-black">Log in</h2>
         </div>
 
-        <div>
+        <form onSubmit={handleSubmit}>
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4 text-sm">
               {error}
@@ -183,8 +183,7 @@ const Login = () => {
           </div>
 
           <button
-            type="button"
-            onClick={handleSubmit}
+            type="submit"
             className="w-full py-3 bg-linear-to-r from-gray-700 to-black text-white rounded-lg font-semibold hover:from-gray-800 hover:to-gray-900 transform hover:-translate-y-0.5 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             disabled={!formData.email || !formData.password || loading}
           >
@@ -209,7 +208,7 @@ const Login = () => {
               Sign up
             </Link>
           </div>
-        </div>
+        </form>
       </div>
     </div>
   );

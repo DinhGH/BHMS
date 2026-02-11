@@ -269,6 +269,59 @@ export async function getPayments() {
   if (!res.ok) throw new Error("Failed to fetch payments");
   return await res.json();
 }
+export async function getReportAdmins({
+  page = 1,
+  limit = 10,
+  status,
+  search,
+  target,
+  orderBy,
+  order,
+  senderId,
+} = {}) {
+  const params = new URLSearchParams();
+  params.set("page", String(page));
+  params.set("limit", String(limit));
+  if (status) params.set("status", status);
+  if (search) params.set("search", search);
+  if (target) params.set("target", target);
+  if (orderBy) params.set("orderBy", orderBy);
+  if (order) params.set("order", order);
+  if (senderId) params.set("senderId", String(senderId));
+
+  const url = `${API_BASE_URL}/api/report-admins?${params.toString()}`;
+  const res = await fetch(url, {
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Failed to fetch admin reports");
+  return await res.json();
+}
+
+export async function updateReportAdmin(reportId, payload) {
+  const res = await fetch(`${API_BASE_URL}/api/report-admins/${reportId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) throw new Error("Failed to update report");
+  return await res.json();
+}
+
+export async function deleteReportAdmin(reportId, payload) {
+  const res = await fetch(`${API_BASE_URL}/api/report-admins/${reportId}`, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(payload || {}),
+  });
+
+  if (!res.ok) throw new Error("Failed to delete report");
+  if (res.status === 204) return null;
+  return await res.json();
+}
+
 // Tenant Management APIs
 export async function getTenants() {
   const res = await fetch(`${API_BASE_URL}/api/tenants`, {

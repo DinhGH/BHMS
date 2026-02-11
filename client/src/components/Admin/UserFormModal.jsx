@@ -9,159 +9,147 @@ export default function UserFormModal({
   form,
   setForm,
   errors,
+  isEditing = false,
 }) {
   const [showPassword, setShowPassword] = useState(false);
   if (!open) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-      <div className="bg-white w-full max-w-2xl h-auto max-h-screen p-6 overflow-y-auto relative">
-        <div
-          className="flex items-center mb-6 cursor-pointer"
+      <div className="bg-white w-full max-w-2xl h-auto max-h-[90vh] p-8 overflow-y-auto rounded-lg shadow-lg relative">
+        <button
           onClick={onClose}
+          className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl"
         >
-          <FaHome className="text-xl mr-2" />
-          <span className="font-semibold text-lg">Back</span>
-        </div>
+          ✕
+        </button>
 
-        <h2 className="text-2xl font-semibold mb-6 text-center">Add User</h2>
+        <h2 className="text-3xl font-bold mb-2 text-gray-900">
+          {isEditing ? "Edit User" : "Add New User"}
+        </h2>
+        <p className="text-gray-600 text-sm mb-6">
+          Fill in the form below to {isEditing ? "update" : "create"} a user
+        </p>
 
-        {/* EMAIL */}
-        <div className="mb-4">
-          <label className="block mb-1 font-medium">Email *</label>
-          <input
-            type="email"
-            placeholder="Enter email"
-            className={`w-full border p-2 rounded ${
-              errors?.email ? "border-red-500" : ""
-            }`}
-            value={form.email}
-            onChange={(e) => setForm({ ...form, email: e.target.value })}
-          />
-          {errors?.email && (
-            <p className="text-red-500 text-xs mt-1">{errors.email}</p>
-          )}
-        </div>
-
-        {/* PASSWORD */}
-        <div className="mb-4">
-          <label className="block mb-1 font-medium">Password</label>
-
-          <div className="relative">
+        {/* FORM GRID */}
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          {/* EMAIL */}
+          <div className="col-span-2">
+            <label className="block mb-2 font-semibold text-gray-700">
+              Email *
+            </label>
             <input
-              type={showPassword ? "text" : "password"}
-              placeholder="Enter password"
-              className={`w-full border p-2 pr-10 rounded ${
-                errors?.password ? "border-red-500" : ""
+              type="email"
+              placeholder="user@example.com"
+              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 transition ${
+                errors?.email
+                  ? "border-red-500 focus:ring-red-500"
+                  : "border-gray-300 focus:ring-blue-500"
               }`}
-              value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
             />
-
-            <EyeToggle
-              show={showPassword}
-              onToggle={() => setShowPassword((prev) => !prev)}
-            />
+            {errors?.email && (
+              <p className="text-red-500 text-sm mt-1">⚠ {errors.email}</p>
+            )}
           </div>
 
-          {errors?.password && (
-            <p className="text-red-500 text-xs mt-1">{errors.password}</p>
-          )}
-        </div>
+          {/* PASSWORD */}
+          <div className="col-span-2">
+            <label className="block mb-2 font-semibold text-gray-700">
+              Password {!isEditing && "*"}
+            </label>
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder={
+                  isEditing
+                    ? "Leave blank to keep current"
+                    : "Enter strong password"
+                }
+                className={`w-full px-4 py-2 border pr-10 rounded-lg focus:outline-none focus:ring-2 transition ${
+                  errors?.password
+                    ? "border-red-500 focus:ring-red-500"
+                    : "border-gray-300 focus:ring-blue-500"
+                }`}
+                value={form.password}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+              />
+              <EyeToggle
+                show={showPassword}
+                onToggle={() => setShowPassword((prev) => !prev)}
+              />
+            </div>
+            {errors?.password && (
+              <p className="text-red-500 text-sm mt-1">⚠ {errors.password}</p>
+            )}
+          </div>
 
-        {/* FULL NAME */}
-        <div className="mb-4">
-          <label className="block mb-1 font-medium">Full Name</label>
+          {/* FULL NAME */}
+          <div className="col-span-2">
+            <label className="block mb-2 font-semibold text-gray-700">
+              Full Name *
+            </label>
+            <input
+              type="text"
+              name="fullName"
+              autoComplete="name"
+              placeholder="John Doe"
+              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 transition ${
+                errors?.fullName
+                  ? "border-red-500 focus:ring-red-500"
+                  : "border-gray-300 focus:ring-blue-500"
+              }`}
+              value={form.fullName || ""}
+              onChange={(e) => setForm({ ...form, fullName: e.target.value })}
+            />
+            {errors?.fullName && (
+              <p className="text-red-500 text-sm mt-1">⚠ {errors.fullName}</p>
+            )}
+          </div>
 
-          <input
-            type="text"
-            name="fullName"
-            autoComplete="name"
-            className={`w-full border p-2 rounded ${
-              errors?.fullName ? "border-red-500" : ""
-            }`}
-            placeholder="Enter full name"
-            value={form.fullName || ""}
-            onChange={(e) => {
-              setForm({ ...form, fullName: e.target.value });
+          {/* ROLE */}
+          <div>
+            <label className="block mb-2 font-semibold text-gray-700">
+              Role
+            </label>
+            <select
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+              value={form.role || "TENANT"}
+              onChange={(e) => setForm({ ...form, role: e.target.value })}
+            >
+              <option value="OWNER">Owner</option>
+              <option value="ADMIN">Admin</option>
+            </select>
+          </div>
 
-              {
-                errors?.fullName && (
-                  <p className="text-red-500 text-xs mt-1">{errors.fullName}</p>
-                );
-              }
-            }}
-          />
-
-          {errors?.fullName && (
-            <p className="text-red-500 text-xs mt-1">{errors.fullName}</p>
-          )}
-        </div>
-
-        {/* PROVIDER */}
-        <div className="mb-4">
-          <label className="block mb-1 font-medium">Provider</label>
-          <select
-            className="w-full border p-2 rounded"
-            value={form.provider || "LOCAL"}
-            onChange={(e) => setForm({ ...form, provider: e.target.value })}
-          >
-            <option value="LOCAL">LOCAL</option>
-            <option value="GOOGLE">GOOGLE</option>
-            <option value="FACEBOOK">FACEBOOK</option>
-          </select>
-        </div>
-
-        {/* ROLE */}
-        <div className="mb-4">
-          <label className="block mb-1 font-medium">Role</label>
-          <select
-            className="w-full border p-2 rounded"
-            value={form.role || "USER"}
-            onChange={(e) => setForm({ ...form, role: e.target.value })}
-          >
-            <option value="OWNER">OWNER</option>
-            <option value="ADMIN">ADMIN</option>
-          </select>
-        </div>
-
-        {/* STATUS */}
-        <div className="mb-4">
-          <label className="block mb-1 font-medium">Status</label>
-          <select
-            className="w-full border p-2 rounded"
-            value={form.status || "ACTIVE"}
-            onChange={(e) => setForm({ ...form, status: e.target.value })}
-          >
-            <option value="BLOCKED">BLOCKED</option>
-            <option value="ACTIVE">ACTIVE</option>
-          </select>
-        </div>
-
-        {/* ACTIVE */}
-        <div className="mb-6">
-          <label className="block mb-1 font-medium">Active</label>
-          <select
-            className="w-full border p-2 rounded"
-            value={form.active || "YES"}
-            onChange={(e) => setForm({ ...form, active: e.target.value })}
-          >
-            <option value="YES">YES</option>
-            <option value="NO">NO</option>
-          </select>
+          {/* STATUS */}
+          <div>
+            <label className="block mb-2 font-semibold text-gray-700">
+              Status
+            </label>
+            <select
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+              value={form.status || "ACTIVE"}
+              onChange={(e) => setForm({ ...form, status: e.target.value })}
+            >
+              <option value="ACTIVE">Active</option>
+              <option value="BLOCKED">Blocked</option>
+            </select>
+          </div>
         </div>
 
         {/* BUTTONS */}
-        <div className="flex gap-3">
+        <div className="flex gap-3 mt-8 pt-6 border-t">
           <button
             onClick={onSubmit}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            className="flex-1 px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition shadow-md"
           >
-            Save
+            {isEditing ? "Update" : "Create"} User
           </button>
           <button
             onClick={onClose}
-            className="px-4 py-2 border rounded hover:bg-gray-100"
+            className="flex-1 px-6 py-2 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition"
           >
             Cancel
           </button>

@@ -81,6 +81,10 @@ export const authService = {
       throw new Error("Invalid email or password");
     }
 
+    if (user.status === "BLOCKED") {
+      throw new Error("Account is blocked");
+    }
+
     if (user.active === "NO") {
       throw new Error("Account is inactive");
     }

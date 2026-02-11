@@ -163,7 +163,7 @@ export const updateUserStatus = async (req, res) => {
 
     const updatedUser = await prisma.user.update({
       where: { id: userId },
-      data: { status },
+      data: { status, updatedAt: new Date() },
       select: {
         id: true,
         email: true,
@@ -188,51 +188,24 @@ export const updateUserStatus = async (req, res) => {
  */
 export const deleteUsers = async (req, res) => {
   const { ids } = req.body;
-  const currentUserId = req.user.id;
 
   if (!ids || ids.length === 0) {
     return res.status(400).json({ message: "No users selected" });
   }
 
-  // Chặn xóa chính mình
-  if (ids.includes(currentUserId)) {
-    return res.status(400).json({
-      message: "You cannot delete your own account while logged in",
-    });
-  }
-  const ownersWithHouses = await prisma.owner.findMany({
-    where: {
-      userId: { in: ids },
-      BoardingHouse: {
-        some: {}, // có ít nhất 1 nhà
-      },
-    },
-    select: {
-      userId: true,
-      User: { select: { fullName: true } },
-    },
-  });
-
-  if (ownersWithHouses.length > 0) {
-    return res.status(400).json({
-      message: "Cannot delete owner who still has boarding houses",
-      owners: ownersWithHouses,
-    });
-  }
-
   try {
-    await prisma.notification.deleteMany({ where: { userId: { in: ids } } });
-    await prisma.report.deleteMany({ where: { senderId: { in: ids } } });
-    await prisma.licenseKey.deleteMany({ where: { userId: { in: ids } } });
-    await prisma.owner.deleteMany({ where: { userId: { in: ids } } });
-
-    await prisma.user.deleteMany({
-      where: { id: { in: ids } },
-    });
+    // Delete dependent rows first to avoid FK constraint errors.
+    await prisma.$transaction([
+      prisma.owner.deleteMany({ where: { userId: { in: ids } } }),
+      prisma.licenseKey.deleteMany({ where: { userId: { in: ids } } }),
+      prisma.notification.deleteMany({ where: { userId: { in: ids } } }),
+      prisma.report.deleteMany({ where: { senderId: { in: ids } } }),
+      prisma.user.deleteMany({ where: { id: { in: ids } } }),
+    ]);
 
     return res.json({ message: "Delete users success" });
   } catch (err) {
-    console.error("DELETE USER ERROR:", err);
+    console.error("deleteUsers error:", err);
     return res.status(500).json({ message: "Delete failed" });
   }
 };
@@ -317,9 +290,10 @@ export const addUser = async (req, res) => {
         passwordHash,
         fullName,
         provider,
-        role: role || "TENANT",
-        status: status || "ACTIVE",
-        active: active || "YES",
+        role,
+        status,
+        active,
+        updatedAt: new Date(),
       },
       select: {
         id: true,
@@ -331,6 +305,14 @@ export const addUser = async (req, res) => {
         createdAt: true,
       },
     });
+
+    if (newUser.role === "OWNER") {
+      await prisma.owner.upsert({
+        where: { userId: newUser.id },
+        update: {},
+        create: { userId: newUser.id },
+      });
+    }
 
     return res.status(201).json({
       message: "Create user success",
@@ -398,6 +380,8 @@ export const updateUser = async (req, res) => {
       data.passwordHash = await bcrypt.hash(password, 10);
     }
 
+    data.updatedAt = new Date();
+
     const updatedUser = await prisma.user.update({
       where: { id: userId },
       data,
@@ -411,6 +395,14 @@ export const updateUser = async (req, res) => {
         createdAt: true,
       },
     });
+
+    if (updatedUser.role === "OWNER") {
+      await prisma.owner.upsert({
+        where: { userId: updatedUser.id },
+        update: {},
+        create: { userId: updatedUser.id },
+      });
+    }
 
     return res
       .status(200)
@@ -588,50 +580,63 @@ export const getAdminDashboard = async (req, res) => {
         orderBy: { createdAt: "desc" },
         take: 5,
         include: {
-          Invoice: { select: { id: true, Room: { select: { name: true } } } },
+          Invoice: { 
+            select: { 
+              id: true, 
+              Room: { select: { name: true } } 
+            } 
+          },
         },
       }),
       prisma.invoice.findMany({
         orderBy: { createdAt: "desc" },
         take: 5,
-        include: { Room: { select: { name: true } } },
+        include: { 
+          Room: { select: { name: true } } 
+        },
       }),
       prisma.report.findMany({
         orderBy: { createdAt: "desc" },
         take: 5,
-        include: { User: { select: { fullName: true } } },
+        include: { 
+          User: { select: { fullName: true, email: true } } 
+        },
       }),
       prisma.notification.findMany({
         orderBy: { createdAt: "desc" },
         take: 5,
-        select: { title: true, createdAt: true },
+        select: { 
+          title: true, 
+          createdAt: true,
+          User: { select: { fullName: true } }
+        },
       }),
     ]);
 
     const activityItems = [
       ...recentSubscriptions.map((subscription) => ({
-        title: `Subscription ${subscription.plan} ${subscription.amount.toLocaleString("vi-VN")} VND`,
+        title: `Subscription ${subscription.plan} - ${subscription.amount.toLocaleString("vi-VN")} VND`,
         createdAt: subscription.purchasedAt,
       })),
       ...recentPayments.map((payment) => ({
-        title: `Payment ${payment.amount.toLocaleString("vi-VN")} VND for room ${payment.Invoice?.Room?.name ?? ""}`,
+        title: `Payment ${payment.amount.toLocaleString("vi-VN")} VND - ${payment.Invoice?.Room?.name ?? `Invoice #${payment.invoiceId}`}`,
         createdAt: payment.createdAt,
       })),
       ...recentInvoices.map((invoice) => ({
-        title: `Invoice #${invoice.id} created for room ${invoice.Room?.name ?? invoice.roomId}`,
+        title: `Invoice #${invoice.id} - ${invoice.Room?.name ?? `Room ${invoice.roomId}`}`,
         createdAt: invoice.createdAt,
       })),
       ...recentReports.map((report) => ({
-        title: `Report from ${report.User?.fullName ?? "user"}`,
+        title: `Report từ ${report.User?.fullName ?? report.User?.email ?? "user"}`,
         createdAt: report.createdAt,
       })),
       ...recentNotifications.map((notification) => ({
-        title: `Notification: ${notification.title}`,
+        title: notification.title,
         createdAt: notification.createdAt,
       })),
     ]
       .sort((a, b) => b.createdAt - a.createdAt)
-      .slice(0, 4)
+      .slice(0, 5)
       .map((item) => ({
         title: item.title,
         time: formatActivityTime(item.createdAt),
