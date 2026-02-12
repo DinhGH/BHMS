@@ -12,12 +12,19 @@ const STATUS_COLORS = {
   FIXING: "bg-rose-100 text-rose-800 ring-1 ring-rose-200",
 };
 
-const STATUS_OPTIONS = ["PENDING", "PROCESSING", "RESOLVED", "REVIEWING", "FIXING"];
+const STATUS_OPTIONS = [
+  "PENDING",
+  "PROCESSING",
+  "RESOLVED",
+  "REVIEWING",
+  "FIXING",
+];
 
 export default function ReportAdmin() {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState([]);
@@ -35,8 +42,8 @@ export default function ReportAdmin() {
         params.set("status", filter);
       }
 
-      if (search) {
-        params.set("search", search);
+      if (searchQuery) {
+        params.set("search", searchQuery);
       }
 
       const res = await api.get(`/api/report-admins?${params.toString()}`);
@@ -51,15 +58,24 @@ export default function ReportAdmin() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [filter, search]);
+  }, [filter, searchQuery]);
 
   useEffect(() => {
     fetchReports();
-  }, [currentPage, filter, search]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage, filter, searchQuery]);
+
+  const handleSearchKeyDown = (e) => {
+    if (e.key === "Enter") {
+      setSearchQuery(search);
+    }
+  };
 
   const handleStatusChange = async (reportId, newStatus) => {
     try {
-      await api.patch(`/api/report-admins/${reportId}/status`, { status: newStatus });
+      await api.patch(`/api/report-admins/${reportId}/status`, {
+        status: newStatus,
+      });
       setReports((prev) =>
         prev.map((r) => (r.id === reportId ? { ...r, status: newStatus } : r)),
       );
@@ -125,19 +141,20 @@ export default function ReportAdmin() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-6">
+    <div className="h-full flex flex-col max-w-7xl mx-auto p-6">
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-6">
         <h1 className="text-3xl font-bold text-black mb-2">Admin Reports</h1>
         <p className="text-gray-600">Manage reports from owners</p>
       </div>
 
       {/* Filters & Search */}
-      <div className="mb-6 flex flex-col md:flex-row gap-4">
+      <div className="mb-4 flex flex-col md:flex-row gap-4">
         <SearchInput
           value={search}
-          onChange={setSearch}
-          placeholder="Search by email or content..."
+          onChange={(e) => setSearch(e.target.value)}
+          onKeyDown={handleSearchKeyDown}
+          placeholder="Search by email or content... (Press Enter)"
         />
 
         <select
@@ -172,104 +189,122 @@ export default function ReportAdmin() {
         </div>
       )}
 
-      {/* Table */}
-      <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+      {/* Table Container - Scrollable */}
+      <div className="flex-1 bg-white shadow-lg rounded-lg overflow-hidden flex flex-col min-h-0">
         {reports.length === 0 ? (
           <div className="p-8 text-center text-gray-500">
             <p>No reports found</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-100 border-b border-gray-200">
-                <tr>
-                  <th className="px-6 py-3 text-left">
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.length === reports.length && reports.length > 0}
-                      onChange={toggleAll}
-                      className="rounded"
-                    />
-                  </th>
-                  <th className="px-6 py-3 text-left font-semibold">ID</th>
-                  <th className="px-6 py-3 text-left font-semibold">Owner</th>
-                  <th className="px-6 py-3 text-left font-semibold">Target</th>
-                  <th className="px-6 py-3 text-left font-semibold">Content</th>
-                  <th className="px-6 py-3 text-left font-semibold">Status</th>
-                  <th className="px-6 py-3 text-left font-semibold">Date</th>
-                  <th className="px-6 py-3 text-left font-semibold">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {reports.map((report) => (
-                  <tr key={report.id} className="border-b hover:bg-gray-50">
-                    <td className="px-6 py-3">
+          <>
+            <div className="overflow-auto flex-1">
+              <table className="w-full">
+                <thead className="bg-gray-100 border-b border-gray-200 sticky top-0 z-10">
+                  <tr>
+                    <th className="px-6 py-3 text-left">
                       <input
                         type="checkbox"
-                        checked={selectedIds.includes(report.id)}
-                        onChange={() => toggleCheckbox(report.id)}
+                        checked={
+                          selectedIds.length === reports.length &&
+                          reports.length > 0
+                        }
+                        onChange={toggleAll}
                         className="rounded"
                       />
-                    </td>
-                    <td className="px-6 py-3 font-semibold">#{report.id}</td>
-                    <td className="px-6 py-3">
-                      <div className="text-sm">
-                        <p className="font-medium">{report.sender?.email || "Unknown"}</p>
-                      </div>
-                    </td>
-                    <td className="px-6 py-3 text-sm">
-                      <span className="inline-flex max-w-xs items-center justify-center rounded-full bg-slate-100 px-3 py-1.5 text-[11px] font-semibold text-slate-800 leading-tight shadow-sm ring-1 ring-slate-200 whitespace-nowrap">
-                        {report.target}
-                      </span>
-                    </td>
-                    <td className="px-6 py-3 text-sm max-w-xs truncate">
-                      {report.content}
-                    </td>
-                    <td className="px-6 py-3">
-                      <select
-                        value={report.status || ""}
-                        onChange={(e) => handleStatusChange(report.id, e.target.value)}
-                        className={`w-full rounded-lg px-3 py-2 text-xs font-semibold uppercase cursor-pointer border-2 shadow-sm transition focus:outline-none focus:ring-2 focus:ring-offset-1 ${
-                          STATUS_COLORS[report.status] || "bg-gray-100 text-gray-800 ring-1 ring-gray-200"
-                        } border-current`}
-                      >
-                        {STATUS_OPTIONS.map((status) => (
-                          <option key={status} value={status}>
-                            {status}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-                    <td className="px-6 py-3 text-sm text-gray-600">
-                      {new Date(report.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-3">
-                      <button
-                        onClick={() => handleDelete(report.id)}
-                        className="text-red-600 hover:text-red-800 transition"
-                        title="Delete"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </td>
+                    </th>
+                    <th className="px-6 py-3 text-left font-semibold">ID</th>
+                    <th className="px-6 py-3 text-left font-semibold">Owner</th>
+                    <th className="px-6 py-3 text-left font-semibold">
+                      Target
+                    </th>
+                    <th className="px-6 py-3 text-left font-semibold">
+                      Content
+                    </th>
+                    <th className="px-6 py-3 text-left font-semibold">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-left font-semibold">Date</th>
+                    <th className="px-6 py-3 text-left font-semibold">
+                      Actions
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {reports.map((report) => (
+                    <tr key={report.id} className="border-b hover:bg-gray-50">
+                      <td className="px-6 py-3">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.includes(report.id)}
+                          onChange={() => toggleCheckbox(report.id)}
+                          className="rounded"
+                        />
+                      </td>
+                      <td className="px-6 py-3 font-semibold">#{report.id}</td>
+                      <td className="px-6 py-3">
+                        <div className="text-sm">
+                          <p className="font-medium">
+                            {report.sender?.email || "Unknown"}
+                          </p>
+                        </div>
+                      </td>
+                      <td className="px-6 py-3 text-sm">
+                        <span className="inline-flex max-w-xs items-center justify-center rounded-full bg-slate-100 px-3 py-1.5 text-[11px] font-semibold text-slate-800 leading-tight shadow-sm ring-1 ring-slate-200 whitespace-nowrap">
+                          {report.target}
+                        </span>
+                      </td>
+                      <td className="px-6 py-3 text-sm max-w-xs truncate">
+                        {report.content}
+                      </td>
+                      <td className="px-6 py-3">
+                        <select
+                          value={report.status || ""}
+                          onChange={(e) =>
+                            handleStatusChange(report.id, e.target.value)
+                          }
+                          className={`w-full rounded-lg px-3 py-2 text-xs font-semibold uppercase cursor-pointer border-2 shadow-sm transition focus:outline-none focus:ring-2 focus:ring-offset-1 ${
+                            STATUS_COLORS[report.status] ||
+                            "bg-gray-100 text-gray-800 ring-1 ring-gray-200"
+                          } border-current`}
+                        >
+                          {STATUS_OPTIONS.map((status) => (
+                            <option key={status} value={status}>
+                              {status}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+                      <td className="px-6 py-3 text-sm text-gray-600">
+                        {new Date(report.createdAt).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-3">
+                        <button
+                          onClick={() => handleDelete(report.id)}
+                          className="text-red-600 hover:text-red-800 transition"
+                          title="Delete"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination - Fixed at bottom */}
+            {reports.length > 0 && (
+              <div className="border-t border-gray-200 p-4 flex justify-center bg-white">
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={Math.ceil(reports.length / pageSize)}
+                  onPageChange={setCurrentPage}
+                />
+              </div>
+            )}
+          </>
         )}
       </div>
-
-      {/* Pagination */}
-      {reports.length > 0 && (
-        <div className="mt-6 flex justify-center">
-          <Pagination
-            currentPage={currentPage}
-            totalPages={Math.ceil(reports.length / pageSize)}
-            onPageChange={setCurrentPage}
-          />
-        </div>
-      )}
     </div>
   );
 }

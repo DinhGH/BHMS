@@ -180,8 +180,8 @@ export default function AdminUsers() {
         </div>
 
         {/* Tabs */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between border-b mb-6">
-          <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
+          <div className="inline-flex items-center gap-2 p-1 bg-gray-100 rounded-lg">
             {[
               ["all", "All"],
               ["active", "Active"],
@@ -191,10 +191,10 @@ export default function AdminUsers() {
               <button
                 key={key}
                 onClick={() => setFilter(key)}
-                className={`pb-2 sm:pb-3 whitespace-nowrap ${
+                className={`px-4 py-2 text-sm font-medium rounded-md transition-all whitespace-nowrap ${
                   filter === key
-                    ? "border-b-2 border-blue-600 text-blue-600 font-medium"
-                    : "text-gray-500"
+                    ? "bg-white text-blue-600 shadow-sm"
+                    : "text-gray-600 hover:text-gray-900 hover:bg-white/50"
                 }`}
               >
                 {label}
