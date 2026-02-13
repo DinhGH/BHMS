@@ -45,10 +45,7 @@ export const getAllBoardingHouses = async (req, res) => {
             latestInvoice &&
             latestInvoice.status === "PAID" &&
             latestInvoice.Payment.some((p) => p.confirmed === true);
-
-          // 🔥 CHỈ OCCUPIED KHI: có người + đã thanh toán
           const isOccupied = hasTenant && isPaidInvoice;
-
           if (isOccupied) {
             occupied++;
           } else {

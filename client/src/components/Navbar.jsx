@@ -5,9 +5,23 @@ import { Link } from "react-router-dom";
 function Navbar({ onMenuClick, onBellClick, onAvatarClick, user }) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  const displayName = user?.fullName || user?.name || "User";
-  const displayRole = user?.role
-    ? user.role.charAt(0) + user.role.slice(1).toLowerCase()
+  // Lấy user từ prop hoặc localStorage
+  let currentUser = user;
+  if (!currentUser) {
+    try {
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        currentUser = JSON.parse(storedUser);
+      }
+    } catch (error) {
+      console.error("Error parsing user from localStorage:", error);
+    }
+  }
+
+  const displayName =
+    currentUser?.fullName || currentUser?.name || currentUser?.email || "User";
+  const displayRole = currentUser?.role
+    ? currentUser.role.charAt(0) + currentUser.role.slice(1).toLowerCase()
     : "";
 
   const handleAvatarClick = () => {
@@ -70,9 +84,9 @@ function Navbar({ onMenuClick, onBellClick, onAvatarClick, user }) {
                 className="flex items-center gap-2 focus:outline-none p-1 rounded-lg hover:bg-blue-50 transition-colors"
                 onClick={handleAvatarClick}
               >
-                {user?.avatar ? (
+                {currentUser?.avatar ? (
                   <img
-                    src={user.avatar}
+                    src={currentUser.avatar}
                     alt={displayName}
                     className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full border-2 border-blue-400 object-cover"
                   />

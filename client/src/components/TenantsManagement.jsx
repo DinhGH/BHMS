@@ -214,9 +214,9 @@ function TenantsManagement() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-6">
+    <div className="h-full flex flex-col max-w-7xl mx-auto p-6">
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-6">
         <h1 className="text-3xl font-bold text-black mb-2">
           Tenant Management
         </h1>
@@ -231,7 +231,7 @@ function TenantsManagement() {
       )}
 
       {/* Controls */}
-      <div className="mb-6 flex flex-wrap gap-4 items-center">
+      <div className="mb-4 flex flex-wrap gap-4 items-center">
         {/* Search */}
         <input
           type="text"
@@ -399,102 +399,109 @@ function TenantsManagement() {
         </div>
       )}
 
-      {/* Table */}
-      <div className="overflow-x-auto bg-white rounded-lg shadow">
-        <table className="w-full">
-          <thead className="bg-gray-100 border-b-2 border-gray-300">
-            <tr>
-              <th className="px-6 py-3 text-left">
-                <input
-                  type="checkbox"
-                  checked={
-                    selectedIds.length === paginatedTenants.length &&
-                    paginatedTenants.length > 0
-                  }
-                  onChange={(e) => {
-                    if (e.target.checked) {
-                      setSelectedIds(paginatedTenants.map((t) => t.id));
-                    } else {
-                      setSelectedIds([]);
+      {/* Table Container - Scrollable */}
+      <div className="flex-1 bg-white shadow rounded-lg overflow-hidden flex flex-col min-h-0">
+        <div className="overflow-auto flex-1">
+          <table className="w-full">
+            <thead className="bg-gray-100 border-b-2 border-gray-300 sticky top-0 z-10">
+              <tr>
+                <th className="px-6 py-3 text-left">
+                  <input
+                    type="checkbox"
+                    checked={
+                      selectedIds.length === paginatedTenants.length &&
+                      paginatedTenants.length > 0
                     }
-                  }}
-                />
-              </th>
-              <th className="px-6 py-3 text-left font-semibold">Name</th>
-              <th className="px-6 py-3 text-left font-semibold">Email</th>
-              <th className="px-6 py-3 text-left font-semibold">Phone</th>
-              <th className="px-6 py-3 text-left font-semibold">Gender</th>
-              <th className="px-6 py-3 text-left font-semibold">Room</th>
-              <th className="px-6 py-3 text-left font-semibold">Start Date</th>
-              <th className="px-6 py-3 text-left font-semibold">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {paginatedTenants.length > 0 ? (
-              paginatedTenants.map((tenant) => (
-                <tr key={tenant.id} className="border-b hover:bg-gray-50">
-                  <td className="px-6 py-3">
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.includes(tenant.id)}
-                      onChange={() => handleCheckboxChange(tenant.id)}
-                    />
-                  </td>
-                  <td className="px-6 py-3">{tenant.fullName || "-"}</td>
-                  <td className="px-6 py-3">{tenant.email || "-"}</td>
-                  <td className="px-6 py-3">{tenant.phone || "-"}</td>
-                  <td className="px-6 py-3">{tenant.gender || "-"}</td>
-                  <td className="px-6 py-3">{tenant.room?.name || "-"}</td>
-                  <td className="px-6 py-3">
-                    {tenant.startDate
-                      ? new Date(tenant.startDate).toLocaleDateString("vi-VN")
-                      : "-"}
-                  </td>
-                  <td className="px-6 py-3 flex gap-2">
-                    <button
-                      onClick={() => handleEdit(tenant)}
-                      className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(tenant.id)}
-                      className="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition"
-                    >
-                      Delete
-                    </button>
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedIds(paginatedTenants.map((t) => t.id));
+                      } else {
+                        setSelectedIds([]);
+                      }
+                    }}
+                  />
+                </th>
+                <th className="px-6 py-3 text-left font-semibold">Name</th>
+                <th className="px-6 py-3 text-left font-semibold">Email</th>
+                <th className="px-6 py-3 text-left font-semibold">Phone</th>
+                <th className="px-6 py-3 text-left font-semibold">Gender</th>
+                <th className="px-6 py-3 text-left font-semibold">Room</th>
+                <th className="px-6 py-3 text-left font-semibold">
+                  Start Date
+                </th>
+                <th className="px-6 py-3 text-left font-semibold">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {paginatedTenants.length > 0 ? (
+                paginatedTenants.map((tenant) => (
+                  <tr key={tenant.id} className="border-b hover:bg-gray-50">
+                    <td className="px-6 py-3">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.includes(tenant.id)}
+                        onChange={() => handleCheckboxChange(tenant.id)}
+                      />
+                    </td>
+                    <td className="px-6 py-3">{tenant.fullName || "-"}</td>
+                    <td className="px-6 py-3">{tenant.email || "-"}</td>
+                    <td className="px-6 py-3">{tenant.phone || "-"}</td>
+                    <td className="px-6 py-3">{tenant.gender || "-"}</td>
+                    <td className="px-6 py-3">{tenant.room?.name || "-"}</td>
+                    <td className="px-6 py-3">
+                      {tenant.startDate
+                        ? new Date(tenant.startDate).toLocaleDateString("vi-VN")
+                        : "-"}
+                    </td>
+                    <td className="px-6 py-3 flex gap-2">
+                      <button
+                        onClick={() => handleEdit(tenant)}
+                        className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(tenant.id)}
+                        className="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td
+                    colSpan="8"
+                    className="px-6 py-6 text-center text-gray-500"
+                  >
+                    No data
                   </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="8" className="px-6 py-6 text-center text-gray-500">
-                  No data
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="mt-6 flex justify-center gap-2">
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-            <button
-              key={page}
-              onClick={() => setCurrentPage(page)}
-              className={`px-4 py-2 rounded-lg transition ${
-                currentPage === page
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-              }`}
-            >
-              {page}
-            </button>
-          ))}
+              )}
+            </tbody>
+          </table>
         </div>
-      )}
+
+        {/* Pagination - Fixed at bottom */}
+        {totalPages > 1 && (
+          <div className="border-t border-gray-200 p-4 flex justify-center gap-2 bg-white">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <button
+                key={page}
+                onClick={() => setCurrentPage(page)}
+                className={`px-4 py-2 rounded-lg transition ${
+                  currentPage === page
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                }`}
+              >
+                {page}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

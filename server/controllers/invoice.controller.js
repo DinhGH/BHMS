@@ -15,8 +15,8 @@ export const makeInvoice = async (req, res) => {
     const room = await prisma.room.findUnique({
       where: { id: roomId },
       include: {
-        house: true,
-        roomServices: true,
+        BoardingHouse: true,
+        RoomService: true,
       },
     });
 
@@ -57,10 +57,10 @@ export const makeInvoice = async (req, res) => {
     }
 
     // 4️⃣ Tính tiền
-    const electricCost = room.electricMeter * room.house.electricFee;
-    const waterCost = room.waterMeter * room.house.waterFee;
+    const electricCost = room.electricMeter * room.BoardingHouse.electricFee;
+    const waterCost = room.waterMeter * room.BoardingHouse.waterFee;
 
-    const serviceCost = room.roomServices.reduce((sum, s) => sum + s.price, 0);
+    const serviceCost = room.RoomService.reduce((sum, s) => sum + s.price, 0);
 
     const totalAmount = room.price + electricCost + waterCost + serviceCost;
 

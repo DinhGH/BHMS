@@ -87,13 +87,6 @@ export async function createTenant(data) {
     throw error;
   }
 
-  // Validate roomId >= 1
-  if (roomIdNumber < 1) {
-    const error = new Error("Please select a valid room");
-    error.status = 400;
-    throw error;
-  }
-
   const startDateValue = startDate ? new Date(startDate) : new Date();
   if (Number.isNaN(startDateValue.getTime())) {
     const error = new Error("Ngày bắt đầu không hợp lệ");
@@ -104,8 +97,8 @@ export async function createTenant(data) {
   let roomIdNumber = null;
   if (roomId) {
     roomIdNumber = parseInt(roomId, 10);
-    if (Number.isNaN(roomIdNumber)) {
-      const error = new Error("Room ID không hợp lệ");
+    if (Number.isNaN(roomIdNumber) || roomIdNumber < 1) {
+      const error = new Error("Please select a valid room");
       error.status = 400;
       throw error;
     }

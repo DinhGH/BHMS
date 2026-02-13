@@ -1,25 +1,26 @@
 /* eslint-disable react-refresh/only-export-components */
-/* eslint-disable react-hooks/set-state-in-effect */
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useState } from "react";
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // Check if user is already logged in
-    const savedToken = localStorage.getItem("token");
+  // Khởi tạo user và token từ localStorage ngay từ đầu
+  const [user, setUser] = useState(() => {
     const savedUser = localStorage.getItem("user");
-
-    if (savedToken && savedUser) {
-      setToken(savedToken);
-      setUser(JSON.parse(savedUser));
+    if (savedUser) {
+      try {
+        return JSON.parse(savedUser);
+      } catch (error) {
+        console.error("Error parsing saved user:", error);
+        return null;
+      }
     }
-    setLoading(false);
-  }, []);
+    return null;
+  });
+
+  const [token, setToken] = useState(() => {
+    return localStorage.getItem("token");
+  });
 
   const login = (userData, authToken) => {
     setUser(userData);
@@ -39,7 +40,7 @@ export const AuthProvider = ({ children }) => {
   const value = {
     user,
     token,
-    loading,
+    loading: false,
     login,
     logout,
     isAuthenticated: !!token,

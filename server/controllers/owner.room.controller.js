@@ -98,7 +98,7 @@ export const getRoomDetail = async (req, res) => {
     const room = await prisma.room.findUnique({
       where: { id: roomId },
       include: {
-        house: {
+        BoardingHouse: {
           select: {
             electricFee: true,
             waterFee: true,
@@ -111,7 +111,7 @@ export const getRoomDetail = async (req, res) => {
         },
         roomServices: {
           include: {
-            service: true,
+            Service: true,
           },
         },
       },
@@ -140,8 +140,8 @@ export const getRoomDetail = async (req, res) => {
       waterMeterNow: room.waterMeterNow,
       waterMeterAfter: room.waterMeterAfter,
 
-      electricFee: room.house.electricFee,
-      waterFee: room.house.waterFee,
+      electricFee: room.BoardingHouse.electricFee,
+      waterFee: room.BoardingHouse.waterFee,
 
       tenants: room.Tenant,
 
@@ -652,7 +652,7 @@ export const getServicesOfRoom = async (req, res) => {
     const services = await prisma.roomService.findMany({
       where: { roomId },
       include: {
-        service: {
+        Service: {
           select: {
             id: true,
             name: true,
@@ -688,7 +688,7 @@ export const updateServiceQuantity = async (req, res) => {
       where: {
         roomId_serviceId: { roomId, serviceId },
       },
-      include: { service: true },
+      include: { Service: true },
     });
 
     if (!roomService) {
@@ -721,7 +721,7 @@ export const updateServiceQuantity = async (req, res) => {
         quantity: finalQuantity,
         totalPrice: finalPrice * finalQuantity,
       },
-      include: { service: true },
+      include: { Service: true },
     });
 
     res.json(updated);
