@@ -133,15 +133,6 @@ export const sendInvoiceEmail = async (tenantOrEmail, invoice) => {
               </a>
             </div>
 
-            ${
-              invoice.imageUrl
-                ? `<div style="margin: 20px 0; text-align: center;">
-                    <strong>QR Code to Scan:</strong>
-                    <img src="${invoice.imageUrl}" width="250" style="margin-top: 10px; border: 1px solid #ddd; border-radius: 8px;"/>
-                  </div>`
-                : ""
-            }
-
             <div style="background: #fff3e0; padding: 15px; border-left: 4px solid #f57c00; margin-top: 20px; border-radius: 4px;">
               <strong>❓ Need Help?</strong><br/>
               If you have any questions about this invoice, please contact your boarding house owner.
