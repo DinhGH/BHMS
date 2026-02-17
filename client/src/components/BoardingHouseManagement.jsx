@@ -53,20 +53,12 @@ export default function BoardingHouseManagement({ ownerId }) {
   // Pagination logic
   //handle delete by name
   const handleDelete = async (houseName) => {
-    const confirmed = window.confirm(
-      `Are you sure you want to delete "${houseName}"?\nThis action cannot be undone.`,
-    );
-
-    if (!confirmed) return;
-
     try {
       await deleteBoardingHouseByName(houseName);
-
-      alert("Deleted successfully");
-      fetchHouses();
+      await fetchHouses();
     } catch (error) {
       console.error("Delete error", error);
-      alert("Delete failed. Check house name again.");
+      throw error; // 👈 QUAN TRỌNG
     }
   };
 

@@ -65,6 +65,8 @@ export const previewInvoice = async (req, res) => {
     });
   } catch (err) {
     console.error(err);
+    console.log("req.user:", req.user);
+
     res.status(500).json({ message: err.message });
   }
 };
