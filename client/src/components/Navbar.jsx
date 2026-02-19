@@ -2,7 +2,7 @@ import { FaUserCircle, FaBell, FaBars, FaTimes } from "react-icons/fa";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 
-function Navbar({ onMenuClick, onBellClick, onAvatarClick, user }) {
+function Navbar({ onMenuClick, onBellClick, onAvatarClick, user, onProfileClick }) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const displayName = user?.fullName || user?.name || "User";

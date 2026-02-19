@@ -3,7 +3,7 @@ import { prisma } from "../lib/prisma.js";
 export async function listTenants() {
   const tenants = await prisma.tenant.findMany({
     include: {
-      Invoice: {
+      invoices: {
         select: {
           id: true,
           status: true,
@@ -13,7 +13,7 @@ export async function listTenants() {
         select: {
           id: true,
           name: true,
-          BoardingHouse: {
+          house: {
             select: {
               id: true,
               name: true,

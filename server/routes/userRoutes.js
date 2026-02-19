@@ -3,12 +3,17 @@ import {
   forgotPassword,
   verifyOTP,
   resetPassword,
+  getMyProfile,
+  updateMyProfile,
 } from "../controllers/userController.js";
+import { requireAuth } from "../middlewares/auth.middleware.js";
 
 const router = express.Router();
 
 router.post("/forgot-password", forgotPassword);
 router.post("/verify-otp", verifyOTP);
 router.post("/reset-password", resetPassword);
+router.get("/profile", requireAuth, getMyProfile);
+router.put("/profile", requireAuth, updateMyProfile);
 
 export default router;

@@ -59,7 +59,7 @@ model BoardingHouse {
 
 model Room {
   id                 Int              @id @default(autoincrement())
-  houseId            Int
+  houseId            Int?
   name               String
   price              Float
   isLocked           Boolean          @default(false)
@@ -73,7 +73,7 @@ model Room {
   contractStart      DateTime?
   Invoice            Invoice[]
   RentalContract     RentalContract[]
-  house              BoardingHouse    @relation(fields: [houseId], references: [id])
+  house              BoardingHouse?   @relation(fields: [houseId], references: [id])
   roomServices       RoomService[]
   Tenant             Tenant[]
 
