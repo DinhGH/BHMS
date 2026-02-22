@@ -3,7 +3,7 @@ import Navbar from "../../components/Navbar";
 import Sidebar from "../../components/Sidebar";
 import Dashboard from "../../components/Dashboard";
 import BoardingHouseManagement from "../../components/BoardingHouseManagement";
-import RoomManagement from "../../components/RoomManagement";
+import ContractManagement from "../../components/ContractManagement";
 import TenantsManagement from "../../components/TenantsManagement";
 import NotificationManagement from "../../components/NotificationManagement";
 import ReportManagement from "../../components/ReportManagement";
@@ -82,8 +82,8 @@ function HomePageOwner() {
         return <Dashboard />;
       case "boarding-house":
         return <BoardingHouseManagement />;
-      case "rooms":
-        return <RoomManagement />;
+      case "contracts":
+        return <ContractManagement />;
       case "tenants":
         return <TenantsManagement />;
       case "notifications":
