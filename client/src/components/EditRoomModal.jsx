@@ -14,6 +14,7 @@ export default function EditRoomModal({ open, room, onClose, onUpdated }) {
     contractEnd: "",
     imageUrl: "",
   });
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   useEffect(() => {
     if (room) {
@@ -58,6 +59,31 @@ export default function EditRoomModal({ open, room, onClose, onUpdated }) {
       // eslint-disable-next-line no-unused-vars
     } catch (err) {
       toast.error("Update failed");
+    }
+  };
+
+  const handleUploadRoomImage = async (file) => {
+    if (!file) return;
+
+    try {
+      setUploadingImage(true);
+      const body = new FormData();
+      body.append("image", file);
+      const result = await api.post(
+        "/api/owner/uploads/image?target=room",
+        body,
+      );
+
+      if (!result?.url) {
+        throw new Error("Upload completed but URL was not returned");
+      }
+
+      setForm((prev) => ({ ...prev, imageUrl: result.url }));
+      toast.success("Image uploaded successfully");
+    } catch (err) {
+      toast.error(err.message || "Image upload failed");
+    } finally {
+      setUploadingImage(false);
     }
   };
 
@@ -150,13 +176,23 @@ export default function EditRoomModal({ open, room, onClose, onUpdated }) {
           />
 
           {/* Image */}
-          <label className="block font-medium">Image URL</label>
+          <label className="block font-medium">Image</label>
           <input
-            name="imageUrl"
-            value={form.imageUrl}
-            onChange={handleChange}
+            type="file"
+            accept="image/*"
+            onChange={(e) => handleUploadRoomImage(e.target.files?.[0])}
             className="w-full border p-2 rounded"
           />
+          {uploadingImage && (
+            <p className="text-xs text-blue-600 mt-1">Uploading image...</p>
+          )}
+          {form.imageUrl && (
+            <img
+              src={form.imageUrl}
+              alt="Room preview"
+              className="mt-2 h-28 w-full object-cover rounded border"
+            />
+          )}
         </div>
 
         {/* FOOTER */}

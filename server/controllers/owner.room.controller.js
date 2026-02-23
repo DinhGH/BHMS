@@ -166,8 +166,15 @@ export const getRoomDetail = async (req, res) => {
    ===================================================== */
 export const createRoom = async (req, res) => {
   try {
-    const { houseId, name, price, image, contractStart, contractEnd } =
-      req.body;
+    const {
+      houseId,
+      name,
+      price,
+      image,
+      imageUrl,
+      contractStart,
+      contractEnd,
+    } = req.body;
 
     if (!name || !price) {
       return res.status(400).json({ message: "Missing required fields" });
@@ -186,7 +193,7 @@ export const createRoom = async (req, res) => {
       data: {
         name: name.trim(),
         price: Number(price),
-        imageUrl: image || null,
+        imageUrl: imageUrl || image || null,
 
         contractStart: contractStart ? new Date(contractStart) : null,
 
@@ -786,7 +793,7 @@ export const updateServiceQuantity = async (req, res) => {
       where: {
         roomId_serviceId: { roomId, serviceId },
       },
-      include: { Service: true },
+      include: { service: true },
     });
 
     if (!roomService) {
@@ -819,7 +826,7 @@ export const updateServiceQuantity = async (req, res) => {
         quantity: finalQuantity,
         totalPrice: finalPrice * finalQuantity,
       },
-      include: { Service: true },
+      include: { service: true },
     });
 
     res.json(updated);

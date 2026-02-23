@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../server/api";
+import { toast } from "react-hot-toast";
 
 export default function EditBoardingHouseModal({
   open,
@@ -14,6 +15,7 @@ export default function EditBoardingHouseModal({
     waterFee: "",
     imageUrl: "",
   });
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   useEffect(() => {
     if (house) {
@@ -43,6 +45,31 @@ export default function EditBoardingHouseModal({
     } catch (err) {
       console.error(err);
       alert("Update failed");
+    }
+  };
+
+  const handleUploadHouseImage = async (file) => {
+    if (!file) return;
+
+    try {
+      setUploadingImage(true);
+      const body = new FormData();
+      body.append("image", file);
+      const result = await api.post(
+        "/api/owner/uploads/image?target=boarding-house",
+        body,
+      );
+
+      if (!result?.url) {
+        throw new Error("Upload completed but URL was not returned");
+      }
+
+      setForm((prev) => ({ ...prev, imageUrl: result.url }));
+      toast.success("Image uploaded successfully");
+    } catch (error) {
+      toast.error(error.message || "Image upload failed");
+    } finally {
+      setUploadingImage(false);
     }
   };
 
@@ -85,13 +112,25 @@ export default function EditBoardingHouseModal({
           className="w-full border px-3 py-2 rounded"
         />
 
-        <input
-          name="imageUrl"
-          value={form.imageUrl}
-          onChange={handleChange}
-          placeholder="Image URL"
-          className="w-full border px-3 py-2 rounded"
-        />
+        <div>
+          <label className="block text-sm font-medium mb-1">Image</label>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => handleUploadHouseImage(e.target.files?.[0])}
+            className="w-full border px-3 py-2 rounded"
+          />
+          {uploadingImage && (
+            <p className="text-xs text-blue-600 mt-1">Uploading image...</p>
+          )}
+          {form.imageUrl && (
+            <img
+              src={form.imageUrl}
+              alt="Boarding house preview"
+              className="mt-2 h-28 w-full object-cover rounded border"
+            />
+          )}
+        </div>
 
         <div className="flex justify-end gap-3">
           <button onClick={onClose} className="px-4 py-2 border rounded">

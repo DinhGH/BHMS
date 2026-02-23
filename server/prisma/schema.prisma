@@ -37,6 +37,7 @@ model LicenseKey {
 model Owner {
   id          Int             @id @default(autoincrement())
   userId      Int             @unique
+  qrImageUrl  String?
   houses      BoardingHouse[]
   user        User            @relation(fields: [userId], references: [id])
   ReportAdmin ReportAdmin[]

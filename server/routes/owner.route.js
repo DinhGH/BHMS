@@ -24,16 +24,33 @@ import {
   getAllServices,
   updateServiceQuantity,
 } from "../controllers/owner.room.controller.js";
+
 import {
   makeInvoice,
   getInvoicesByRoom,
   updateInvoice,
   deleteInvoice,
 } from "../controllers/invoice.controller.js";
+
+// import { makeInvoice } from "../controllers/invoice.controller.js";
+import {
+  getOwnerProfile,
+  updateOwnerProfile,
+  changePassword,
+} from "../controllers/owner.profile.controller.js";
+import { uploadOwnerImage } from "../controllers/owner.upload.controller.js";
+
 import { authOwner } from "../middlewares/owner.middleware.js";
+import { uploadImage } from "../middlewares/upload.middleware.js";
 
 const router = express.Router();
 router.use(authOwner);
+
+// Profile routes
+router.get("/profile", getOwnerProfile);
+router.put("/profile", updateOwnerProfile);
+router.post("/profile/change-password", changePassword);
+router.post("/uploads/image", uploadImage.single("image"), uploadOwnerImage);
 router.get("/boarding-houses", getAllBoardingHouses);
 router.get("/boarding-houses/check", checkBoardingHouseByName);
 router.post("/boarding-houses", createBoardingHouse);

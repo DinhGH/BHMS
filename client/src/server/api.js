@@ -68,13 +68,13 @@ const api = {
   post: (url, data) =>
     request(url, {
       method: "POST",
-      body: JSON.stringify(data),
+      body: data instanceof FormData ? data : JSON.stringify(data),
     }),
 
   put: (url, data) =>
     request(url, {
       method: "PUT",
-      body: JSON.stringify(data),
+      body: data instanceof FormData ? data : JSON.stringify(data),
     }),
 
   delete: (url, data) =>

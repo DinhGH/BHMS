@@ -56,6 +56,7 @@ export const sendInvoiceEmail = async ({
   serviceCost,
   totalAmount,
   paymentLink,
+  qrImageUrl,
 }) => {
   if (!to) return { sent: false, error: "Missing recipient" };
   if (!paymentLink) {
@@ -78,13 +79,12 @@ export const sendInvoiceEmail = async ({
     `Your invoice for room ${roomName}${houseName ? ` - ${houseName}` : ""} for ${month}/${year} has been created.\n` +
     `Total amount: ${formatUsd(totalAmount)}.\n\n` +
     `Payment options:\n` +
-    `1) QR transfer - Please reply to this email with proof of payment for verification.\n` +
+    `1) QR transfer - Scan the QR code below and reply with transfer receipt for verification.\n` +
     `2) Stripe payment: ${paymentLink}.\n` +
     `3) Cash: please reply to schedule a time for collection.\n\n` +
     `Thank you.`;
 
-  const qrPlaceholderUrl =
-    "https://via.placeholder.com/200x200.png?text=QR+Coming+Soon";
+  const qrDisplayUrl = qrImageUrl || null;
 
   const html = `
     <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111;">
@@ -105,12 +105,13 @@ export const sendInvoiceEmail = async ({
         <li>
           <strong>QR transfer</strong>
           <div style="margin-top: 8px; color: #d32f2f; font-weight: 500; font-size: 14px;">
-            Please reply to this email with proof of payment (transfer receipt screenshot) for verification.
+            Scan this QR and reply to this email with proof of payment (transfer receipt screenshot) for verification.
           </div>
-          <div style="margin-top: 8px;">
-            <img src="${qrPlaceholderUrl}" alt="Payment QR" style="width: 200px; height: 200px; border: 1px solid #eee;" />
-          </div>
-          <div style="color: #666; font-size: 12px;">QR code will be updated soon.</div>
+          ${
+            qrDisplayUrl
+              ? `<div style="margin-top: 8px;"><img src="${qrDisplayUrl}" alt="Payment QR" style="width: 220px; height: 220px; border: 1px solid #eee; object-fit: cover;" /></div>`
+              : `<div style="margin-top: 8px; color: #666; font-size: 12px;">QR is currently unavailable. Please contact the owner for transfer details.</div>`
+          }
         </li>
         <li style="margin-top: 8px;">
           <strong>Stripe payment</strong><br />

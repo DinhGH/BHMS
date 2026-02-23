@@ -15,6 +15,7 @@ export default function AddNewBoardingHouseModal({ open, onClose, onSuccess }) {
   const [errors, setErrors] = useState({});
   const [isValid, setIsValid] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -38,13 +39,6 @@ export default function AddNewBoardingHouseModal({ open, onClose, onSuccess }) {
 
     if (form.waterFee && Number(form.waterFee) <= 0) {
       newErrors.waterFee = "Water price must be greater than 0";
-    }
-
-    if (form.imageUrl) {
-      const urlRegex = /^(https?:\/\/)/i;
-      if (!urlRegex.test(form.imageUrl.trim())) {
-        newErrors.imageUrl = "Invalid image URL";
-      }
     }
 
     setErrors(newErrors);
@@ -91,6 +85,33 @@ export default function AddNewBoardingHouseModal({ open, onClose, onSuccess }) {
       toast.error("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleUploadHouseImage = async (file) => {
+    if (!file) return;
+
+    try {
+      setUploadingImage(true);
+      const body = new FormData();
+      body.append("image", file);
+
+      const result = await api.post(
+        "/api/owner/uploads/image?target=boarding-house",
+        body,
+      );
+
+      if (!result?.url) {
+        throw new Error("Upload completed but URL was not returned");
+      }
+
+      setForm((prev) => ({ ...prev, imageUrl: result.url }));
+      toast.success("Image uploaded successfully");
+    } catch (err) {
+      console.error(err);
+      toast.error(err.message || "Failed to upload image");
+    } finally {
+      setUploadingImage(false);
     }
   };
 
@@ -170,13 +191,23 @@ export default function AddNewBoardingHouseModal({ open, onClose, onSuccess }) {
 
         {/* Image */}
         <div className="mb-6">
-          <label className="block mb-1 font-medium">Image URL</label>
+          <label className="block mb-1 font-medium">Image</label>
           <input
-            name="imageUrl"
-            value={form.imageUrl}
-            onChange={handleChange}
+            type="file"
+            accept="image/*"
+            onChange={(e) => handleUploadHouseImage(e.target.files?.[0])}
             className="w-full border p-2 rounded"
           />
+          {uploadingImage && (
+            <p className="text-blue-500 text-sm mt-1">Uploading image...</p>
+          )}
+          {form.imageUrl && (
+            <img
+              src={form.imageUrl}
+              alt="Boarding house preview"
+              className="mt-2 h-28 w-full object-cover rounded border"
+            />
+          )}
           {errors.imageUrl && (
             <p className="text-red-500 text-sm">{errors.imageUrl}</p>
           )}

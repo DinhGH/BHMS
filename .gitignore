@@ -1,4 +1,0 @@
-server/.env
-server/*.log
-server/seed-*.log
-server/prisma-seed.log

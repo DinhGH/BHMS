@@ -13,6 +13,7 @@ import {
 import AddServiceModal from "./AddServiceModal";
 import MakeInvoiceModal from "./MakeInvoiceModal";
 import EditInvoiceModal from "./EditInvoiceModal";
+import EditServiceQuantityModal from "./EditServiceQuantityModal";
 import api from "../server/api";
 import { toast } from "react-hot-toast";
 
@@ -28,6 +29,8 @@ export default function ViewDetailRoom({ roomId, onBack }) {
   const [showMakeInvoice, setShowMakeInvoice] = useState(false);
   const [invoices, setInvoices] = useState([]);
   const [editingInvoice, setEditingInvoice] = useState(null);
+  const [showEditServiceQuantity, setShowEditServiceQuantity] = useState(false);
+  const [serviceToEdit, setServiceToEdit] = useState(null);
 
   /* ================= FETCH ================= */
 
@@ -326,8 +329,8 @@ export default function ViewDetailRoom({ roomId, onBack }) {
                     {isUnitBased && (
                       <button
                         onClick={() => {
-                          // TODO: Open edit quantity modal
-                          console.log("Edit quantity for service:", s.id);
+                          setServiceToEdit(s);
+                          setShowEditServiceQuantity(true);
                         }}
                         className="text-blue-500 text-sm hover:underline px-2 py-1 hover:bg-blue-50 rounded"
                       >
@@ -552,6 +555,17 @@ export default function ViewDetailRoom({ roomId, onBack }) {
           onUpdated={fetchRoomInvoices}
         />
       )}
+
+      <EditServiceQuantityModal
+        isOpen={showEditServiceQuantity}
+        onClose={() => {
+          setShowEditServiceQuantity(false);
+          setServiceToEdit(null);
+        }}
+        roomId={roomId}
+        service={serviceToEdit}
+        onSuccess={fetchRoomServices}
+      />
     </div>
   );
 }

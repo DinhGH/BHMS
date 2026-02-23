@@ -1,8 +1,15 @@
+/* eslint-disable no-unused-vars */
 import { FaUserCircle, FaBell, FaBars, FaTimes } from "react-icons/fa";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 
-function Navbar({ onMenuClick, onBellClick, onAvatarClick, user }) {
+function Navbar({
+  onMenuClick,
+  onBellClick,
+  onAvatarClick,
+  user,
+  onProfileClick,
+}) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   // Lấy user từ prop hoặc localStorage
@@ -84,9 +91,9 @@ function Navbar({ onMenuClick, onBellClick, onAvatarClick, user }) {
                 className="flex items-center gap-2 focus:outline-none p-1 rounded-lg hover:bg-blue-50 transition-colors"
                 onClick={handleAvatarClick}
               >
-                {currentUser?.avatar ? (
+                {currentUser?.avatar || currentUser?.imageUrl ? (
                   <img
-                    src={currentUser.avatar}
+                    src={currentUser.avatar || currentUser.imageUrl}
                     alt={displayName}
                     className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full border-2 border-blue-400 object-cover"
                   />

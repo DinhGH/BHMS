@@ -37,12 +37,22 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("rememberMe");
   };
 
+  const updateUser = (partialUserData) => {
+    setUser((prevUser) => {
+      if (!prevUser) return prevUser;
+      const mergedUser = { ...prevUser, ...partialUserData };
+      localStorage.setItem("user", JSON.stringify(mergedUser));
+      return mergedUser;
+    });
+  };
+
   const value = {
     user,
     token,
     loading: false,
     login,
     logout,
+    updateUser,
     isAuthenticated: !!token,
   };
 

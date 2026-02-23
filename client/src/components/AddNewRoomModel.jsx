@@ -19,6 +19,7 @@ export default function AddNewRoomModal({ open, onClose, houseId, onSuccess }) {
   const [errors, setErrors] = useState({});
   const [isValid, setIsValid] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   useEffect(() => {
     const newErrors = {};
@@ -31,13 +32,6 @@ export default function AddNewRoomModal({ open, onClose, houseId, onSuccess }) {
       newErrors.price = "Rent price is required";
     } else if (Number(form.price) <= 0) {
       newErrors.price = "Rent price must be greater than 0";
-    }
-
-    if (form.image) {
-      const urlRegex = /^(https?:\/\/)/i;
-      if (!urlRegex.test(form.image.trim())) {
-        newErrors.image = "Invalid image URL";
-      }
     }
 
     if (form.contractStart && form.contractEnd) {
@@ -101,6 +95,32 @@ export default function AddNewRoomModal({ open, onClose, houseId, onSuccess }) {
       toast.error("Failed to add room");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleUploadRoomImage = async (file) => {
+    if (!file) return;
+
+    try {
+      setUploadingImage(true);
+      const body = new FormData();
+      body.append("image", file);
+      const result = await api.post(
+        "/api/owner/uploads/image?target=room",
+        body,
+      );
+
+      if (!result?.url) {
+        throw new Error("Upload completed but URL was not returned");
+      }
+
+      setForm((prev) => ({ ...prev, image: result.url }));
+      toast.success("Image uploaded successfully");
+    } catch (error) {
+      console.error(error);
+      toast.error(error.message || "Failed to upload image");
+    } finally {
+      setUploadingImage(false);
     }
   };
 
@@ -209,14 +229,23 @@ export default function AddNewRoomModal({ open, onClose, houseId, onSuccess }) {
 
         {/* Image */}
         <div className="mb-6">
-          <label className="block mb-1 font-medium">Image URL</label>
+          <label className="block mb-1 font-medium">Image</label>
           <input
-            name="image"
-            value={form.image}
-            onChange={handleChange}
+            type="file"
+            accept="image/*"
+            onChange={(e) => handleUploadRoomImage(e.target.files?.[0])}
             className="w-full border p-2 rounded"
-            placeholder="https://..."
           />
+          {uploadingImage && (
+            <p className="text-blue-500 text-sm mt-1">Uploading image...</p>
+          )}
+          {form.image && (
+            <img
+              src={form.image}
+              alt="Room preview"
+              className="mt-2 h-28 w-full object-cover rounded border"
+            />
+          )}
           {errors.image && (
             <p className="text-sm text-red-500 mt-1">{errors.image}</p>
           )}

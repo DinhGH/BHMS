@@ -60,6 +60,11 @@ export const makeInvoice = async (req, res) => {
             name: true,
             electricFee: true,
             waterFee: true,
+            owner: {
+              select: {
+                qrImageUrl: true,
+              },
+            },
           },
         },
         roomServices: true,
@@ -294,6 +299,7 @@ export const makeInvoice = async (req, res) => {
           serviceCost,
           totalAmount,
           paymentLink,
+          qrImageUrl: room.house?.owner?.qrImageUrl || null,
         });
       }
     } catch (mailError) {
