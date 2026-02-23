@@ -28,10 +28,13 @@ async function request(url, options = {}) {
       // ignore JSON parse error
     }
 
-    throw {
+    const err = new Error(errorData.message || "Request failed");
+    err.status = res.status;
+    err.response = {
       status: res.status,
-      message: errorData.message || "Unauthorized",
+      data: errorData,
     };
+    throw err;
   }
 
   if (res.status === 204) return null;

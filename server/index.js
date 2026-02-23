@@ -7,13 +7,16 @@ import cors from "cors";
 import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import serviceRoutes from "./routes/services.js";
-import paymentRoutes from "./routes/paymentRoutes.js";
+import paymentRoutes, { handleStripeWebhook } from "./routes/paymentRoutes.js";
 import tenantRoutes from "./routes/tenantRoutes.js";
 import reportRoutes from "./routes/reportRoutes.js";
 import reportAdminRoutes from "./routes/reportAdminRoutes.js";
 
 import ownerRoute from "./routes/owner.route.js";
 import adminRoutes from "./routes/admin.routes.js";
+
+// Scheduled tasks
+import { scheduleOverdueCheck } from "./services/overdueService.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -24,6 +27,15 @@ app.use(
     credentials: true,
   }),
 );
+
+// Stripe webhook must be registered BEFORE express.json()
+// because it needs raw body for signature verification
+app.post(
+  "/api/webhooks/stripe",
+  express.raw({ type: "application/json" }),
+  handleStripeWebhook,
+);
+
 app.use(express.json());
 
 // Health check
@@ -58,4 +70,13 @@ app.use((err, req, res, next) => {
 // Start server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+
+  // Initialize scheduled tasks
+  console.log("📅 Initializing scheduled tasks...");
+  scheduleOverdueCheck();
+  const hour = Number(process.env.OVERDUE_CHECK_HOUR || 6);
+  const minute = Number(process.env.OVERDUE_CHECK_MINUTE || 0);
+  console.log(
+    `✓ Overdue check scheduled (runs daily at ${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")})`,
+  );
 });

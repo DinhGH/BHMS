@@ -3,7 +3,7 @@ import { prisma } from "../lib/prisma.js";
 export async function listTenants() {
   const tenants = await prisma.tenant.findMany({
     include: {
-      Invoice: {
+      invoices: {
         select: {
           id: true,
           status: true,
@@ -13,7 +13,7 @@ export async function listTenants() {
         select: {
           id: true,
           name: true,
-          BoardingHouse: {
+          house: {
             select: {
               id: true,
               name: true,
@@ -49,7 +49,7 @@ export async function getTenantById(id) {
   const tenant = await prisma.tenant.findUnique({
     where: { id: parseInt(id, 10) },
     include: {
-      Invoice: {
+      invoices: {
         include: {
           Room: {
             include: {
@@ -128,10 +128,10 @@ export async function createTenant(data) {
       startDate: startDateValue,
     },
     include: {
-      Invoice: true,
+      invoices: true,
       Room: {
         include: {
-          BoardingHouse: true,
+          house: true,
         },
       },
     },
@@ -187,10 +187,10 @@ export async function updateTenant(id, data) {
       ...(endDate && { endDate: new Date(endDate) }),
     },
     include: {
-      Invoice: true,
+      invoices: true,
       Room: {
         include: {
-          BoardingHouse: true,
+          house: true,
         },
       },
     },

@@ -98,20 +98,22 @@ export const getRoomDetail = async (req, res) => {
     const room = await prisma.room.findUnique({
       where: { id: roomId },
       include: {
-        BoardingHouse: {
+        house: {
           select: {
             electricFee: true,
             waterFee: true,
           },
         },
-        Tenant: true,
+        Tenant: {
+          orderBy: { id: "asc" },
+        },
         Invoice: {
           take: 1,
           orderBy: { createdAt: "desc" },
         },
         roomServices: {
           include: {
-            Service: true,
+            service: true,
           },
         },
       },
@@ -140,8 +142,8 @@ export const getRoomDetail = async (req, res) => {
       waterMeterNow: room.waterMeterNow,
       waterMeterAfter: room.waterMeterAfter,
 
-      electricFee: room.BoardingHouse.electricFee,
-      waterFee: room.BoardingHouse.waterFee,
+      electricFee: room.house?.electricFee ?? null,
+      waterFee: room.house?.waterFee ?? null,
 
       tenants: room.Tenant,
 
@@ -167,8 +169,17 @@ export const createRoom = async (req, res) => {
     const { houseId, name, price, image, contractStart, contractEnd } =
       req.body;
 
-    if (!houseId || !name || !price) {
+    if (!name || !price) {
       return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    const parsedHouseId =
+      houseId === undefined || houseId === null || houseId === ""
+        ? null
+        : Number(houseId);
+
+    if (parsedHouseId !== null && isNaN(parsedHouseId)) {
+      return res.status(400).json({ message: "Invalid boarding house id" });
     }
 
     const room = await prisma.room.create({
@@ -181,10 +192,13 @@ export const createRoom = async (req, res) => {
 
         contractEnd: contractEnd ? new Date(contractEnd) : null,
 
-        // 🔥 BẮT BUỘC
-        house: {
-          connect: { id: Number(houseId) },
-        },
+        ...(parsedHouseId
+          ? {
+              house: {
+                connect: { id: parsedHouseId },
+              },
+            }
+          : { houseId: null }),
       },
     });
 
@@ -277,6 +291,7 @@ export const updateRoom = async (req, res) => {
       contractStart,
       contractEnd,
       isLocked,
+      houseId,
     } = req.body;
 
     const room = await prisma.room.findUnique({
@@ -285,6 +300,26 @@ export const updateRoom = async (req, res) => {
 
     if (!room) {
       return res.status(404).json({ message: "Room not found" });
+    }
+
+    let nextHouseId = undefined;
+    if (houseId !== undefined) {
+      if (houseId === null || houseId === "") {
+        nextHouseId = null;
+      } else {
+        const parsedHouseId = Number(houseId);
+        if (isNaN(parsedHouseId)) {
+          return res.status(400).json({ message: "Invalid boarding house id" });
+        }
+
+        if (room.houseId && room.houseId !== parsedHouseId) {
+          return res.status(400).json({
+            message: "Room already assigned to another boarding house",
+          });
+        }
+
+        nextHouseId = parsedHouseId;
+      }
     }
 
     const updatedRoom = await prisma.room.update({
@@ -321,6 +356,8 @@ export const updateRoom = async (req, res) => {
         contractEnd: contractEnd ? new Date(contractEnd) : room.contractEnd,
 
         isLocked: isLocked ?? room.isLocked,
+
+        ...(nextHouseId !== undefined ? { houseId: nextHouseId } : {}),
       },
     });
 
@@ -328,6 +365,67 @@ export const updateRoom = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Update room failed" });
+  }
+};
+
+/* =====================================================
+   GET ALL ROOMS (OWNER)
+   ===================================================== */
+export const getAllRooms = async (req, res) => {
+  try {
+    const { unassigned } = req.query;
+
+    const where = {};
+    if (unassigned === "true") {
+      where.houseId = null;
+    }
+
+    const rooms = await prisma.room.findMany({
+      where,
+      include: {
+        house: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        Tenant: true,
+        Invoice: {
+          take: 1,
+          orderBy: { createdAt: "desc" },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const result = rooms.map((room) => {
+      const tenantCount = room.Tenant.length;
+      const invoice = room.Invoice[0] ?? null;
+
+      let roomStatus = "EMPTY";
+      if (room.isLocked) roomStatus = "LOCKED";
+      else if (tenantCount > 0) roomStatus = "OCCUPIED";
+
+      return {
+        id: room.id,
+        name: room.name,
+        imageUrl: room.imageUrl,
+        price: room.price,
+        houseId: room.house?.id ?? null,
+        houseName: room.house?.name ?? null,
+        status: roomStatus,
+        currentOccupants: tenantCount,
+        paymentStatus:
+          tenantCount > 0 ? (invoice?.status ?? "NO_INVOICE") : "NO_TENANT",
+        month: invoice?.month ?? null,
+        year: invoice?.year ?? null,
+      };
+    });
+
+    return res.json(result);
+  } catch (err) {
+    console.error("GET ALL ROOMS ERROR:", err);
+    return res.status(500).json({ message: "Server error" });
   }
 };
 /* =====================================================
@@ -652,7 +750,7 @@ export const getServicesOfRoom = async (req, res) => {
     const services = await prisma.roomService.findMany({
       where: { roomId },
       include: {
-        Service: {
+        service: {
           select: {
             id: true,
             name: true,

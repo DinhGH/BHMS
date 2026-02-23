@@ -6,6 +6,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import PaymentSuccess from "./pages/PaymentSuccess";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminLayout from "./layouts/AdminLayout.jsx";
 
@@ -73,6 +74,8 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+        <Route path="/payment/success" element={<PaymentSuccess />} />
 
         <Route path="/services" element={<ServiceManagement />} />
         <Route path="/reports" element={<ReportManagement />} />

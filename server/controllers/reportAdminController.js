@@ -2,7 +2,10 @@ import { prisma } from "../lib/prisma.js";
 
 const parsePagination = (req) => {
   const page = Math.max(parseInt(req.query.page || "1", 10), 1);
-  const limit = Math.min(Math.max(parseInt(req.query.limit || "10", 10), 1), 100);
+  const limit = Math.min(
+    Math.max(parseInt(req.query.limit || "10", 10), 1),
+    100,
+  );
   const skip = (page - 1) * limit;
   return { page, limit, skip };
 };
@@ -55,7 +58,9 @@ export const listReportAdmins = async (req, res) => {
     }
 
     const allowedOrderBy = ["id", "createdAt"];
-    const safeOrderBy = allowedOrderBy.includes(orderBy) ? orderBy : "createdAt";
+    const safeOrderBy = allowedOrderBy.includes(orderBy)
+      ? orderBy
+      : "createdAt";
     const safeOrder = order === "asc" ? "asc" : "desc";
 
     const [total, reports] = await Promise.all([
@@ -74,7 +79,7 @@ export const listReportAdmins = async (req, res) => {
           where: { id: { in: senderIds } },
           select: {
             id: true,
-            User: { select: { email: true } },
+            user: { select: { email: true } },
           },
         })
       : [];
@@ -110,12 +115,13 @@ export const createReportAdmin = async (req, res) => {
 
     const senderIdNum = Number(senderId);
     const hasSenderId = Number.isFinite(senderIdNum) && senderIdNum > 0;
-    const normalizedEmail = typeof senderEmail === "string"
-      ? senderEmail.trim().toLowerCase()
-      : "";
+    const normalizedEmail =
+      typeof senderEmail === "string" ? senderEmail.trim().toLowerCase() : "";
 
     if (!hasSenderId && !normalizedEmail) {
-      return res.status(400).json({ message: "senderId or senderEmail is required" });
+      return res
+        .status(400)
+        .json({ message: "senderId or senderEmail is required" });
     }
     if (!target || typeof target !== "string") {
       return res.status(400).json({ message: "Target is required" });
@@ -128,7 +134,8 @@ export const createReportAdmin = async (req, res) => {
 
     if (images !== null && images !== undefined) {
       const isStringArray =
-        Array.isArray(images) && images.every((item) => typeof item === "string");
+        Array.isArray(images) &&
+        images.every((item) => typeof item === "string");
       if (!isStringArray) {
         return res
           .status(400)
@@ -263,7 +270,8 @@ export const updateReportAdmin = async (req, res) => {
     }
     if (images !== undefined) {
       const isStringArray =
-        Array.isArray(images) && images.every((item) => typeof item === "string");
+        Array.isArray(images) &&
+        images.every((item) => typeof item === "string");
       if (images !== null && !isStringArray) {
         return res
           .status(400)
@@ -357,7 +365,13 @@ export const updateReportAdminStatus = async (req, res) => {
       return res.status(400).json({ message: "Invalid report ID" });
     }
 
-    const validStatuses = ["PENDING", "PROCESSING", "RESOLVED", "REVIEWING", "FIXING"];
+    const validStatuses = [
+      "PENDING",
+      "PROCESSING",
+      "RESOLVED",
+      "REVIEWING",
+      "FIXING",
+    ];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({
         message: `Invalid status. Must be one of: ${validStatuses.join(", ")}`,
@@ -425,4 +439,3 @@ export const deleteReportAdmin = async (req, res) => {
     res.status(500).json({ message: "Failed to delete report" });
   }
 };
-

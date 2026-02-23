@@ -187,7 +187,11 @@ export default function ViewDetailBoardingHouse({ house, onBack }) {
                   className="bg-white border rounded-lg shadow hover:shadow-xl"
                 >
                   <img
-                    src={room.imageUrl || "/no-image.png"}
+                    src={
+                      room.imageUrl && room.imageUrl.startsWith("http")
+                        ? room.imageUrl
+                        : "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=800&h=600&fit=crop"
+                    }
                     className="w-full h-40 object-cover"
                   />
 
