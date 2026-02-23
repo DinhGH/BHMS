@@ -1,36 +1,30 @@
 import { useEffect, useState } from "react";
-import api from "../server/api";
+import { updateContract } from "../services/boardingHouse";
 import { toast } from "react-hot-toast";
 
 export default function EditRoomModal({ open, room, onClose, onUpdated }) {
   const [form, setForm] = useState({
-    name: "",
-    price: "",
     electricMeterNow: "",
     electricMeterAfter: "",
     waterMeterNow: "",
     waterMeterAfter: "",
     contractStart: "",
     contractEnd: "",
-    imageUrl: "",
   });
-  const [uploadingImage, setUploadingImage] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (room) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setForm({
-        name: room.name || "",
-        price: room.price || "",
-        electricMeterNow: room.electricMeterNow || "",
-        electricMeterAfter: room.electricMeterAfter || "",
-        waterMeterNow: room.waterMeterNow || "",
-        waterMeterAfter: room.waterMeterAfter || "",
-        contractStart: room.contractStart
-          ? room.contractStart.slice(0, 10)
-          : "",
-        contractEnd: room.contractEnd ? room.contractEnd.slice(0, 10) : "",
-        imageUrl: room.imageUrl || "",
+        electricMeterNow: room.electricMeterAfter ?? 0,
+        waterMeterNow: room.waterMeterAfter ?? 0,
+
+        electricMeterAfter: "",
+        waterMeterAfter: "",
+
+        contractStart: room.contractStart?.slice(0, 10) || "",
+        contractEnd: room.contractEnd?.slice(0, 10) || "",
       });
     }
   }, [room]);
@@ -41,49 +35,30 @@ export default function EditRoomModal({ open, room, onClose, onUpdated }) {
 
   const handleSubmit = async () => {
     try {
-      await api.put(`/api/owner/rooms/${room.id}`, {
-        name: form.name.trim(),
-        price: Number(form.price),
-        electricMeterNow: Number(form.electricMeterNow) || 0,
-        electricMeterAfter: Number(form.electricMeterAfter) || 0,
-        waterMeterNow: Number(form.waterMeterNow) || 0,
-        waterMeterAfter: Number(form.waterMeterAfter) || 0,
-        contractStart: form.contractStart || null,
-        contractEnd: form.contractEnd || null,
-        imageUrl: form.imageUrl || null,
-      });
+      setLoading(true);
+      const payload = {};
 
+      const electricNow = Number(form.electricMeterNow);
+      const electricAfter = Number(form.electricMeterAfter);
+      const waterNow = Number(form.waterMeterNow);
+      const waterAfter = Number(form.waterMeterAfter);
+
+      if (!isNaN(electricNow)) payload.electricMeterNow = electricNow;
+      if (!isNaN(electricAfter)) payload.electricMeterAfter = electricAfter;
+      if (!isNaN(waterNow)) payload.waterMeterNow = waterNow;
+      if (!isNaN(waterAfter)) payload.waterMeterAfter = waterAfter;
+
+      if (form.contractStart) payload.contractStart = form.contractStart;
+      if (form.contractEnd) payload.contractEnd = form.contractEnd;
+
+      await updateContract(payload, room.id);
+      setLoading(false);
       toast.success("Room updated successfully");
       onUpdated();
       onClose();
       // eslint-disable-next-line no-unused-vars
     } catch (err) {
       toast.error("Update failed");
-    }
-  };
-
-  const handleUploadRoomImage = async (file) => {
-    if (!file) return;
-
-    try {
-      setUploadingImage(true);
-      const body = new FormData();
-      body.append("image", file);
-      const result = await api.post(
-        "/api/owner/uploads/image?target=room",
-        body,
-      );
-
-      if (!result?.url) {
-        throw new Error("Upload completed but URL was not returned");
-      }
-
-      setForm((prev) => ({ ...prev, imageUrl: result.url }));
-      toast.success("Image uploaded successfully");
-    } catch (err) {
-      toast.error(err.message || "Image upload failed");
-    } finally {
-      setUploadingImage(false);
     }
   };
 
@@ -94,30 +69,10 @@ export default function EditRoomModal({ open, room, onClose, onUpdated }) {
       <div className="bg-white rounded-lg w-full max-w-lg max-h-[90vh] flex flex-col">
         {/* HEADER */}
         <div className="px-6 py-4 border-b">
-          <h2 className="text-xl font-semibold">Edit Room</h2>
+          <h2 className="text-xl font-semibold">Edit Contract</h2>
         </div>
 
-        {/* BODY (SCROLL) */}
         <div className="px-6 py-4 overflow-y-auto space-y-3">
-          {/* Room name */}
-          <label className="block font-medium">Room Name</label>
-          <input
-            name="name"
-            value={form.name}
-            onChange={handleChange}
-            className="w-full border p-2 rounded"
-          />
-
-          {/* Price */}
-          <label className="block font-medium">Price</label>
-          <input
-            type="number"
-            name="price"
-            value={form.price}
-            onChange={handleChange}
-            className="w-full border p-2 rounded"
-          />
-
           {/* Electric */}
           <label className="block font-medium">Electric Meter (Current)</label>
           <input
@@ -174,25 +129,6 @@ export default function EditRoomModal({ open, room, onClose, onUpdated }) {
             onChange={handleChange}
             className="w-full border p-2 rounded"
           />
-
-          {/* Image */}
-          <label className="block font-medium">Image</label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => handleUploadRoomImage(e.target.files?.[0])}
-            className="w-full border p-2 rounded"
-          />
-          {uploadingImage && (
-            <p className="text-xs text-blue-600 mt-1">Uploading image...</p>
-          )}
-          {form.imageUrl && (
-            <img
-              src={form.imageUrl}
-              alt="Room preview"
-              className="mt-2 h-28 w-full object-cover rounded border"
-            />
-          )}
         </div>
 
         {/* FOOTER */}
@@ -204,7 +140,7 @@ export default function EditRoomModal({ open, room, onClose, onUpdated }) {
             onClick={handleSubmit}
             className="bg-blue-600 text-white px-4 py-2 rounded"
           >
-            Save
+            {loading ? "Saving..." : "Save"}
           </button>
         </div>
       </div>

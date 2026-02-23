@@ -1,8 +1,10 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 import { useEffect, useState } from "react";
 import SearchInput from "./ui/SearchInput.jsx";
 import Pagination from "./ui/Pagination.jsx";
-import api from "../server/api.js";
+import {
+  getBoardingHouses,
+  deleteBoardingHouseByName,
+} from "../services/boardingHouse.js";
 import AddNewBoardingHouseModal from "./AddNewBoardingHouseModal.jsx";
 import RoomManagement from "./ViewDetailBoardingHouse.jsx";
 import DeleteHouseModal from "./DeleteHouseModal.jsx";
@@ -35,8 +37,7 @@ export default function BoardingHouseManagement({ ownerId }) {
   const fetchHouses = async () => {
     try {
       setLoading(true);
-      const query = search ? `?search=${encodeURIComponent(search)}` : "";
-      const data = await api.get(`/api/owner/boarding-houses${query}`);
+      const data = await getBoardingHouses(search);
       setHouses(data);
     } catch (error) {
       console.error("Fetch boarding houses error", error);
@@ -52,22 +53,12 @@ export default function BoardingHouseManagement({ ownerId }) {
   // Pagination logic
   //handle delete by name
   const handleDelete = async (houseName) => {
-    const confirmed = window.confirm(
-      `Are you sure you want to delete "${houseName}"?\nThis action cannot be undone.`,
-    );
-
-    if (!confirmed) return;
-
     try {
-      await api.delete(
-        `/api/owner/boarding-houses?name=${encodeURIComponent(houseName)}`,
-      );
-
-      alert("Deleted successfully");
-      fetchHouses();
+      await deleteBoardingHouseByName(houseName);
+      await fetchHouses();
     } catch (error) {
       console.error("Delete error", error);
-      alert("Delete failed. Check house name again.");
+      throw error; // 👈 QUAN TRỌNG
     }
   };
 
@@ -154,11 +145,7 @@ export default function BoardingHouseManagement({ ownerId }) {
                       }}
                     >
                       <img
-                        src={
-                          house.imageUrl && house.imageUrl.startsWith("http")
-                            ? house.imageUrl
-                            : "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&h=600&fit=crop"
-                        }
+                        src={house.imageUrl || "/no-image.png"}
                         alt={house.name}
                         className="apple-card-image"
                       />

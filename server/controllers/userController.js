@@ -79,7 +79,11 @@ export const updateMyProfile = async (req, res) => {
       return res.status(400).json({ message: "Full name must be a string" });
     }
 
-    if (imageUrl !== undefined && imageUrl !== null && typeof imageUrl !== "string") {
+    if (
+      imageUrl !== undefined &&
+      imageUrl !== null &&
+      typeof imageUrl !== "string"
+    ) {
       return res.status(400).json({ message: "Image URL must be a string" });
     }
 
