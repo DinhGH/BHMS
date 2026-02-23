@@ -7,6 +7,7 @@ import AddNewBoardingHouseModal from "./AddNewBoardingHouseModal.jsx";
 import RoomManagement from "./ViewDetailBoardingHouse.jsx";
 import DeleteHouseModal from "./DeleteHouseModal.jsx";
 import EditBoardingHouseModal from "./EditBoardingHouseModal.jsx";
+import Loading from "./loading.jsx";
 import "../index.css";
 
 export default function BoardingHouseManagement({ ownerId }) {
@@ -122,92 +123,92 @@ export default function BoardingHouseManagement({ ownerId }) {
           />
 
           {/* Content */}
-          {loading ? (
-            <div className="text-center py-10 text-slate-500">Loading...</div>
-          ) : houses.length === 0 ? (
-            <div className="text-center py-10 text-slate-500">
-              No boarding houses found
-            </div>
-          ) : (
-            <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 ">
-                {paginatedHouses.map((house) => (
-                  <div
-                    key={house.id}
-                    className="bg-white rounded-lg border shadow-sm overflow-hidden hover:shadow-2xl"
-                  >
+          <Loading isLoading={loading} />
+          {!loading &&
+            (houses.length === 0 ? (
+              <div className="text-center py-10 text-slate-500">
+                No boarding houses found
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 ">
+                  {paginatedHouses.map((house) => (
                     <div
-                      className="apple-card"
-                      onMouseMove={(e) => {
-                        const card = e.currentTarget;
-                        const rect = card.getBoundingClientRect();
-                        const x = e.clientX - rect.left;
-                        const y = e.clientY - rect.top;
-                        const centerX = rect.width / 2;
-                        const centerY = rect.height / 2;
-                        const rotateX = -(y - centerY) / 14;
-                        const rotateY = (x - centerX) / 14;
-                        card.style.transform = `perspective(1200px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.05)`;
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = `perspective(1200px) rotateX(0deg) rotateY(0deg) scale(1)`;
-                      }}
+                      key={house.id}
+                      className="bg-white rounded-lg border shadow-sm overflow-hidden hover:shadow-2xl"
                     >
-                      <img
-                        src={
-                          house.imageUrl && house.imageUrl.startsWith("http")
-                            ? house.imageUrl
-                            : "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&h=600&fit=crop"
-                        }
-                        alt={house.name}
-                        className="apple-card-image"
-                      />
-                    </div>
-
-                    <div className="p-4 space-y-2">
-                      <h3 className="font-semibold">{house.name}</h3>
-                      <div className="text-sm text-slate-600 space-y-1">
-                        <div>Total Rooms: {house.totalRooms}</div>
-                        <div>Occupied: {house.occupied}</div>
-                        <div>Available: {house.available}</div>
-                      </div>
-                      <div className="flex justify-between">
-                        <button
-                          className="text-sm font-medium hover:underline"
-                          onClick={() => setSelectedHouse(house)}
-                        >
-                          View Detail →
-                        </button>
-                        <button
-                          className="text-sm font-medium hover:underline pr-4"
-                          onClick={() => {
-                            setEditingHouse(house);
-                            setOpenEditModal(true);
-                          }}
-                        >
-                          Edit
-                        </button>
-                        <EditBoardingHouseModal
-                          open={openEditModal}
-                          house={editingHouse}
-                          onClose={() => setOpenEditModal(false)}
-                          onSuccess={fetchHouses}
+                      <div
+                        className="apple-card"
+                        onMouseMove={(e) => {
+                          const card = e.currentTarget;
+                          const rect = card.getBoundingClientRect();
+                          const x = e.clientX - rect.left;
+                          const y = e.clientY - rect.top;
+                          const centerX = rect.width / 2;
+                          const centerY = rect.height / 2;
+                          const rotateX = -(y - centerY) / 14;
+                          const rotateY = (x - centerX) / 14;
+                          card.style.transform = `perspective(1200px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.05)`;
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = `perspective(1200px) rotateX(0deg) rotateY(0deg) scale(1)`;
+                        }}
+                      >
+                        <img
+                          src={
+                            house.imageUrl && house.imageUrl.startsWith("http")
+                              ? house.imageUrl
+                              : "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&h=600&fit=crop"
+                          }
+                          alt={house.name}
+                          className="apple-card-image"
                         />
                       </div>
+
+                      <div className="p-4 space-y-2">
+                        <h3 className="font-semibold">{house.name}</h3>
+                        <div className="text-sm text-slate-600 space-y-1">
+                          <div>Total Rooms: {house.totalRooms}</div>
+                          <div>Occupied: {house.occupied}</div>
+                          <div>Available: {house.available}</div>
+                        </div>
+                        <div className="flex justify-between">
+                          <button
+                            className="text-sm font-medium hover:underline"
+                            onClick={() => setSelectedHouse(house)}
+                          >
+                            View Detail →
+                          </button>
+                          <button
+                            className="text-sm font-medium hover:underline pr-4"
+                            onClick={() => {
+                              setEditingHouse(house);
+                              setOpenEditModal(true);
+                            }}
+                          >
+                            Edit
+                          </button>
+                          <EditBoardingHouseModal
+                            open={openEditModal}
+                            house={editingHouse}
+                            onClose={() => setOpenEditModal(false)}
+                            onSuccess={fetchHouses}
+                          />
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <Pagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={setCurrentPage}
-                />
-              )}
-            </>
-          )}
+                  ))}
+                </div>
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                  />
+                )}
+              </>
+            ))}
         </>
       )}
     </div>

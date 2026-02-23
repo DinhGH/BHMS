@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import Loading from "./loading.jsx";
 import {
   getServices,
   createService,
@@ -337,85 +338,80 @@ function ServiceManagement() {
         )}
 
         {/* Loading State */}
-        {loading ? (
-          <div className="text-center py-16 bg-white rounded-xl shadow-md border border-gray-200">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-gray-300 border-t-gray-600"></div>
-            <p className="text-gray-600 mt-4 font-medium">
-              Loading services...
-            </p>
-          </div>
-        ) : filteredServices.length === 0 ? (
-          <div className="text-center py-16 bg-white rounded-xl shadow-md border border-gray-200">
-            <div className="text-6xl mb-4">📦</div>
-            <p className="text-gray-600 text-lg font-medium">
-              {allServices.length === 0
-                ? "No services available yet. Create your first service!"
-                : "No services match your search criteria."}
-            </p>
-          </div>
-        ) : (
-          /* Services Grid - Responsive Cards */
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredServices.map((service) => (
-              <div
-                key={service.id}
-                className="bg-white rounded-xl shadow-md border border-gray-200 hover:shadow-xl transition-all duration-300 overflow-hidden group"
-              >
-                {/* Card Header */}
-                <div className="bg-linear-to-r from-gray-600 to-gray-500 p-5">
-                  <h3 className="text-xl font-bold text-white truncate mb-2">
-                    {service.name}
-                  </h3>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-3xl font-bold text-white">
-                      ${formatPrice(service.price)}
-                    </span>
-                    {service.unit && (
-                      <span className="text-gray-300 text-sm">
-                        {service.unit}
+        <Loading isLoading={loading} />
+        {!loading &&
+          (filteredServices.length === 0 ? (
+            <div className="text-center py-16 bg-white rounded-xl shadow-md border border-gray-200">
+              <div className="text-6xl mb-4">📦</div>
+              <p className="text-gray-600 text-lg font-medium">
+                {allServices.length === 0
+                  ? "No services available yet. Create your first service!"
+                  : "No services match your search criteria."}
+              </p>
+            </div>
+          ) : (
+            /* Services Grid - Responsive Cards */
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredServices.map((service) => (
+                <div
+                  key={service.id}
+                  className="bg-white rounded-xl shadow-md border border-gray-200 hover:shadow-xl transition-all duration-300 overflow-hidden group"
+                >
+                  {/* Card Header */}
+                  <div className="bg-linear-to-r from-gray-600 to-gray-500 p-5">
+                    <h3 className="text-xl font-bold text-white truncate mb-2">
+                      {service.name}
+                    </h3>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-3xl font-bold text-white">
+                        ${formatPrice(service.price)}
                       </span>
-                    )}
+                      {service.unit && (
+                        <span className="text-gray-300 text-sm">
+                          {service.unit}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Card Body */}
+                  <div className="p-5">
+                    <div className="mb-4">
+                      <span
+                        className={`inline-flex px-3 py-1.5 text-xs font-bold rounded-full border ${getPriceTypeBadgeColor(
+                          service.priceType,
+                        )}`}
+                      >
+                        {getPriceTypeLabel(service.priceType)}
+                      </span>
+                    </div>
+
+                    <div className="mb-5">
+                      <p className="text-gray-600 text-sm line-clamp-3 min-h-15">
+                        {service.description || "No description provided."}
+                      </p>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex gap-3 pt-4 border-t border-gray-200">
+                      <button
+                        onClick={() => handleEdit(service)}
+                        className="flex-1 bg-gray-200 hover:bg-gray-700 hover:text-white text-gray-900 px-4 py-2.5 rounded-lg transition-all duration-200 font-bold text-sm"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(service.id)}
+                        className="flex-1 bg-gray-200 hover:bg-gray-700 hover:text-white text-gray-900 px-4 py-2.5 rounded-lg transition-all duration-200 font-bold text-sm"
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </div>
                 </div>
-
-                {/* Card Body */}
-                <div className="p-5">
-                  <div className="mb-4">
-                    <span
-                      className={`inline-flex px-3 py-1.5 text-xs font-bold rounded-full border ${getPriceTypeBadgeColor(
-                        service.priceType,
-                      )}`}
-                    >
-                      {getPriceTypeLabel(service.priceType)}
-                    </span>
-                  </div>
-
-                  <div className="mb-5">
-                    <p className="text-gray-600 text-sm line-clamp-3 min-h-15">
-                      {service.description || "No description provided."}
-                    </p>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex gap-3 pt-4 border-t border-gray-200">
-                    <button
-                      onClick={() => handleEdit(service)}
-                      className="flex-1 bg-gray-200 hover:bg-gray-700 hover:text-white text-gray-900 px-4 py-2.5 rounded-lg transition-all duration-200 font-bold text-sm"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(service.id)}
-                      className="flex-1 bg-gray-200 hover:bg-gray-700 hover:text-white text-gray-900 px-4 py-2.5 rounded-lg transition-all duration-200 font-bold text-sm"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          ))}
       </div>
     </div>
   );

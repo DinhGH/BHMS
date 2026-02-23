@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import Loading from "./loading.jsx";
 import {
   getTenants,
   createTenant,
@@ -206,11 +207,7 @@ function TenantsManagement() {
   };
 
   if (loading) {
-    return (
-      <div className="max-w-7xl mx-auto p-6">
-        <p className="text-center text-gray-500">Loading data...</p>
-      </div>
-    );
+    return <Loading isLoading={true} />;
   }
 
   return (

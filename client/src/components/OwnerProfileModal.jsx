@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { FaTimes } from "react-icons/fa";
 import api from "../server/api";
+import Loading from "./loading.jsx";
 
 export default function OwnerProfileModal({ open, onClose, onProfileUpdate }) {
   const [activeTab, setActiveTab] = useState("profile");
@@ -166,16 +167,11 @@ export default function OwnerProfileModal({ open, onClose, onProfileUpdate }) {
           >
             Profile
           </button>
-
         </div>
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6">
-          {loading && (
-            <div className="flex items-center justify-center py-8">
-              <div className="text-slate-500">Loading...</div>
-            </div>
-          )}
+          <Loading isLoading={loading} />
 
           {/* Error and Success messages */}
           {error && (
@@ -399,8 +395,6 @@ export default function OwnerProfileModal({ open, onClose, onProfileUpdate }) {
               </div>
             </div>
           )}
-
-
         </div>
       </div>
     </div>

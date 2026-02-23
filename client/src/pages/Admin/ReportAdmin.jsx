@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Search, Trash2 } from "lucide-react";
+import Loading from "../../components/loading.jsx";
 import Pagination from "../../components/Admin/Pagination.jsx";
 import SearchInput from "../../components/Admin/SearchInput.jsx";
 import api from "../../services/api.js";
@@ -133,11 +134,7 @@ export default function ReportAdmin() {
   };
 
   if (loading) {
-    return (
-      <div className="max-w-7xl mx-auto p-6">
-        <p className="text-center text-gray-500">Loading...</p>
-      </div>
-    );
+    return <Loading isLoading={true} />;
   }
 
   return (

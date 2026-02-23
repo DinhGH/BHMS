@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import Loading from "./loading.jsx";
 import { addServiceToRoomApi } from "../server/roomServiceApi.js";
 import api from "../server/api";
 import { toast } from "react-hot-toast";
@@ -99,11 +100,8 @@ export default function AddServiceModal({ roomId, onClose, onAdded }) {
       <div className="bg-white rounded-xl shadow-lg w-[450px] p-6 space-y-4">
         <h2 className="text-lg font-semibold">Add Service to Room</h2>
 
-        {loadingServices ? (
-          <div className="text-center py-4 text-gray-500">
-            Loading services...
-          </div>
-        ) : services.length === 0 ? (
+        <Loading isLoading={loadingServices} />
+        {!loadingServices && services.length === 0 ? (
           <div className="text-center py-4 text-gray-500">
             No active services available
           </div>

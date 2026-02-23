@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import Loading from "./loading.jsx";
 import {
   createReportAdmin,
   getReportAdmins,
@@ -518,11 +519,7 @@ function ReportIssue() {
                   Your submitted reports
                 </h2>
               </div>
-              {myReportsLoading && (
-                <span className="text-xs font-semibold text-slate-500">
-                  Loading...
-                </span>
-              )}
+              {myReportsLoading && <Loading isLoading={myReportsLoading} />}
             </div>
 
             {myReportsError && (

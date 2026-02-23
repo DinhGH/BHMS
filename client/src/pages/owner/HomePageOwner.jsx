@@ -8,6 +8,7 @@ import TenantsManagement from "../../components/TenantsManagement";
 import NotificationManagement from "../../components/NotificationManagement";
 import ReportManagement from "../../components/ReportManagement";
 import ReportIssue from "../../components/ReportIssue";
+import Loading from "../../components/loading.jsx";
 import PaymentManagement from "../../components/PaymentManagement";
 import ServiceManagement from "../../components/ServiceManagement";
 import OwnerProfileModal from "../../components/OwnerProfileModal";
@@ -62,11 +63,7 @@ function HomePageOwner() {
   }, [notifications, searchQuery]);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        Loading...
-      </div>
-    );
+    return <Loading isLoading={true} />;
   }
 
   if (!user) {
@@ -178,9 +175,7 @@ function HomePageOwner() {
           </div>
           <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50">
             {notificationsLoading ? (
-              <div className="text-center text-sm text-slate-500 py-4">
-                Loading...
-              </div>
+              <Loading isLoading={true} />
             ) : filteredNotifications.length > 0 ? (
               filteredNotifications.map((notification) => (
                 <div

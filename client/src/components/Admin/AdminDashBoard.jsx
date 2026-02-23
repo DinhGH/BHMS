@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import Loading from "../loading.jsx";
 
 export default function AdminDashBoard() {
   const [dashboard, setDashboard] = useState(null);
@@ -64,16 +65,7 @@ export default function AdminDashBoard() {
   const formattedDate = new Intl.DateTimeFormat("vi-VN").format(new Date());
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-12 w-12 rounded-full border-4 border-blue-200 border-t-blue-600 animate-spin" />
-          <div className="text-lg font-semibold text-gray-700 tracking-wide animate-pulse">
-            Loading data...
-          </div>
-        </div>
-      </div>
-    );
+    return <Loading isLoading={true} />;
   }
 
   return (

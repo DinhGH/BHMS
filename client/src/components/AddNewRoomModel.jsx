@@ -1,6 +1,7 @@
 import { FaBed } from "react-icons/fa";
 import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
+import Loading from "./loading.jsx";
 import api from "../server/api.js";
 
 export default function AddNewRoomModal({ open, onClose, houseId, onSuccess }) {
@@ -290,30 +291,30 @@ export default function AddNewRoomModal({ open, onClose, houseId, onSuccess }) {
 
               <div>
                 <div className="text-sm font-medium mb-1">Available rooms</div>
-                {loadingRooms ? (
-                  <div className="text-sm text-slate-500">Loading...</div>
-                ) : availableRooms.length === 0 ? (
-                  <div className="text-sm text-slate-500">
-                    No unassigned rooms
-                  </div>
-                ) : (
-                  <div className="max-h-40 overflow-y-auto border rounded p-2 space-y-1">
-                    {availableRooms.map((room) => (
-                      <button
-                        key={room.id}
-                        type="button"
-                        onClick={() => setAttachRoomId(String(room.id))}
-                        className={`w-full text-left text-sm px-2 py-1 rounded hover:bg-slate-100 ${
-                          String(room.id) === String(attachRoomId)
-                            ? "bg-slate-100"
-                            : ""
-                        }`}
-                      >
-                        #{room.id} - {room.name} (${room.price})
-                      </button>
-                    ))}
-                  </div>
-                )}
+                <Loading isLoading={loadingRooms} />
+                {!loadingRooms &&
+                  (availableRooms.length === 0 ? (
+                    <div className="text-sm text-slate-500">
+                      No unassigned rooms
+                    </div>
+                  ) : (
+                    <div className="max-h-40 overflow-y-auto border rounded p-2 space-y-1">
+                      {availableRooms.map((room) => (
+                        <button
+                          key={room.id}
+                          type="button"
+                          onClick={() => setAttachRoomId(String(room.id))}
+                          className={`w-full text-left text-sm px-2 py-1 rounded hover:bg-slate-100 ${
+                            String(room.id) === String(attachRoomId)
+                              ? "bg-slate-100"
+                              : ""
+                          }`}
+                        >
+                          #{room.id} - {room.name} (${room.price})
+                        </button>
+                      ))}
+                    </div>
+                  ))}
               </div>
 
               <div className="flex justify-end">

@@ -3,6 +3,7 @@ import SearchInput from "./ui/SearchInput.jsx";
 import Pagination from "./ui/Pagination.jsx";
 import ViewDetailRoom from "./ViewDetailRoom.jsx";
 import AddNewRoomModal from "./AddNewRoomModel.jsx";
+import Loading from "./loading.jsx";
 import api from "../server/api.js";
 
 export default function RoomManagement() {
@@ -81,56 +82,56 @@ export default function RoomManagement() {
         onSuccess={fetchRooms}
       />
 
-      {loading ? (
-        <div className="text-center py-10 text-slate-500">Loading...</div>
-      ) : filteredRooms.length === 0 ? (
-        <div className="text-center py-10 text-slate-500">No rooms found</div>
-      ) : (
-        <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {paginatedRooms.map((room) => (
-              <div
-                key={room.id}
-                className="bg-white border rounded-lg shadow hover:shadow-xl"
-              >
-                <img
-                  src={
-                    room.imageUrl && room.imageUrl.startsWith("http")
-                      ? room.imageUrl
-                      : "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=800&h=600&fit=crop"
-                  }
-                  className="w-full h-40 object-cover"
-                />
+      <Loading isLoading={loading} />
+      {!loading &&
+        (filteredRooms.length === 0 ? (
+          <div className="text-center py-10 text-slate-500">No rooms found</div>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {paginatedRooms.map((room) => (
+                <div
+                  key={room.id}
+                  className="bg-white border rounded-lg shadow hover:shadow-xl"
+                >
+                  <img
+                    src={
+                      room.imageUrl && room.imageUrl.startsWith("http")
+                        ? room.imageUrl
+                        : "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=800&h=600&fit=crop"
+                    }
+                    className="w-full h-40 object-cover"
+                  />
 
-                <div className="p-4 space-y-2">
-                  <h3 className="font-semibold">{room.name}</h3>
-                  <div className="text-sm text-slate-600 space-y-1">
-                    <div>Rent: ${room.price} / Month</div>
-                    <div>
-                      House: {room.houseName ? room.houseName : "Unassigned"}
+                  <div className="p-4 space-y-2">
+                    <h3 className="font-semibold">{room.name}</h3>
+                    <div className="text-sm text-slate-600 space-y-1">
+                      <div>Rent: ${room.price} / Month</div>
+                      <div>
+                        House: {room.houseName ? room.houseName : "Unassigned"}
+                      </div>
                     </div>
+
+                    <button
+                      onClick={() => setSelectedRoomId(room.id)}
+                      className="text-sm font-medium hover:underline"
+                    >
+                      View Detail →
+                    </button>
                   </div>
-
-                  <button
-                    onClick={() => setSelectedRoomId(room.id)}
-                    className="text-sm font-medium hover:underline"
-                  >
-                    View Detail →
-                  </button>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
 
-          {totalPages > 1 && (
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={setCurrentPage}
-            />
-          )}
-        </>
-      )}
+            {totalPages > 1 && (
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
+            )}
+          </>
+        ))}
     </div>
   );
 }

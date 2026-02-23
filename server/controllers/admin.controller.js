@@ -588,7 +588,7 @@ export const getAdminDashboard = async (req, res) => {
         orderBy: { createdAt: "desc" },
         take: 5,
         include: {
-          Invoice: { select: { id: true, Room: { select: { name: true } } } },
+          invoice: { select: { id: true, Room: { select: { name: true } } } },
         },
       }),
       prisma.invoice.findMany({

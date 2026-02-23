@@ -1,5 +1,6 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import Loading from "./loading.jsx";
 
 // Optional role-based guard. Pass roles={["ADMIN"]} or roles={["OWNER","ADMIN"]}.
 const ProtectedRoute = ({ children, roles }) => {
@@ -7,18 +8,7 @@ const ProtectedRoute = ({ children, roles }) => {
   const location = useLocation();
 
   if (loading) {
-    return (
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "100vh",
-        }}
-      >
-        Loading...
-      </div>
-    );
+    return <Loading isLoading={true} />;
   }
 
   if (!isAuthenticated) {

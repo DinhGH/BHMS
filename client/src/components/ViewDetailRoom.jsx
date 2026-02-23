@@ -14,6 +14,7 @@ import AddServiceModal from "./AddServiceModal";
 import MakeInvoiceModal from "./MakeInvoiceModal";
 import EditInvoiceModal from "./EditInvoiceModal";
 import EditServiceQuantityModal from "./EditServiceQuantityModal";
+import Loading from "./loading.jsx";
 import api from "../server/api";
 import { toast } from "react-hot-toast";
 
@@ -165,7 +166,7 @@ export default function ViewDetailRoom({ roomId, onBack }) {
   /* ================= UI ================= */
 
   if (loading) {
-    return <div className="text-center py-16">Loading...</div>;
+    return <Loading isLoading={true} />;
   }
 
   if (!room) {
