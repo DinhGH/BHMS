@@ -588,50 +588,63 @@ export const getAdminDashboard = async (req, res) => {
         orderBy: { createdAt: "desc" },
         take: 5,
         include: {
-          Invoice: { select: { id: true, Room: { select: { name: true } } } },
+          Invoice: {
+            select: {
+              id: true,
+              Room: { select: { name: true } },
+            },
+          },
         },
       }),
       prisma.invoice.findMany({
         orderBy: { createdAt: "desc" },
         take: 5,
-        include: { Room: { select: { name: true } } },
+        include: {
+          Room: { select: { name: true } },
+        },
       }),
       prisma.report.findMany({
         orderBy: { createdAt: "desc" },
         take: 5,
-        include: { User: { select: { fullName: true } } },
+        include: {
+          User: { select: { fullName: true, email: true } },
+        },
       }),
       prisma.notification.findMany({
         orderBy: { createdAt: "desc" },
         take: 5,
-        select: { title: true, createdAt: true },
+        select: {
+          title: true,
+          createdAt: true,
+          User: { select: { fullName: true } },
+        },
       }),
     ]);
 
     const activityItems = [
       ...recentSubscriptions.map((subscription) => ({
-        title: `Subscription ${subscription.plan} ${subscription.amount.toLocaleString("vi-VN")} VND`,
+        title: `Subscription ${subscription.plan} - ${subscription.amount.toLocaleString("vi-VN")} VND`,
         createdAt: subscription.purchasedAt,
       })),
       ...recentPayments.map((payment) => ({
-        title: `Payment ${payment.amount.toLocaleString("vi-VN")} VND for room ${payment.Invoice?.Room?.name ?? ""}`,
+        title: `Payment ${payment.amount.toLocaleString("vi-VN")} VND - ${payment.Invoice?.Room?.name ?? `Invoice #${payment.invoiceId}`}`,
         createdAt: payment.createdAt,
       })),
       ...recentInvoices.map((invoice) => ({
-        title: `Invoice #${invoice.id} created for room ${invoice.Room?.name ?? invoice.roomId}`,
+        title: `Invoice #${invoice.id} - ${invoice.Room?.name ?? `Room ${invoice.roomId}`}`,
         createdAt: invoice.createdAt,
       })),
       ...recentReports.map((report) => ({
-        title: `Report from ${report.User?.fullName ?? "user"}`,
+        title: `Report từ ${report.User?.fullName ?? report.User?.email ?? "user"}`,
         createdAt: report.createdAt,
       })),
       ...recentNotifications.map((notification) => ({
-        title: `Notification: ${notification.title}`,
+        title: notification.title,
         createdAt: notification.createdAt,
       })),
     ]
       .sort((a, b) => b.createdAt - a.createdAt)
-      .slice(0, 4)
+      .slice(0, 5)
       .map((item) => ({
         title: item.title,
         time: formatActivityTime(item.createdAt),

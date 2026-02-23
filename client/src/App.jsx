@@ -20,6 +20,7 @@ import ReportAdmin from "./pages/Admin/ReportAdmin.jsx";
 import { Toaster } from "react-hot-toast";
 
 import AdminDashBoard from "./components/Admin/AdminDashBoard.jsx";
+import PaymentMethodModal from "./components/PaymentMethodModal.jsx";
 
 function App() {
   const [resetEmail, setResetEmail] = useState("");
@@ -79,6 +80,7 @@ function App() {
         <Route path="/services" element={<ServiceManagement />} />
         <Route path="/reports" element={<ReportManagement />} />
         <Route path="/payment/success" element={<PaymentSuccess />} />
+        <Route path="/payment/:id" element={<PaymentMethodModal />} />
       </Routes>
       <Toaster
         position="top-right"
