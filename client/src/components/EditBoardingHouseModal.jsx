@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { updateBoardingHouse } from "../services/boardingHouse";
+import toast from "react-hot-toast";
 
 export default function EditBoardingHouseModal({
   open,
@@ -62,12 +63,12 @@ export default function EditBoardingHouseModal({
       setLoading(true);
       await updateBoardingHouse(house.id, formData);
 
-      alert("Updated successfully");
+      toast.success("Updated boarding house successfully");
       onSuccess();
       onClose();
     } catch (err) {
       console.error(err);
-      alert("Update failed");
+      toast.error("Update boarding house failed");
     } finally {
       setLoading(false);
     }

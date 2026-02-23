@@ -220,38 +220,63 @@ export const deleteBoardingHouseByName = async (req, res) => {
 
     const house = await prisma.boardingHouse.findFirst({
       where: { name: name.trim() },
-      include: { rooms: true },
     });
 
     if (!house) {
       return res.status(404).json({ message: "Not found" });
     }
 
-    const imagesToDelete = [];
+    // 🔥 Lấy tất cả room thuộc house
+    const rooms = await prisma.room.findMany({
+      where: { houseId: house.id },
+      select: { id: true },
+    });
 
-    if (house.imageUrl) {
-      imagesToDelete.push(house.imageUrl);
-    }
+    const roomIds = rooms.map((r) => r.id);
 
-    house.rooms.forEach((room) => {
-      if (room.imageUrl) {
-        imagesToDelete.push(room.imageUrl);
+    if (roomIds.length > 0) {
+      // 🔥 Lấy invoice thuộc room
+      const invoices = await prisma.invoice.findMany({
+        where: { roomId: { in: roomIds } },
+        select: { id: true },
+      });
+
+      const invoiceIds = invoices.map((i) => i.id);
+
+      // 1️⃣ Xóa Payment
+      if (invoiceIds.length > 0) {
+        await prisma.payment.deleteMany({
+          where: { invoiceId: { in: invoiceIds } },
+        });
       }
 
-      room.Tenant.forEach((tenant) => {
-        if (tenant.imageUrl) {
-          imagesToDelete.push(tenant.imageUrl);
-        }
+      // 2️⃣ Xóa Invoice
+      await prisma.invoice.deleteMany({
+        where: { roomId: { in: roomIds } },
       });
-    });
 
-    console.log(`Deleting ${imagesToDelete.length} images from Cloudinary...`);
-    deleteMultipleImages(imagesToDelete).catch((err) => {});
+      // 3️⃣ Xóa RentalContract
+      await prisma.rentalContract.deleteMany({
+        where: { roomId: { in: roomIds } },
+      });
 
-    await prisma.room.deleteMany({
-      where: { houseId: house.id },
-    });
+      // 4️⃣ Xóa Tenant
+      await prisma.tenant.deleteMany({
+        where: { roomId: { in: roomIds } },
+      });
 
+      // 5️⃣ Xóa RoomService
+      await prisma.roomService.deleteMany({
+        where: { roomId: { in: roomIds } },
+      });
+
+      // 6️⃣ Xóa Room
+      await prisma.room.deleteMany({
+        where: { houseId: house.id },
+      });
+    }
+
+    // 7️⃣ Xóa BoardingHouse
     await prisma.boardingHouse.delete({
       where: { id: house.id },
     });

@@ -1,1 +1,2 @@
-ALTER TABLE `Payment` ADD COLUMN `img` VARCHAR(191) NULL;
+-- This migration was broken because Report table did not exist
+-- Emptied to allow future migrations

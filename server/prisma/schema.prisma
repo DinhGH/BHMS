@@ -59,7 +59,7 @@ model BoardingHouse {
 
 model Room {
   id                 Int              @id @default(autoincrement())
-  houseId            Int
+  houseId            Int?
   name               String
   price              Float
   isLocked           Boolean          @default(false)
@@ -73,7 +73,7 @@ model Room {
   contractStart      DateTime?
   Invoice            Invoice[]
   RentalContract     RentalContract[]
-  house              BoardingHouse    @relation(fields: [houseId], references: [id])
+  house              BoardingHouse?   @relation(fields: [houseId], references: [id])
   roomServices       RoomService[]
   Tenant             Tenant[]
 
@@ -140,10 +140,9 @@ model Invoice {
   status       InvoiceStatus @default(PENDING)
   month        Int
   year         Int
-  imageUrl     String?
   createdAt    DateTime      @default(now())
   Room         Room          @relation(fields: [roomId], references: [id])
-  Tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  Tenant       Tenant        @relation(fields: [tenantId], references: [id])
   payment      Payment[]
 
   @@unique([roomId, month, year])
@@ -155,12 +154,10 @@ model Payment {
   invoiceId  Int
   method     Payment_method
   amount     Float
-  stripeSessionId String?   @unique 
   proofImage String?
   confirmed  Boolean        @default(false)
-  paymentDate DateTime?
   createdAt  DateTime       @default(now())
-  invoice    Invoice        @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  invoice    Invoice        @relation(fields: [invoiceId], references: [id])
 
   @@index([invoiceId], map: "Payment_invoiceId_fkey")
 }
@@ -182,7 +179,7 @@ model Report {
   senderId  Int
   target    String
   content   String
-  images    String?
+  images    Json?
   status    Report_status @default(PENDING)
   createdAt DateTime      @default(now())
   User      User          @relation(fields: [senderId], references: [id])
@@ -212,7 +209,7 @@ model RentalContract {
   terms     String?
   createdAt DateTime  @default(now())
   Room      Room      @relation(fields: [roomId], references: [id])
-  Tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  Tenant    Tenant    @relation(fields: [tenantId], references: [id])
 
   @@index([roomId])
   @@index([tenantId])
@@ -240,12 +237,6 @@ enum InvoiceStatus {
   PENDING
   PAID
   OVERDUE
-}
-
-enum Payment_method {
-  GATEWAY
-  QR_TRANSFER
-  CASH
 }
 
 enum Service_priceType {
@@ -297,4 +288,9 @@ enum Subscription_status {
   ACTIVE
   CANCELED
   EXPIRED
+}
+
+enum Payment_method {
+  GATEWAY
+  QR_TRANSFER
 }

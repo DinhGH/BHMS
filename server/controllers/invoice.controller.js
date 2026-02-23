@@ -40,10 +40,16 @@ export const previewInvoice = async (req, res) => {
     const waterCost =
       (room.waterMeterAfter - room.waterMeterNow) * room.house.waterFee;
 
-    const serviceCost = room.roomServices.reduce(
-      (sum, s) => sum + s.service.price * (s.quantity || 1),
-      0,
-    );
+    // 👉 Tạo danh sách service chi tiết
+    const services = room.roomServices.map((rs) => ({
+      name: rs.service.name,
+      price: rs.service.price,
+      quantity: rs.quantity || 1,
+      total: rs.service.price * (rs.quantity || 1),
+    }));
+
+    // 👉 Tổng tiền service
+    const serviceCost = services.reduce((sum, s) => sum + s.total, 0);
 
     const roomPrice = room.price;
     const total = roomPrice + electricCost + waterCost + serviceCost;
@@ -55,9 +61,12 @@ export const previewInvoice = async (req, res) => {
       serviceCost,
       numberOfTenants,
       total,
+      services, // 👈 thêm dòng này cho frontend
     });
   } catch (err) {
     console.error(err);
+    console.log("req.user:", req.user);
+
     res.status(500).json({ message: err.message });
   }
 };
@@ -322,6 +331,7 @@ export const confirmPayment = async (req, res) => {
       return res.status(404).json({ message: "Invoice not found" });
     }
 
+    let proofImageUrl = null;
     if (req.file && method === "QR_TRANSFER") {
       proofImageUrl = await uploadSingle(req.file.buffer, "payment_proof");
     }
