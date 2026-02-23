@@ -1,21 +1,14 @@
 import { useEffect, useState } from "react";
-import { FaTimes, FaEye, FaEyeSlash } from "react-icons/fa";
+import { FaTimes } from "react-icons/fa";
 import api from "../server/api";
 
 export default function OwnerProfileModal({ open, onClose, onProfileUpdate }) {
   const [activeTab, setActiveTab] = useState("profile");
   const [isEditing, setIsEditing] = useState(false);
-  const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [profileData, setProfileData] = useState(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [showPasswords, setShowPasswords] = useState({
-    current: false,
-    new: false,
-    confirm: false,
-  });
-
   const [editForm, setEditForm] = useState({
     fullName: "",
     email: "",
@@ -24,12 +17,6 @@ export default function OwnerProfileModal({ open, onClose, onProfileUpdate }) {
   });
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingQr, setUploadingQr] = useState(false);
-
-  const [passwordForm, setPasswordForm] = useState({
-    currentPassword: "",
-    newPassword: "",
-    confirmPassword: "",
-  });
 
   // Fetch owner profile when modal opens
   useEffect(() => {
@@ -61,15 +48,6 @@ export default function OwnerProfileModal({ open, onClose, onProfileUpdate }) {
   const handleEditChange = (e) => {
     const { name, value } = e.target;
     setEditForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-    setError("");
-  };
-
-  const handlePasswordChange = (e) => {
-    const { name, value } = e.target;
-    setPasswordForm((prev) => ({
       ...prev,
       [name]: value,
     }));
@@ -155,69 +133,6 @@ export default function OwnerProfileModal({ open, onClose, onProfileUpdate }) {
     }
   };
 
-  const handleChangePassword = async () => {
-    try {
-      setLoading(true);
-      setError("");
-      setSuccess("");
-
-      // Validation
-      if (!passwordForm.currentPassword) {
-        setError("Current password is required");
-        setLoading(false);
-        return;
-      }
-
-      if (!passwordForm.newPassword) {
-        setError("New password is required");
-        setLoading(false);
-        return;
-      }
-
-      if (passwordForm.newPassword.length < 6) {
-        setError("New password must be at least 6 characters");
-        setLoading(false);
-        return;
-      }
-
-      if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-        setError("New passwords do not match");
-        setLoading(false);
-        return;
-      }
-
-      const confirmed = window.confirm(
-        "Are you sure you want to change your password?",
-      );
-      if (!confirmed) {
-        setLoading(false);
-        return;
-      }
-
-      const result = await api.post("/api/owner/profile/change-password", {
-        currentPassword: passwordForm.currentPassword,
-        newPassword: passwordForm.newPassword,
-        confirmPassword: passwordForm.confirmPassword,
-      });
-
-      if (result.success) {
-        setSuccess("Password changed successfully!");
-        setPasswordForm({
-          currentPassword: "",
-          newPassword: "",
-          confirmPassword: "",
-        });
-        setIsChangingPassword(false);
-        setTimeout(() => setSuccess(""), 3000);
-      }
-    } catch (err) {
-      setError(err.message || "Failed to change password");
-      console.error("Change password error:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   if (!open) return null;
 
   return (
@@ -251,21 +166,7 @@ export default function OwnerProfileModal({ open, onClose, onProfileUpdate }) {
           >
             Profile
           </button>
-          <button
-            onClick={() => {
-              setActiveTab("security");
-              setIsChangingPassword(true);
-              setError("");
-              setSuccess("");
-            }}
-            className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
-              activeTab === "security"
-                ? "text-slate-900 border-b-2 border-slate-700 bg-white"
-                : "text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            Security
-          </button>
+
         </div>
 
         {/* Content */}
@@ -499,130 +400,7 @@ export default function OwnerProfileModal({ open, onClose, onProfileUpdate }) {
             </div>
           )}
 
-          {/* Security Tab */}
-          {activeTab === "security" && isChangingPassword && (
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Current Password
-                </label>
-                <div className="relative">
-                  <input
-                    type={showPasswords.current ? "text" : "password"}
-                    name="currentPassword"
-                    value={passwordForm.currentPassword}
-                    onChange={handlePasswordChange}
-                    placeholder="Enter current password"
-                    className="w-full px-3 py-2 pr-10 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-700 text-slate-900 text-sm"
-                  />
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setShowPasswords((prev) => ({
-                        ...prev,
-                        current: !prev.current,
-                      }))
-                    }
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700"
-                  >
-                    {showPasswords.current ? (
-                      <FaEyeSlash className="w-4 h-4" />
-                    ) : (
-                      <FaEye className="w-4 h-4" />
-                    )}
-                  </button>
-                </div>
-              </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  New Password
-                </label>
-                <div className="relative">
-                  <input
-                    type={showPasswords.new ? "text" : "password"}
-                    name="newPassword"
-                    value={passwordForm.newPassword}
-                    onChange={handlePasswordChange}
-                    placeholder="Enter new password (at least 6 characters)"
-                    className="w-full px-3 py-2 pr-10 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-700 text-slate-900 text-sm"
-                  />
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setShowPasswords((prev) => ({
-                        ...prev,
-                        new: !prev.new,
-                      }))
-                    }
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700"
-                  >
-                    {showPasswords.new ? (
-                      <FaEyeSlash className="w-4 h-4" />
-                    ) : (
-                      <FaEye className="w-4 h-4" />
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Confirm New Password
-                </label>
-                <div className="relative">
-                  <input
-                    type={showPasswords.confirm ? "text" : "password"}
-                    name="confirmPassword"
-                    value={passwordForm.confirmPassword}
-                    onChange={handlePasswordChange}
-                    placeholder="Confirm new password"
-                    className="w-full px-3 py-2 pr-10 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-700 text-slate-900 text-sm"
-                  />
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setShowPasswords((prev) => ({
-                        ...prev,
-                        confirm: !prev.confirm,
-                      }))
-                    }
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700"
-                  >
-                    {showPasswords.confirm ? (
-                      <FaEyeSlash className="w-4 h-4" />
-                    ) : (
-                      <FaEye className="w-4 h-4" />
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex gap-2 pt-4">
-                <button
-                  onClick={() => {
-                    setIsChangingPassword(false);
-                    setPasswordForm({
-                      currentPassword: "",
-                      newPassword: "",
-                      confirmPassword: "",
-                    });
-                    setError("");
-                  }}
-                  className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-100 transition-colors font-medium text-sm"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleChangePassword}
-                  disabled={loading}
-                  className="flex-1 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800 disabled:opacity-50 transition-colors font-medium text-sm"
-                >
-                  {loading ? "Updating..." : "Change Password"}
-                </button>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>
