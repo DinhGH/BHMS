@@ -311,20 +311,27 @@ export const createInvoiceAndSend = async (req, res) => {
   }
 };
 
-// 💰 Confirm payment by QR or Cash
+// 💰 Confirm payment (supports multiple payments)
 export const confirmPayment = async (req, res) => {
   try {
     const invoiceId = Number(req.params.id);
-    const { method } = req.body; // "QR_TRANSFER" or "CASH"
+    const { method, amount } = req.body;
 
-    if (!["QR_TRANSFER", "CASH"].includes(method)) {
+    // ✅ KHỚP với enum trong Prisma
+    const ALLOWED_METHODS = ["QR_TRANSFER", "CASH", "GATEWAY"];
+
+    if (!ALLOWED_METHODS.includes(method)) {
       return res.status(400).json({
-        message: 'Invalid payment method. Use "QR_TRANSFER" or "CASH"',
+        message: `Invalid payment method. Allowed: ${ALLOWED_METHODS.join(", ")}`,
       });
     }
 
+    // 🔎 Lấy invoice + tất cả payment (đúng tên field trong schema: payment, không phải payments)
     const invoice = await prisma.invoice.findUnique({
       where: { id: invoiceId },
+      include: {
+        payment: true, // ⚠️ phải là "payment" vì schema là payment Payment[]
+      },
     });
 
     if (!invoice) {
@@ -336,42 +343,54 @@ export const confirmPayment = async (req, res) => {
       proofImageUrl = await uploadSingle(req.file.buffer, "payment_proof");
     }
 
-    // Do NOT auto-mark invoice as PAID here. The tenant chooses QR or CASH
-    // from the email/payment modal — we only record the chosen method so the
-    // owner/admin can review and confirm later.
+    // 🔥 TÍNH TỔNG ĐÃ THANH TOÁN (chỉ tính payment đã confirm)
+    const totalPaid = invoice.payment
+      .filter((p) => p.confirmed)
+      .reduce((sum, p) => sum + p.amount, 0);
 
-    // Create or update payment record: only update method/proof, keep confirmed=false
-    const payment = await prisma.payment.upsert({
-      where: { invoiceId },
-      update: {
-        method,
-        proofImage: proofImageUrl || undefined,
-        // keep confirmed false so admin can verify (unless you want auto-confirm)
-        confirmed: false,
-        // do not set paymentDate yet
-        paymentDate: null,
-        amount: invoice.totalAmount,
-      },
-      create: {
+    const remaining = invoice.totalAmount - totalPaid;
+
+    // Nếu không gửi amount → mặc định trả hết phần còn lại
+    const payAmount = amount ? Number(amount) : remaining;
+
+    if (payAmount <= 0) {
+      return res.status(400).json({
+        message: "Payment amount must be greater than 0",
+      });
+    }
+
+    if (payAmount > remaining) {
+      return res.status(400).json({
+        message: "Payment exceeds remaining amount",
+        remaining,
+      });
+    }
+
+    // ⭐ LUÔN CREATE mới (vì cho phép thanh toán nhiều lần)
+    const payment = await prisma.payment.create({
+      data: {
         invoiceId,
         method,
-        amount: invoice.totalAmount,
+        amount: payAmount,
         proofImage: proofImageUrl,
-        confirmed: false,
+        confirmed: false, // owner/admin sẽ duyệt
       },
     });
 
-    res.json({
-      message: `Payment method updated to ${
-        method === "QR_TRANSFER" ? "QR Transfer" : "Cash"
-      }`,
+    return res.json({
+      message: "Payment submitted successfully",
       invoiceId,
-      status: "PENDING",
       payment,
+      remainingBefore: remaining,
+      remainingAfter: remaining - payAmount,
+      status: "PENDING_CONFIRMATION",
     });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Payment confirmation failed" });
+    console.error("CONFIRM PAYMENT ERROR:", err);
+    return res.status(500).json({
+      message: "Payment confirmation failed",
+      error: err.message,
+    });
   }
 };
 
