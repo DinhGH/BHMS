@@ -10,16 +10,17 @@ import ReportManagement from "../../components/ReportManagement";
 import ReportIssue from "../../components/ReportIssue";
 import PaymentManagement from "../../components/PaymentManagement";
 import ServiceManagement from "../../components/ServiceManagement";
+import OwnerProfileModal from "../../components/OwnerProfileModal";
 import { useAuth } from "../../contexts/AuthContext";
 import { getNotifications } from "../../services/api";
 // import { getNotifications } from "../../services/api";
 
 function HomePageOwner() {
-  const { user, loading, logout } = useAuth();
+  const { user, loading, logout, updateUser } = useAuth();
   const [activeSection, setActiveSection] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [showProfile, setShowProfile] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -102,19 +103,12 @@ function HomePageOwner() {
   };
 
   const toggleNotifications = () => {
-    setShowNotifications((prev) => {
-      const next = !prev;
-      if (next) setShowProfile(false);
-      return next;
-    });
+    setShowNotifications((prev) => !prev);
   };
 
-  const toggleProfile = () => {
-    setShowProfile((prev) => {
-      const next = !prev;
-      if (next) setShowNotifications(false);
-      return next;
-    });
+  const handleProfileUpdate = (updatedData) => {
+    if (!updatedData) return;
+    updateUser(updatedData);
   };
 
   return (
@@ -122,7 +116,10 @@ function HomePageOwner() {
       <Navbar
         onMenuClick={() => setSidebarOpen(!sidebarOpen)}
         onBellClick={toggleNotifications}
-        onAvatarClick={toggleProfile}
+        onAvatarClick={() => {
+          setShowNotifications(false);
+          setShowProfileModal(true);
+        }}
         onLogout={logout}
         sidebarOpen={sidebarOpen}
         user={user}
@@ -147,19 +144,18 @@ function HomePageOwner() {
       </div>
 
       {/* Overlay to close panels */}
-      {(showNotifications || showProfile) && (
+      {showNotifications && (
         <div
           className="fixed inset-0 bg-transparent z-40 bottom-0"
           onClick={() => {
             setShowNotifications(false);
-            setShowProfile(false);
           }}
         />
       )}
 
       {/* Notifications Panel */}
       <div
-        className={`fixed right-0 bottom-0 w-full sm:w-80 bg-white border-l border-slate-200 z-50 transform transition-transform duration-300 ease-in-out shadow-xl ${
+        className={`fixed right-0 w-full sm:w-80 bg-white border-l border-slate-200 z-50 transform transition-transform duration-300 ease-in-out shadow-xl ${
           showNotifications ? "translate-x-0" : "translate-x-full"
         }`}
         style={{
@@ -168,7 +164,7 @@ function HomePageOwner() {
         }}
       >
         <div className="h-full flex flex-col">
-          <div className="h-12 flex items-center justify-center px-4 border-b border-slate-200 font-semibold text-sm sm:text-base text-slate-900">
+          <div className="flex items-center justify-center px-4 py-3 border-b border-slate-200 font-semibold text-sm sm:text-base text-slate-900">
             Notifications
           </div>
           <div className="p-4 border-b border-slate-200">
@@ -215,46 +211,13 @@ function HomePageOwner() {
         </div>
       </div>
 
-      {/* Profile Panel */}
-      <div
-        className={`fixed right-0 bottom-0 w-full sm:w-80 bg-white border-l border-slate-200 z-50 transform transition-transform duration-300 ease-in-out shadow-xl ${
-          showProfile ? "translate-x-0" : "translate-x-full"
-        }`}
-        style={{
-          height: "calc(100vh - 65px)",
-          top: "65px",
-        }}
-      >
-        <div className="h-full flex flex-col">
-          <div className="h-12 flex items-center px-4 border-b border-slate-200 font-semibold text-sm sm:text-base text-slate-900">
-            Your Profile
-          </div>
-          <div className="p-4 space-y-4 flex-1 overflow-y-auto bg-slate-50">
-            <div className="rounded-lg border border-slate-200 p-4 bg-white space-y-1">
-              <div className="text-xs text-slate-500">Full Name</div>
-              <div className="text-sm font-semibold text-slate-900">
-                {user?.name || "Owner Name"}
-              </div>
-              <div className="text-xs text-slate-500">Email</div>
-              <div className="text-sm text-slate-800">
-                {user?.email || "owner@example.com"}
-              </div>
-              <div className="text-xs text-slate-500">Phone</div>
-              <div className="text-sm text-slate-800">
-                {user?.phone || "+84 912 345 678"}
-              </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <button className="w-full flex items-center justify-center gap-2 border border-slate-300 text-slate-900 font-semibold py-2 rounded-lg hover:bg-slate-100 transition">
-                View Profile
-              </button>
-              <button className="w-full flex items-center justify-center gap-2 border border-slate-300 text-slate-900 font-semibold py-2 rounded-lg hover:bg-slate-100 transition">
-                Settings
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Profile Modal */}
+      <OwnerProfileModal
+        open={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+        user={user}
+        onProfileUpdate={handleProfileUpdate}
+      />
     </div>
   );
 }

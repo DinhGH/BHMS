@@ -16,6 +16,11 @@ import stripeRoute from "./routes/stripe.routes.js";
 import ownerRoute from "./routes/owner.route.js";
 import adminRoutes from "./routes/admin.routes.js";
 
+import { handleStripeWebhook } from "./controllers/paymentController.js";
+
+// Scheduled tasks
+import { scheduleOverdueCheck } from "./services/overdueService.js";
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -27,6 +32,13 @@ app.use(
 );
 // Stripe webhook (raw body middleware inside route)
 app.use("/webhook", stripeRoute);
+// Stripe webhook must be registered BEFORE express.json()
+// because it needs raw body for signature verification
+app.post(
+  "/api/webhooks/stripe",
+  express.raw({ type: "application/json" }),
+  handleStripeWebhook,
+);
 app.use(express.json());
 
 // Health check
@@ -61,4 +73,13 @@ app.use((err, req, res, next) => {
 // Start server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+
+  // Initialize scheduled tasks
+  console.log("📅 Initializing scheduled tasks...");
+  scheduleOverdueCheck();
+  const hour = Number(process.env.OVERDUE_CHECK_HOUR || 6);
+  const minute = Number(process.env.OVERDUE_CHECK_MINUTE || 0);
+  console.log(
+    `✓ Overdue check scheduled (runs daily at ${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")})`,
+  );
 });

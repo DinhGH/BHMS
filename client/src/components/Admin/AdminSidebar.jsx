@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 
 import SearchInput from "./SearchInput.jsx";
@@ -11,24 +11,33 @@ import {
 } from "react-icons/fa";
 
 import { AiFillSetting } from "react-icons/ai";
-import {
-  HiChevronDoubleLeft,
-  HiChevronDoubleRight,
-  HiX,
-} from "react-icons/hi";
+import { HiX } from "react-icons/hi";
 import { useAuth } from "../../contexts/AuthContext";
 
-export default function AdminSidebar({
-  user,
-  collapsed = false,
-  onToggle,
-  mobileOpen = false,
-  onClose,
-}) {
+export default function AdminSidebar({ user, mobileOpen = false, onClose }) {
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { logout, user: authUser } = useAuth();
   const [notifications, setNotifications] = useState(2);
   const [search, setSearch] = useState("");
+
+  const storedUser = useMemo(() => {
+    if (typeof window === "undefined") {
+      return null;
+    }
+    try {
+      const rawUser = localStorage.getItem("user");
+      return rawUser ? JSON.parse(rawUser) : null;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const displayUser = user ?? authUser ?? storedUser;
+  const displayName = displayUser?.name || displayUser?.email || "Nguyen Van A";
+  const displayInitial = (displayUser?.name || displayUser?.email || "A")
+    .charAt(0)
+    .toUpperCase();
+  const displayRole = displayUser?.role === "ADMIN" ? "Administrator" : "";
 
   const menuItems = [
     {
@@ -68,69 +77,54 @@ export default function AdminSidebar({
 
   return (
     <div
-      className={`bg-white shadow-lg flex flex-col transition-all duration-200 fixed inset-y-0 left-0 z-40 w-64
-      ${mobileOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0 lg:static
-      ${collapsed ? "lg:w-20" : "lg:w-64"}`}
+      className={`bg-white shadow-lg flex flex-col transition-transform duration-200 fixed inset-y-0 left-0 z-40 w-72 max-w-[85vw]
+      ${mobileOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0 lg:static lg:h-screen lg:w-64 lg:max-w-none`}
     >
       {/* Header */}
-      <div className={`border-b border-gray-200 ${collapsed ? "p-4" : "p-6"}`}>
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center">
+      <div className="border-b border-gray-200 p-5">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-sm">
               <span className="text-white font-bold text-sm">
-                {user?.name?.charAt(0).toUpperCase() || "A"}
+                {displayInitial}
               </span>
             </div>
-            {!collapsed && (
-              <div>
-                <div className="font-bold text-gray-800">
-                  {user?.name || "Nguyen Van A"}
-                </div>
-                <div className="text-xs text-gray-500">
-                  {user?.role === "ADMIN" ? "Administrator" : ""}
-                </div>
+            <div className="min-w-0">
+              <div className="font-semibold text-gray-800 truncate">
+                {displayName}
               </div>
-            )}
+              <div className="text-xs text-gray-500 truncate">
+                {displayRole}
+              </div>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="p-2 rounded-full hover:bg-gray-100 text-gray-500 lg:hidden"
-              aria-label="Close sidebar"
-            >
-              <HiX className="h-5 w-5" />
-            </button>
-            <button
-              type="button"
-              onClick={onToggle}
-              className="p-2 rounded-full hover:bg-gray-100 text-gray-500 hidden lg:inline-flex"
-              aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            >
-              {collapsed ? (
-                <HiChevronDoubleRight className="h-5 w-5" />
-              ) : (
-                <HiChevronDoubleLeft className="h-5 w-5" />
-              )}
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-2 rounded-full hover:bg-gray-100 text-gray-500 lg:hidden"
+            aria-label="Close sidebar"
+          >
+            <HiX className="h-5 w-5" />
+          </button>
         </div>
 
         {/* Actions */}
-        <div className={`flex items-center gap-4 mb-4 ${collapsed ? "justify-center" : ""}`}>
+        <div className="mt-4 flex items-center gap-3">
           <button
-            className="p-2 hover:bg-gray-100 rounded-full"
+            className="p-2.5 hover:bg-gray-100 rounded-xl border border-gray-200 text-gray-600"
             onClick={handleSettings}
+            aria-label="Settings"
           >
-            <AiFillSetting className="h-6 w-6" />
+            <AiFillSetting className="h-5 w-5" />
           </button>
           <button
-            className="p-2 hover:bg-gray-100 rounded-full relative"
+            className="p-2.5 hover:bg-gray-100 rounded-xl border border-gray-200 text-gray-600 relative"
             onClick={handleNotifications}
+            aria-label="Notifications"
           >
-            <FaBell className="h-6 w-6" />
+            <FaBell className="h-5 w-5" />
             {notifications > 0 && (
-              <span className="absolute top-0 right-0 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center">
                 {notifications}
               </span>
             )}
@@ -138,21 +132,17 @@ export default function AdminSidebar({
         </div>
 
         {/* Search */}
-        {!collapsed && (
-          <div className="flex">
-            <div className="w-full">
-              <SearchInput
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search menu..."
-              />
-            </div>
-          </div>
-        )}
+        <div className="mt-4">
+          <SearchInput
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search menu..."
+          />
+        </div>
       </div>
 
       {/* Menu */}
-      <nav className={`flex-1 ${collapsed ? "p-3" : "p-4"}`}>
+      <nav className="flex-1 px-3 py-4 overflow-y-auto">
         {filteredMenuItems.length > 0 ? (
           filteredMenuItems.map((item) => (
             <NavLink
@@ -160,17 +150,17 @@ export default function AdminSidebar({
               to={item.to}
               end={item.end}
               className={({ isActive }) =>
-                `flex items-center gap-3 ${
-                  collapsed ? "justify-center px-3" : "px-4"
-                } py-3 rounded-lg mb-2 transition-colors ${
+                `group flex items-center gap-3 px-4 py-3 rounded-xl mb-2 transition-colors ${
                   isActive
                     ? "bg-blue-50 text-blue-600"
                     : "text-gray-700 hover:bg-gray-100"
                 }`
               }
             >
-              <span className="text-xl">{item.icon}</span>
-              {!collapsed && <span className="font-medium">{item.label}</span>}
+              <span className="text-xl text-gray-500 group-hover:text-gray-700">
+                {item.icon}
+              </span>
+              <span className="font-medium">{item.label}</span>
             </NavLink>
           ))
         ) : (
@@ -184,12 +174,10 @@ export default function AdminSidebar({
       <div className="p-4 border-t border-gray-200">
         <button
           onClick={handleLogout}
-          className={`w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg ${
-            collapsed ? "px-2" : ""
-          }`}
+          className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl border border-gray-200"
         >
           <CiLogout className="w-6 h-6" />{" "}
-          {!collapsed && <span className="font-medium text-lg">Log out</span>}
+          <span className="font-medium text-lg">Log out</span>
         </button>
       </div>
     </div>

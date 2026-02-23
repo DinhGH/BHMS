@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Outlet } from "react-router-dom";
 import AdminSidebar from "../components/Admin/AdminSidebar.jsx";
@@ -6,7 +5,6 @@ import { useAuth } from "../contexts/AuthContext";
 
 export default function AdminLayout() {
   const { user } = useAuth();
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   return (
@@ -21,8 +19,6 @@ export default function AdminLayout() {
       )}
       <AdminSidebar
         user={user}
-        collapsed={isSidebarCollapsed}
-        onToggle={() => setIsSidebarCollapsed((prev) => !prev)}
         mobileOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
       />

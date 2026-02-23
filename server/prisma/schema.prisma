@@ -37,6 +37,10 @@ model LicenseKey {
 model Owner {
   id          Int             @id @default(autoincrement())
   userId      Int             @unique
+<<<<<<< HEAD
+=======
+  qrImageUrl  String?
+>>>>>>> bd4ed63a834ba0b98af84f11f3cdcf76f4197dfb
   houses      BoardingHouse[]
   user        User            @relation(fields: [userId], references: [id])
   ReportAdmin ReportAdmin[]
@@ -239,6 +243,14 @@ enum InvoiceStatus {
   OVERDUE
 }
 
+<<<<<<< HEAD
+=======
+enum Payment_method {
+  GATEWAY
+  QR_TRANSFER
+}
+
+>>>>>>> bd4ed63a834ba0b98af84f11f3cdcf76f4197dfb
 enum Service_priceType {
   FIXED
   UNIT_BASED
@@ -289,8 +301,11 @@ enum Subscription_status {
   CANCELED
   EXPIRED
 }
+<<<<<<< HEAD
 
 enum Payment_method {
   GATEWAY
   QR_TRANSFER
 }
+=======
+>>>>>>> bd4ed63a834ba0b98af84f11f3cdcf76f4197dfb

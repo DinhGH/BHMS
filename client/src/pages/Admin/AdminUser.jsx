@@ -3,13 +3,12 @@ import { Search, MoreHorizontal } from "lucide-react";
 import UserFormModal from "../../components/Admin/UserFormModal.jsx";
 import Pagination from "../../components/Admin/Pagination.jsx";
 import SearchInput from "../../components/Admin/SearchInput.jsx";
-import api from "../../services/api.js";
+import api from "../../server/api.js";
 
 export default function AdminUsers() {
   const [users, setUsers] = useState([]);
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
-  const [selected, setSelected] = useState([]);
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -21,12 +20,8 @@ export default function AdminUsers() {
     email: "",
     password: "",
     fullName: "",
-    gender: "MALE",
-    phone: "",
-    provider: "LOCAL",
     role: "TENANT",
     status: "ACTIVE",
-    active: "YES",
   });
 
   const defaultForm = { ...form };
@@ -48,11 +43,6 @@ export default function AdminUsers() {
     fetchUsers();
   }, []);
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setSelected([]);
-  }, [filter, search, currentPage]);
-
   // Pagination
   const filteredUsers = users
     .filter((u) => {
@@ -73,38 +63,10 @@ export default function AdminUsers() {
         u.email?.toLowerCase().includes(search.toLowerCase()),
     );
 
-  const toggleAll = () => {
-    setSelected(
-      selected.length === filteredUsers.length
-        ? []
-        : filteredUsers.map((u) => u.id),
-    );
-  };
   const totalPages = Math.ceil(filteredUsers.length / pageSize);
   const startIndex = (currentPage - 1) * pageSize;
   const paginatedUsers = filteredUsers.slice(startIndex, startIndex + pageSize);
   // Pagination
-  const handleDelete = async (idsOverride) => {
-    const ids = idsOverride || selected;
-    if (ids.length === 0) return;
-
-    if (!window.confirm(`Delete ${ids.length} user(s)?`)) return;
-
-    try {
-      await api.delete("/api/users", { ids });
-
-      setUsers((prev) => prev.filter((u) => !ids.includes(u.id)));
-      alert("Deleted successfully");
-      setSelected([]);
-    } catch (err) {
-      console.error("Delete error:", err);
-
-      const msg =
-        err?.response?.data?.message || err.message || "Delete failed";
-
-      alert(msg);
-    }
-  };
   const handleSubmit = async () => {
     const newErrors = {};
 
@@ -183,37 +145,56 @@ export default function AdminUsers() {
       email: user.email || "",
       password: "",
       fullName: user.fullName || "",
-      provider: user.provider || "LOCAL",
       role: user.role || "TENANT",
       status: user.status || "ACTIVE",
-      active: user.active || "YES",
     });
     setEditingId(user.id);
     setOpen(true);
   };
 
+  const handleOpenAdd = () => {
+    setForm({
+      email: "",
+      password: "",
+      fullName: "",
+      role: "TENANT",
+      status: "ACTIVE",
+    });
+    setEditingId(null);
+    setErrors({});
+    setOpen(true);
+  };
+
   return (
-    <div className="flex h-screen bg-[#f5f6f8]">
-      <div className="flex-1 p-8 overflow-auto">
+    <div className="flex min-h-screen bg-[#f5f6f8]">
+      <div className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto">
         {/* Title */}
-        <h1 className="text-2xl font-semibold mb-6">Users</h1>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
+          <h1 className="text-2xl font-semibold">Users</h1>
+          <button
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold shadow-md transition w-full sm:w-auto"
+            onClick={handleOpenAdd}
+          >
+            + Add New User
+          </button>
+        </div>
 
         {/* Tabs */}
-        <div className="flex justify-between border-b mb-6 ">
-          <div className="flex items-center gap-6 text-sm">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
+          <div className="inline-flex items-center gap-2 p-1 bg-gray-100 rounded-lg">
             {[
               ["all", "All"],
-              ["renting", "Renting"],
-              ["noRenting", "No Renting"],
+              ["active", "Active"],
+              ["blocked", "Blocked"],
               ["inactive", "Not Active in 6 months"],
             ].map(([key, label]) => (
               <button
                 key={key}
                 onClick={() => setFilter(key)}
-                className={`pb-3 ${
+                className={`px-4 py-2 text-sm font-medium rounded-md transition-all whitespace-nowrap ${
                   filter === key
-                    ? "border-b-2 border-blue-600 text-blue-600 font-medium"
-                    : "text-gray-500"
+                    ? "bg-white text-blue-600 shadow-sm"
+                    : "text-gray-600 hover:text-gray-900 hover:bg-white/50"
                 }`}
               >
                 {label}
@@ -221,8 +202,8 @@ export default function AdminUsers() {
             ))}
           </div>
           {/* Search */}
-          <div className="flex  mb-4">
-            <div className="w-64">
+          <div className="flex">
+            <div className="w-full sm:w-64">
               <SearchInput
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -232,128 +213,82 @@ export default function AdminUsers() {
         </div>
 
         {/* Table */}
-        <div className="bg-white rounded-md shadow-sm">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b">
-              <tr className="text-left text-gray-500">
-                <th className="px-4 py-3">
-                  <input
-                    type="checkbox"
-                    checked={
-                      selected.length === filteredUsers.length &&
-                      filteredUsers.length > 0
-                    }
-                    onChange={toggleAll}
-                  />
-                </th>
-                <th className="px-4 py-3">User</th>
-                <th className="px-4 py-3">Email</th>
-                <th className="px-4 py-3">Role</th>
-                <th className="px-4 py-3">Date Created Account</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Active</th>
-                <th className="px-4 py-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {paginatedUsers.map((u) => (
-                <tr
-                  key={u.id}
-                  className="border-b last:border-none hover:bg-gray-50"
-                >
-                  <td className="px-4 py-3">
-                    <input
-                      type="checkbox"
-                      checked={selected.includes(u.id)}
-                      onChange={() =>
-                        setSelected((prev) =>
-                          prev.includes(u.id)
-                            ? prev.filter((i) => i !== u.id)
-                            : [...prev, u.id],
-                        )
-                      }
-                    />
-                  </td>
-
-                  <td className="px-4 py-3">
-                    <div className="font-medium">
-                      {u.fullName || "User Name"}
-                    </div>
-                    <div className="text-xs text-gray-400">Address</div>
-                  </td>
-
-                  <td className="px-4 py-3">{u.email}</td>
-                  <td className="px-4 py-3">{u.role}</td>
-                  <td className="px-4 py-3">
-                    {new Date(u.createdAt).toLocaleDateString()}
-                  </td>
-
-                  <td className="px-4 py-3">{u.status}</td>
-
-                  <td className="px-4 py-3">
-                    <span className={`px-3 py-1 rounded-full text-xs `}>
-                      {u.active}
-                    </span>
-                  </td>
-
-                  <td className="px-4 py-3 text-right">
-                    <div className="flex gap-2 justify-end">
-                      <button
-                        className="px-3 py-1 rounded bg-blue-500 text-white text-xs"
-                        onClick={() => startEdit(u)}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        className="px-3 py-1 rounded bg-red-500 text-white text-xs"
-                        onClick={() => {
-                          handleDelete([u.id]);
-                        }}
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </td>
+        <div className="bg-white rounded-md shadow-sm overflow-hidden">
+          <div className="max-h-[calc(100vh-260px)] sm:max-h-[calc(100vh-280px)] overflow-y-auto overflow-x-auto">
+            <table className="w-full text-sm min-w-160">
+              <thead className="bg-gray-50 border-b sticky top-0 z-10">
+                <tr className="text-left text-gray-500">
+                  <th className="px-4 py-3">User</th>
+                  <th className="px-4 py-3">Email</th>
+                  <th className="px-4 py-3 hidden md:table-cell">Role</th>
+                  <th className="px-4 py-3 hidden lg:table-cell">
+                    Date Created Account
+                  </th>
+                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3 text-right">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {paginatedUsers.map((u) => (
+                  <tr
+                    key={u.id}
+                    className="border-b last:border-none hover:bg-gray-50"
+                  >
+                    <td className="px-4 py-3">
+                      <div className="font-medium">
+                        {u.fullName || "User Name"}
+                      </div>
+                      <div className="text-xs text-gray-400">Address</div>
+                    </td>
 
-        {/* Bottom actions */}
-        <div className="flex justify-between items-center mt-6">
-          <button
-            className="bg-gray-300 hover:bg-blue-600 text-white px-6 py-2 rounded"
-            onClick={() => {
-              setForm(defaultForm);
-              setOpen(true);
-            }}
-          >
-            Add New
-          </button>
+                    <td className="px-4 py-3">{u.email}</td>
+                    <td className="px-4 py-3 hidden md:table-cell">{u.role}</td>
+                    <td className="px-4 py-3 hidden lg:table-cell">
+                      {new Date(u.createdAt).toLocaleDateString()}
+                    </td>
 
-          <button
-            className={`px-6 py-2 rounded ${
-              selected.length === 0
-                ? "bg-gray-300 text-white cursor-not-allowed"
-                : "bg-red-600 text-white"
-            }`}
-            disabled={selected.length === 0}
-            onClick={() => handleDelete()}
-          >
-            Delete
-          </button>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          u.status === "ACTIVE"
+                            ? "bg-blue-100 text-blue-800"
+                            : "bg-red-100 text-red-800"
+                        }`}
+                      >
+                        {u.status}
+                      </span>
+                    </td>
+
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex gap-2 justify-end">
+                        <button
+                          className="px-3 py-1 rounded bg-blue-500 text-white text-xs"
+                          onClick={() => startEdit(u)}
+                        >
+                          Edit
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {/* User Form Modal */}
         <UserFormModal
           open={open}
-          onClose={() => setOpen(false)}
+          onClose={() => {
+            setOpen(false);
+            setEditingId(null);
+            setErrors({});
+          }}
           onSubmit={handleSubmit}
           form={form}
           setForm={setForm}
           errors={errors}
-          nameModal={editingId ? "Edit User" : "Add User"}
+          isEditing={!!editingId}
         />
 
         {/* Pagination */}

@@ -38,7 +38,7 @@ export async function listTenants() {
     createdAt: tenant.createdAt,
     startDate: tenant.startDate,
     endDate: tenant.endDate,
-    invoiceCount: tenant.invoices?.length || 0,
+    invoiceCount: tenant.Invoice?.length || 0,
     roomId: tenant.roomId,
     room: tenant.Room,
     imageUrl: tenant.imageUrl,
@@ -53,15 +53,15 @@ export async function getTenantById(id) {
         include: {
           Room: {
             include: {
-              house: true,
+              BoardingHouse: true,
             },
           },
-          payment: true,
+          Payment: true,
         },
       },
       Room: {
         include: {
-          house: true,
+          BoardingHouse: true,
         },
       },
     },
@@ -79,6 +79,14 @@ export async function createTenant(data) {
     throw error;
   }
 
+  // Validate age >= 18
+  const ageNumber = parseInt(age, 10);
+  if (!Number.isNaN(ageNumber) && ageNumber < 18) {
+    const error = new Error("Age must be at least 18 years old");
+    error.status = 400;
+    throw error;
+  }
+
   const startDateValue = startDate ? new Date(startDate) : new Date();
   if (Number.isNaN(startDateValue.getTime())) {
     const error = new Error("Ngày bắt đầu không hợp lệ");
@@ -89,8 +97,8 @@ export async function createTenant(data) {
   let roomIdNumber = null;
   if (roomId) {
     roomIdNumber = parseInt(roomId, 10);
-    if (Number.isNaN(roomIdNumber)) {
-      const error = new Error("Room ID không hợp lệ");
+    if (Number.isNaN(roomIdNumber) || roomIdNumber < 1) {
+      const error = new Error("Please select a valid room");
       error.status = 400;
       throw error;
     }
@@ -142,6 +150,16 @@ export async function updateTenant(id, data) {
     const error = new Error("Tenant not found");
     error.status = 404;
     throw error;
+  }
+
+  // Validate age >= 18
+  if (age !== undefined && age !== null) {
+    const ageNumber = parseInt(age, 10);
+    if (!Number.isNaN(ageNumber) && ageNumber < 18) {
+      const error = new Error("Age must be at least 18 years old");
+      error.status = 400;
+      throw error;
+    }
   }
 
   if (email && email !== tenant.email) {

@@ -118,7 +118,7 @@ const Register = () => {
           <p className="text-gray-600 mt-2">Sign up to get started</p>
         </div>
 
-        <div>
+        <form onSubmit={handleSubmit}>
           {/* Error Message */}
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4 text-sm">
@@ -276,8 +276,7 @@ const Register = () => {
 
           {/* Register Button */}
           <button
-            type="button"
-            onClick={handleSubmit}
+            type="submit"
             className="w-full py-3 bg-linear-to-r from-gray-700 to-black text-white rounded-lg font-semibold hover:from-gray-800 hover:to-gray-900 transform hover:-translate-y-0.5 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             disabled={!isFormValid || loading}
           >
@@ -294,7 +293,7 @@ const Register = () => {
               Log in
             </Link>
           </div>
-        </div>
+        </form>
       </div>
     </div>
   );

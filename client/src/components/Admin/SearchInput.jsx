@@ -5,6 +5,7 @@ import { Search } from "lucide-react";
 export default function SearchInput({
   value,
   onChange,
+  onKeyDown,
   placeholder = "Search",
   className,
 }) {
@@ -17,6 +18,7 @@ export default function SearchInput({
         placeholder={placeholder}
         value={value}
         onChange={onChange}
+        onKeyDown={onKeyDown}
       />
     </div>
   );

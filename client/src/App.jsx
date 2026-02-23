@@ -6,9 +6,9 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import PaymentSuccess from "./pages/PaymentSuccess";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminLayout from "./layouts/AdminLayout.jsx";
-import PaymentMethodModal from "./components/PaymentMethodModal";
 
 import HomePageOwner from "./pages/owner/HomePageOwner";
 import LandingPage from "./pages/LandingPage";
@@ -67,7 +67,6 @@ function App() {
           }
         />
         <Route path="/" element={<LandingPage />} />
-        <Route path="/payment/:id" element={<PaymentMethodModal />} />
         <Route
           path="/owner"
           element={
@@ -79,6 +78,7 @@ function App() {
 
         <Route path="/services" element={<ServiceManagement />} />
         <Route path="/reports" element={<ReportManagement />} />
+        <Route path="/payment/success" element={<PaymentSuccess />} />
       </Routes>
       <Toaster
         position="top-right"
