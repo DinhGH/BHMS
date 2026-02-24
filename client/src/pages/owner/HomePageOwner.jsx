@@ -13,7 +13,7 @@ import PaymentManagement from "../../components/PaymentManagement";
 import ServiceManagement from "../../components/ServiceManagement";
 import OwnerProfileModal from "../../components/OwnerProfileModal";
 import { useAuth } from "../../contexts/AuthContext";
-import { getNotifications } from "../../services/api";
+import { getNotifications, markNotificationsRead } from "../../services/api";
 import api from "../../services/api";
 // import { getNotifications } from "../../services/api";
 
@@ -26,6 +26,11 @@ function HomePageOwner() {
   const [notifications, setNotifications] = useState([]);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+
+  const unreadCount = useMemo(
+    () => notifications.filter((n) => !n.isRead).length,
+    [notifications],
+  );
 
   useEffect(() => {
     if (!user?.id) return;
@@ -61,15 +66,15 @@ function HomePageOwner() {
     };
   }, [updateUser, user?.email, user?.fullName, user?.id, user?.imageUrl]);
 
-  // Fetch notifications once when user is ready (lọc tại client theo searchQuery)
+  // Fetch notifications when user is ready (filtering is client-side)
   useEffect(() => {
     if (!user?.id) return;
     let cancelled = false;
 
-    (async () => {
+    const loadNotifications = async () => {
       setNotificationsLoading(true);
       try {
-        const data = await getNotifications(); // không truyền tham số
+        const data = await getNotifications();
         if (!cancelled) {
           setNotifications(Array.isArray(data) ? data : []);
         }
@@ -79,14 +84,18 @@ function HomePageOwner() {
       } finally {
         if (!cancelled) setNotificationsLoading(false);
       }
-    })();
+    };
+
+    loadNotifications();
+    const intervalId = setInterval(loadNotifications, 15000);
 
     return () => {
       cancelled = true;
+      clearInterval(intervalId);
     };
   }, [user?.id]);
 
-  // Lọc client-side theo searchQuery (title/content)
+  // Client-side filter by searchQuery (title/content)
   const filteredNotifications = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     if (!q) return notifications;
@@ -134,8 +143,20 @@ function HomePageOwner() {
     }
   };
 
-  const toggleNotifications = () => {
-    setShowNotifications((prev) => !prev);
+  const toggleNotifications = async () => {
+    const nextOpen = !showNotifications;
+    setShowNotifications(nextOpen);
+
+    if (!nextOpen) return;
+
+    try {
+      await markNotificationsRead();
+      setNotifications((prev) =>
+        prev.map((notification) => ({ ...notification, isRead: true })),
+      );
+    } catch (error) {
+      console.error("Failed to mark notifications as read:", error);
+    }
   };
 
   const handleProfileUpdate = (updatedData) => {
@@ -155,6 +176,7 @@ function HomePageOwner() {
         onLogout={logout}
         sidebarOpen={sidebarOpen}
         user={user}
+        notificationCount={unreadCount}
       />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar

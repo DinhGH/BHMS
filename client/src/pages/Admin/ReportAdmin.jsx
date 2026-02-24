@@ -73,14 +73,28 @@ export default function ReportAdmin() {
   };
 
   const handleStatusChange = async (reportId, newStatus) => {
+    const confirmed = window.confirm(
+      `Confirm updating report #${reportId} to ${newStatus}?`,
+    );
+    if (!confirmed) return;
+
     try {
-      await api.patch(`/api/report-admins/${reportId}/status`, {
+      const response = await api.patch(`/api/report-admins/${reportId}/status`, {
         status: newStatus,
+        confirm: true,
       });
       setReports((prev) =>
         prev.map((r) => (r.id === reportId ? { ...r, status: newStatus } : r)),
       );
-      alert("Status updated successfully");
+
+      const emailStats = response?.email;
+      if (emailStats) {
+        alert(
+          `Status updated successfully. Email: attempted ${emailStats.attempted}, sent ${emailStats.sent}, failed ${emailStats.failed}.`,
+        );
+      } else {
+        alert("Status updated successfully");
+      }
     } catch (error) {
       console.error("Update status error:", error);
       alert("Failed to update status");
@@ -91,7 +105,7 @@ export default function ReportAdmin() {
     if (!window.confirm("Are you sure you want to delete this report?")) return;
 
     try {
-      await api.delete(`/api/report-admins/${reportId}`);
+      await api.delete(`/api/report-admins/${reportId}`, { confirm: true });
       setReports((prev) => prev.filter((r) => r.id !== reportId));
       alert("Report deleted successfully");
     } catch (error) {
@@ -122,7 +136,7 @@ export default function ReportAdmin() {
 
     try {
       for (const id of selectedIds) {
-        await api.delete(`/api/report-admins/${id}`);
+        await api.delete(`/api/report-admins/${id}`, { confirm: true });
       }
       setReports((prev) => prev.filter((r) => !selectedIds.includes(r.id)));
       setSelectedIds([]);

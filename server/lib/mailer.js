@@ -23,6 +23,85 @@ const getTransporter = () => {
   });
 };
 
+const escapeHtml = (value) => {
+  const text = String(value ?? "");
+  return text
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+};
+
+const formatReportAdminStatus = (status) => {
+  const labelByStatus = {
+    PENDING: "Pending",
+    PROCESSING: "In Resolution",
+    RESOLVED: "Resolved",
+    REVIEWING: "Under Review",
+    FIXING: "In Fixing",
+  };
+
+  return labelByStatus[status] || "Updated";
+};
+
+export const sendReportAdminStatusEmail = async ({
+  to,
+  ownerName,
+  reportId,
+  status,
+  category,
+  summary,
+}) => {
+  if (!to) return { sent: false, error: "Missing recipient" };
+
+  const transporter = getTransporter();
+  const from = process.env.SMTP_FROM || process.env.SMTP_USER;
+  const statusLabel = formatReportAdminStatus(status);
+
+  const safeOwnerName = escapeHtml(ownerName || "Owner");
+  const safeCategory = escapeHtml(category || "N/A");
+  const safeSummary = escapeHtml(summary || "N/A");
+
+  const subject = `[BHMS] Report #${reportId} status updated to ${statusLabel}`;
+
+  const text =
+    `Hello ${ownerName || "Owner"},\n\n` +
+    `Your report #${reportId} has a status update.\n` +
+    `Current status: ${statusLabel}\n` +
+    `Category: ${category || "N/A"}\n` +
+    `Summary: ${summary || "N/A"}\n\n` +
+    `Thank you for helping us improve BHMS.`;
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111;">
+      <h2 style="margin: 0 0 12px;">BHMS Report Status Update</h2>
+      <p>Hello <strong>${safeOwnerName}</strong>,</p>
+      <p>Your report <strong>#${reportId}</strong> has a status update.</p>
+
+      <table style="border-collapse: collapse; width: 100%; max-width: 560px; margin: 12px 0; border: 1px solid #e5e7eb;">
+        <tr>
+          <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; background: #f9fafb;">Current status</td>
+          <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb;">${escapeHtml(statusLabel)}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; background: #f9fafb;">Category</td>
+          <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb;">${safeCategory}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 12px; background: #f9fafb;">Summary</td>
+          <td style="padding: 8px 12px;">${safeSummary}</td>
+        </tr>
+      </table>
+
+      <p style="margin-top: 12px;">Thank you for helping us improve BHMS.</p>
+    </div>
+  `;
+
+  const info = await transporter.sendMail({ from, to, subject, text, html });
+  return { sent: true, messageId: info.messageId };
+};
+
 export const sendTenantStatusEmail = async ({ to, reportId, status }) => {
   if (!to) return { sent: false, error: "Missing recipient" };
 
