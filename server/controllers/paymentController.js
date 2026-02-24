@@ -39,7 +39,7 @@ const toServiceItems = (roomServices = []) => {
   });
 };
 
-const sendPaidInvoiceNotificationsToRoom = async ({
+export const sendPaidInvoiceNotifications = async ({
   invoiceId,
   extra = {},
 }) => {
@@ -204,7 +204,7 @@ const markInvoiceAsPaid = async (invoiceId, source, extra = {}) => {
     ...extra,
   });
 
-  const emailResult = await sendPaidInvoiceNotificationsToRoom({
+  const emailResult = await sendPaidInvoiceNotifications({
     invoiceId: parsedInvoiceId,
     extra,
   });

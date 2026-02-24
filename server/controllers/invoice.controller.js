@@ -432,6 +432,8 @@ export const updateInvoice = async (req, res) => {
     }
 
     const nextStatus = req.body?.status || invoice.status;
+    const statusChanged = invoice.status !== nextStatus;
+    const nowPaid = nextStatus === "PAID" && invoice.status !== "PAID";
 
     const updated = await prisma.invoice.update({
       where: { id: invoiceId },
@@ -446,6 +448,29 @@ export const updateInvoice = async (req, res) => {
         status: nextStatus,
       },
     });
+
+    // Send email notification when status changes to PAID
+    if (nowPaid) {
+      try {
+        const { sendPaidInvoiceNotifications } =
+          await import("./paymentController.js");
+        await sendPaidInvoiceNotifications({
+          invoiceId: updated.id,
+          extra: {
+            paymentMethod: req.body?.paymentMethod || "Manual",
+            paidAt: new Date(),
+          },
+        });
+        console.log("INVOICE UPDATE: Paid notification email sent", {
+          invoiceId: updated.id,
+        });
+      } catch (emailError) {
+        console.error("INVOICE UPDATE: Failed to send paid email", {
+          message: emailError?.message,
+          invoiceId: updated.id,
+        });
+      }
+    }
 
     res.json({ message: "Invoice updated", invoice: updated });
   } catch (error) {
