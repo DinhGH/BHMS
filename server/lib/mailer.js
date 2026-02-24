@@ -132,6 +132,164 @@ export const sendInvoiceEmail = async ({
 };
 
 /**
+ * Send payment success confirmation with detailed invoice breakdown
+ */
+export const sendInvoicePaidEmail = async ({
+  to,
+  tenantName,
+  invoiceId,
+  roomName,
+  houseName,
+  month,
+  year,
+  roomPrice,
+  electricCost,
+  waterCost,
+  serviceCost,
+  serviceItems = [],
+  totalAmount,
+  currency = "USD",
+  paidAt,
+  paymentMethod = "Stripe",
+  transactionId,
+}) => {
+  if (!to) return { sent: false, error: "Missing recipient" };
+
+  const transporter = getTransporter();
+  const from = process.env.SMTP_FROM || process.env.SMTP_USER;
+
+  const safeCurrency = String(currency || "USD").toUpperCase();
+  const formatCurrency = (value) =>
+    new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: safeCurrency,
+      maximumFractionDigits: 2,
+    }).format(Number(value || 0));
+
+  const paidAtDate = paidAt ? new Date(paidAt) : null;
+  const paidAtDisplay =
+    paidAtDate && !Number.isNaN(paidAtDate.getTime())
+      ? paidAtDate.toLocaleString("en-US")
+      : "N/A";
+
+  const subject = `✅ Payment received - Invoice #${invoiceId} (${month}/${year})`;
+  const serviceItemsText =
+    Array.isArray(serviceItems) && serviceItems.length
+      ? serviceItems
+          .map(
+            (item, idx) =>
+              `  ${idx + 1}. ${item.serviceName} x${item.quantity} (${formatCurrency(item.unitPrice)}) = ${formatCurrency(item.totalPrice)}`,
+          )
+          .join("\n")
+      : "  - No additional services";
+
+  const serviceItemsHtml =
+    Array.isArray(serviceItems) && serviceItems.length
+      ? serviceItems
+          .map(
+            (item, idx) => `
+            <tr>
+              <td style="padding: 6px 10px; border-bottom: 1px solid #f3f4f6;">${idx + 1}. ${item.serviceName}</td>
+              <td style="padding: 6px 10px; border-bottom: 1px solid #f3f4f6; text-align: center;">${item.quantity}</td>
+              <td style="padding: 6px 10px; border-bottom: 1px solid #f3f4f6; text-align: right;">${formatCurrency(item.unitPrice)}</td>
+              <td style="padding: 6px 10px; border-bottom: 1px solid #f3f4f6; text-align: right;">${formatCurrency(item.totalPrice)}</td>
+            </tr>
+          `,
+          )
+          .join("")
+      : `<tr><td colspan="4" style="padding: 8px 10px; color: #6b7280;">No additional services</td></tr>`;
+
+  const text =
+    `Hello ${tenantName || "there"},\n\n` +
+    `Your payment has been received successfully for invoice #${invoiceId}.\n` +
+    `Room: ${roomName}${houseName ? ` - ${houseName}` : ""}\n` +
+    `Billing period: ${month}/${year}\n\n` +
+    `Invoice breakdown:\n` +
+    `- Room rent: ${formatCurrency(roomPrice)}\n` +
+    `- Electricity: ${formatCurrency(electricCost)}\n` +
+    `- Water: ${formatCurrency(waterCost)}\n` +
+    `- Services: ${formatCurrency(serviceCost)}\n` +
+    `Service details:\n${serviceItemsText}\n` +
+    `- Total paid: ${formatCurrency(totalAmount)}\n\n` +
+    `Payment method: ${paymentMethod}\n` +
+    `Paid at: ${paidAtDisplay}\n` +
+    `${transactionId ? `Transaction: ${transactionId}\n` : ""}\n` +
+    `Thank you.`;
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111;">
+      <h2 style="margin: 0 0 12px; color: #166534;">✅ Payment Confirmed</h2>
+      <p>Hello <strong>${tenantName || "there"}</strong>,</p>
+      <p>Your payment for invoice <strong>#${invoiceId}</strong> has been received successfully.</p>
+
+      <table style="border-collapse: collapse; width: 100%; max-width: 560px; margin: 12px 0; border: 1px solid #e5e7eb;">
+        <tr>
+          <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; background: #f9fafb;">Room</td>
+          <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb;">${roomName}${houseName ? ` - ${houseName}` : ""}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; background: #f9fafb;">Billing period</td>
+          <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb;">${month}/${year}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; background: #f9fafb;">Payment method</td>
+          <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb;">${paymentMethod}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; background: #f9fafb;">Paid at</td>
+          <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb;">${paidAtDisplay}</td>
+        </tr>
+        ${
+          transactionId
+            ? `<tr><td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; background: #f9fafb;">Transaction</td><td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb;">${transactionId}</td></tr>`
+            : ""
+        }
+      </table>
+
+      <h3 style="margin: 16px 0 8px;">Detailed invoice</h3>
+      <table style="border-collapse: collapse; width: 100%; max-width: 560px; margin: 8px 0; border: 1px solid #e5e7eb;">
+        <tr>
+          <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb;">Room rent</td>
+          <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; text-align: right;">${formatCurrency(roomPrice)}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb;">Electricity</td>
+          <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; text-align: right;">${formatCurrency(electricCost)}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb;">Water</td>
+          <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; text-align: right;">${formatCurrency(waterCost)}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb;">Services</td>
+          <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; text-align: right;">${formatCurrency(serviceCost)}</td>
+        </tr>
+        <tr>
+          <td style="padding: 10px 12px; font-weight: bold; color: #1d4ed8; background: #eff6ff;">Total paid</td>
+          <td style="padding: 10px 12px; font-weight: bold; color: #1d4ed8; text-align: right; background: #eff6ff;">${formatCurrency(totalAmount)}</td>
+        </tr>
+      </table>
+
+      <h3 style="margin: 16px 0 8px;">Service details</h3>
+      <table style="border-collapse: collapse; width: 100%; max-width: 560px; margin: 8px 0; border: 1px solid #e5e7eb;">
+        <tr style="background: #f9fafb;">
+          <th style="padding: 8px 10px; text-align: left; border-bottom: 1px solid #e5e7eb;">Service</th>
+          <th style="padding: 8px 10px; text-align: center; border-bottom: 1px solid #e5e7eb;">Qty</th>
+          <th style="padding: 8px 10px; text-align: right; border-bottom: 1px solid #e5e7eb;">Unit</th>
+          <th style="padding: 8px 10px; text-align: right; border-bottom: 1px solid #e5e7eb;">Amount</th>
+        </tr>
+        ${serviceItemsHtml}
+      </table>
+
+      <p style="margin-top: 12px;">Thank you!</p>
+    </div>
+  `;
+
+  const info = await transporter.sendMail({ from, to, subject, text, html });
+  return { sent: true, messageId: info.messageId };
+};
+
+/**
  * Send overdue invoice notification email
  */
 export const sendOverdueEmail = async ({

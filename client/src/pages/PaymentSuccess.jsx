@@ -13,9 +13,13 @@ export default function PaymentSuccess() {
   const [confirmMessage, setConfirmMessage] = useState("");
   const [receipt, setReceipt] = useState(null);
 
-  const formatMoney = (value) => {
+  const formatMoney = (value, currency = "USD") => {
     const num = Number(value || 0);
-    return `${num.toLocaleString("vi-VN")} VND`;
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: String(currency || "USD").toUpperCase(),
+      maximumFractionDigits: 2,
+    }).format(num);
   };
 
   const formatDate = (value) => {
@@ -118,6 +122,15 @@ export default function PaymentSuccess() {
             >
               Back to Home
             </Link>
+            {receipt && (
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="inline-flex items-center justify-center px-5 py-2.5 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-100 transition"
+              >
+                Print invoice
+              </button>
+            )}
           </div>
         </div>
 
@@ -169,7 +182,14 @@ export default function PaymentSuccess() {
                   <span className="font-semibold text-blue-600">
                     {formatMoney(
                       Number(receipt?.transaction?.amountTotal || 0) / 100,
+                      receipt?.transaction?.currency || "USD",
                     )}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-500">Currency:</span>{" "}
+                  <span className="font-medium uppercase">
+                    {receipt?.transaction?.currency || "USD"}
                   </span>
                 </div>
                 <div>
@@ -240,35 +260,105 @@ export default function PaymentSuccess() {
                 </div>
               </div>
 
+              <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700 space-y-2">
+                <h3 className="font-semibold text-gray-900">Service details</h3>
+                {Array.isArray(receipt?.invoice?.serviceItems) &&
+                receipt.invoice.serviceItems.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-130 border border-gray-200 rounded-lg overflow-hidden">
+                      <thead className="bg-gray-100 text-gray-700">
+                        <tr>
+                          <th className="px-3 py-2 text-left font-medium">
+                            Service
+                          </th>
+                          <th className="px-3 py-2 text-center font-medium">
+                            Qty
+                          </th>
+                          <th className="px-3 py-2 text-right font-medium">
+                            Unit
+                          </th>
+                          <th className="px-3 py-2 text-right font-medium">
+                            Amount
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {receipt.invoice.serviceItems.map((item, idx) => (
+                          <tr key={`${item?.serviceName}-${idx}`}>
+                            <td className="px-3 py-2 border-t border-gray-200">
+                              {item?.serviceName || "Service"}
+                            </td>
+                            <td className="px-3 py-2 border-t border-gray-200 text-center">
+                              {item?.quantity ?? 1}
+                            </td>
+                            <td className="px-3 py-2 border-t border-gray-200 text-right">
+                              {formatMoney(
+                                item?.unitPrice,
+                                receipt?.transaction?.currency || "USD",
+                              )}
+                            </td>
+                            <td className="px-3 py-2 border-t border-gray-200 text-right font-medium">
+                              {formatMoney(
+                                item?.totalPrice,
+                                receipt?.transaction?.currency || "USD",
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-600">
+                    No additional services in this invoice.
+                  </p>
+                )}
+              </div>
+
               <div className="rounded-xl border border-gray-200 overflow-hidden">
                 <div className="flex items-center justify-between px-4 py-2.5 bg-gray-50 border-b text-sm">
                   <span className="text-gray-600">Room fee</span>
                   <span className="font-medium text-gray-900">
-                    {formatMoney(receipt?.invoice?.roomPrice)}
+                    {formatMoney(
+                      receipt?.invoice?.roomPrice,
+                      receipt?.transaction?.currency || "USD",
+                    )}
                   </span>
                 </div>
                 <div className="flex items-center justify-between px-4 py-2.5 border-b text-sm">
                   <span className="text-gray-600">Electric fee</span>
                   <span className="font-medium text-gray-900">
-                    {formatMoney(receipt?.invoice?.electricCost)}
+                    {formatMoney(
+                      receipt?.invoice?.electricCost,
+                      receipt?.transaction?.currency || "USD",
+                    )}
                   </span>
                 </div>
                 <div className="flex items-center justify-between px-4 py-2.5 border-b text-sm">
                   <span className="text-gray-600">Water fee</span>
                   <span className="font-medium text-gray-900">
-                    {formatMoney(receipt?.invoice?.waterCost)}
+                    {formatMoney(
+                      receipt?.invoice?.waterCost,
+                      receipt?.transaction?.currency || "USD",
+                    )}
                   </span>
                 </div>
                 <div className="flex items-center justify-between px-4 py-2.5 border-b text-sm">
                   <span className="text-gray-600">Service fee</span>
                   <span className="font-medium text-gray-900">
-                    {formatMoney(receipt?.invoice?.serviceCost)}
+                    {formatMoney(
+                      receipt?.invoice?.serviceCost,
+                      receipt?.transaction?.currency || "USD",
+                    )}
                   </span>
                 </div>
                 <div className="flex items-center justify-between px-4 py-3 bg-blue-50 text-sm">
                   <span className="font-semibold text-blue-700">Total</span>
                   <span className="font-bold text-blue-700">
-                    {formatMoney(receipt?.invoice?.totalAmount)}
+                    {formatMoney(
+                      receipt?.invoice?.totalAmount,
+                      receipt?.transaction?.currency || "USD",
+                    )}
                   </span>
                 </div>
               </div>
