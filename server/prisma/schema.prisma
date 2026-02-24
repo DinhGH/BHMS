@@ -243,6 +243,7 @@ enum InvoiceStatus {
 enum Payment_method {
   GATEWAY
   QR_TRANSFER
+  CASH
 }
 
 enum Service_priceType {

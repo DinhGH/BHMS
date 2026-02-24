@@ -66,7 +66,10 @@ const Login = () => {
   return (
     <>
       <Loading isLoading={loading} />
-      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-gray-100 to-gray-200 p-4">
+      <div
+        className="min-h-screen flex items-center justify-center p-4"
+        style={{ backgroundColor: "var(--app-bg)" }}
+      >
         <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md border border-gray-200">
           {/* Logo & Brand */}
           <Link

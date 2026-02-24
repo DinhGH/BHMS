@@ -177,6 +177,42 @@ export async function confirmStripeSessionPayment(req, res) {
       sessionId: session.id,
     });
 
+    const invoice = await prisma.invoice.findUnique({
+      where: { id: invoiceId },
+      select: {
+        id: true,
+        status: true,
+        month: true,
+        year: true,
+        roomPrice: true,
+        electricCost: true,
+        waterCost: true,
+        serviceCost: true,
+        totalAmount: true,
+        createdAt: true,
+        Tenant: {
+          select: {
+            fullName: true,
+            email: true,
+            phone: true,
+          },
+        },
+        Room: {
+          select: {
+            name: true,
+            house: {
+              select: {
+                name: true,
+                address: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const customer = session.customer_details || {};
+
     return res.status(200).json({
       message: result.alreadyPaid
         ? "Invoice was already PAID"
@@ -184,6 +220,37 @@ export async function confirmStripeSessionPayment(req, res) {
       invoiceId,
       status: result.invoice.status,
       alreadyPaid: result.alreadyPaid,
+      receipt: {
+        payer: {
+          fullName: invoice?.Tenant?.fullName || customer?.name || "N/A",
+          email: invoice?.Tenant?.email || customer?.email || "N/A",
+          phone: invoice?.Tenant?.phone || customer?.phone || "N/A",
+        },
+        invoice: {
+          id: invoice?.id,
+          month: invoice?.month,
+          year: invoice?.year,
+          status: invoice?.status,
+          roomPrice: invoice?.roomPrice,
+          electricCost: invoice?.electricCost,
+          waterCost: invoice?.waterCost,
+          serviceCost: invoice?.serviceCost,
+          totalAmount: invoice?.totalAmount,
+          createdAt: invoice?.createdAt,
+          roomName: invoice?.Room?.name || "N/A",
+          houseName: invoice?.Room?.house?.name || "N/A",
+          houseAddress: invoice?.Room?.house?.address || "N/A",
+        },
+        transaction: {
+          sessionId: session.id,
+          paymentIntentId: session.payment_intent,
+          amountTotal: session.amount_total,
+          currency: session.currency,
+          paymentStatus: session.payment_status,
+          checkoutStatus: session.status,
+          paidAt: session.created,
+        },
+      },
     });
   } catch (error) {
     console.error("CONFIRM STRIPE SESSION ERROR:", {

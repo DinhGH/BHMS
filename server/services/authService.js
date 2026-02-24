@@ -56,6 +56,8 @@ export const authService = {
         id: newUser.id,
         email: newUser.email,
         role: newUser.role,
+        fullName: newUser.fullName || "",
+        imageUrl: newUser.imageUrl || "",
       },
       token,
     };
@@ -69,6 +71,16 @@ export const authService = {
 
     const user = await prisma.user.findUnique({
       where: { email },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        status: true,
+        active: true,
+        passwordHash: true,
+        fullName: true,
+        imageUrl: true,
+      },
     });
 
     if (!user || !user.passwordHash) {
@@ -100,6 +112,8 @@ export const authService = {
         id: user.id,
         email: user.email,
         role: user.role,
+        fullName: user.fullName || "",
+        imageUrl: user.imageUrl || "",
       },
       token,
     };

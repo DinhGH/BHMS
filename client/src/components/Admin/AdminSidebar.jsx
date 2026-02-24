@@ -62,9 +62,9 @@ export default function AdminSidebar({ user, mobileOpen = false, onClose }) {
     item.label.toLowerCase().includes(search.toLowerCase().trim()),
   );
 
-  const handleSettings = () => {
-    navigate("/admin/settings");
-  };
+  // const handleSettings = () => {
+  //   navigate("/admin/settings");
+  // };
   const handleNotifications = () => {
     alert("You have " + notifications + " notifications!");
     setNotifications(0);
@@ -110,13 +110,13 @@ export default function AdminSidebar({ user, mobileOpen = false, onClose }) {
 
         {/* Actions */}
         <div className="mt-4 flex items-center gap-3">
-          <button
+          {/* <button
             className="p-2.5 hover:bg-gray-100 rounded-xl border border-gray-200 text-gray-600"
             onClick={handleSettings}
             aria-label="Settings"
           >
             <AiFillSetting className="h-5 w-5" />
-          </button>
+          </button> */}
           <button
             className="p-2.5 hover:bg-gray-100 rounded-xl border border-gray-200 text-gray-600 relative"
             onClick={handleNotifications}

@@ -14,6 +14,7 @@ import ServiceManagement from "../../components/ServiceManagement";
 import OwnerProfileModal from "../../components/OwnerProfileModal";
 import { useAuth } from "../../contexts/AuthContext";
 import { getNotifications } from "../../services/api";
+import api from "../../services/api";
 // import { getNotifications } from "../../services/api";
 
 function HomePageOwner() {
@@ -25,6 +26,40 @@ function HomePageOwner() {
   const [notifications, setNotifications] = useState([]);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+
+  useEffect(() => {
+    if (!user?.id) return;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const profile = await api.get("/api/owner/profile");
+        if (cancelled || !profile) return;
+
+        const nextFullName = profile.fullName || "";
+        const nextImageUrl = profile.imageUrl || "";
+        const nextEmail = profile.email || user.email || "";
+
+        if (
+          nextFullName !== (user.fullName || "") ||
+          nextImageUrl !== (user.imageUrl || "") ||
+          nextEmail !== (user.email || "")
+        ) {
+          updateUser({
+            fullName: nextFullName,
+            imageUrl: nextImageUrl,
+            email: nextEmail,
+          });
+        }
+      } catch (error) {
+        console.error("Failed to sync owner profile:", error);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [updateUser, user?.email, user?.fullName, user?.id, user?.imageUrl]);
 
   // Fetch notifications once when user is ready (lọc tại client theo searchQuery)
   useEffect(() => {
