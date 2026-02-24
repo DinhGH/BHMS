@@ -39,6 +39,7 @@ import {
   changePassword,
 } from "../controllers/owner.profile.controller.js";
 import { uploadOwnerImage } from "../controllers/owner.upload.controller.js";
+import { getOwnerDashboard } from "../controllers/owner.dashboard.controller.js";
 
 import { authOwner } from "../middlewares/owner.middleware.js";
 import { uploadImage } from "../middlewares/upload.middleware.js";
@@ -48,6 +49,7 @@ router.use(authOwner);
 
 // Profile routes
 router.get("/profile", getOwnerProfile);
+router.get("/dashboard", getOwnerDashboard);
 router.put("/profile", updateOwnerProfile);
 router.post("/profile/change-password", changePassword);
 router.post("/uploads/image", uploadImage.single("image"), uploadOwnerImage);
