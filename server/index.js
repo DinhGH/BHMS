@@ -7,13 +7,16 @@ import cors from "cors";
 import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import serviceRoutes from "./routes/services.js";
-import paymentRoutes, { handleStripeWebhook } from "./routes/paymentRoutes.js";
+import paymentRoutes from "./routes/paymentRoutes.js";
 import tenantRoutes from "./routes/tenantRoutes.js";
 import reportRoutes from "./routes/reportRoutes.js";
 import reportAdminRoutes from "./routes/reportAdminRoutes.js";
+import stripeRoute from "./routes/stripe.routes.js";
 
 import ownerRoute from "./routes/owner.route.js";
 import adminRoutes from "./routes/admin.routes.js";
+
+import { handleStripeWebhook } from "./controllers/paymentController.js";
 
 // Scheduled tasks
 import { scheduleOverdueCheck } from "./services/overdueService.js";
@@ -27,7 +30,8 @@ app.use(
     credentials: true,
   }),
 );
-
+// Stripe webhook (raw body middleware inside route)
+app.use("/webhook", stripeRoute);
 // Stripe webhook must be registered BEFORE express.json()
 // because it needs raw body for signature verification
 app.post(
@@ -35,7 +39,6 @@ app.post(
   express.raw({ type: "application/json" }),
   handleStripeWebhook,
 );
-
 app.use(express.json());
 
 // Health check

@@ -133,6 +133,7 @@ model Invoice {
   id           Int           @id @default(autoincrement())
   roomId       Int
   tenantId     Int
+  imageUrl     String?
   roomPrice    Float
   electricCost Float
   waterCost    Float
@@ -152,7 +153,7 @@ model Invoice {
 
 model Payment {
   id         Int            @id @default(autoincrement())
-  invoiceId  Int
+  invoiceId  Int         
   method     Payment_method
   amount     Float
   proofImage String?
@@ -240,12 +241,15 @@ enum InvoiceStatus {
   OVERDUE
 }
 
+<<<<<<< HEAD
 enum Payment_method {
   GATEWAY
   QR_TRANSFER
   CASH
 }
 
+=======
+>>>>>>> 7455255e3e3494d8da14b858487ef72915a0d1a6
 enum Service_priceType {
   FIXED
   UNIT_BASED
@@ -295,4 +299,10 @@ enum Subscription_status {
   ACTIVE
   CANCELED
   EXPIRED
+}
+
+enum Payment_method {
+  GATEWAY
+  QR_TRANSFER
+  CASH
 }
