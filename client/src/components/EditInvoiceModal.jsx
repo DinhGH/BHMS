@@ -7,30 +7,68 @@ const STATUS_OPTIONS = ["PENDING", "PAID", "OVERDUE"];
 export default function EditInvoiceModal({
   invoice,
   roomId,
+  room,
   onClose,
   onUpdated,
 }) {
+  const previousElectric = Number(
+    room?.electricMeterNow ?? room?.electricMeterAfter ?? 0,
+  );
+  const previousWater = Number(
+    room?.waterMeterNow ?? room?.waterMeterAfter ?? 0,
+  );
+  const electricFee = Number(room?.electricFee ?? 0);
+  const waterFee = Number(room?.waterFee ?? 0);
+
+  const inferredElectricAfter =
+    room?.electricMeterAfter ??
+    (electricFee > 0
+      ? previousElectric + Number(invoice?.electricCost ?? 0) / electricFee
+      : previousElectric);
+  const inferredWaterAfter =
+    room?.waterMeterAfter ??
+    (waterFee > 0
+      ? previousWater + Number(invoice?.waterCost ?? 0) / waterFee
+      : previousWater);
+
   const [form, setForm] = useState({
     month: invoice?.month ?? "",
     year: invoice?.year ?? "",
     roomPrice: invoice?.roomPrice ?? 0,
-    electricCost: invoice?.electricCost ?? 0,
-    waterCost: invoice?.waterCost ?? 0,
+    electricMeterAfter: Number(inferredElectricAfter || 0),
+    waterMeterAfter: Number(inferredWaterAfter || 0),
     serviceCost: invoice?.serviceCost ?? 0,
     status: invoice?.status ?? "PENDING",
   });
   const [loading, setLoading] = useState(false);
 
+  const electricCost = useMemo(() => {
+    const after = Number(form.electricMeterAfter || 0);
+    const usage = Math.max(0, after - previousElectric);
+    return usage * electricFee;
+  }, [form.electricMeterAfter, previousElectric, electricFee]);
+
+  const waterCost = useMemo(() => {
+    const after = Number(form.waterMeterAfter || 0);
+    const usage = Math.max(0, after - previousWater);
+    return usage * waterFee;
+  }, [form.waterMeterAfter, previousWater, waterFee]);
+
   const totalAmount = useMemo(() => {
     return (
       Number(form.roomPrice || 0) +
-      Number(form.electricCost || 0) +
-      Number(form.waterCost || 0) +
+      Number(electricCost || 0) +
+      Number(waterCost || 0) +
       Number(form.serviceCost || 0)
     );
-  }, [form]);
+  }, [form.roomPrice, form.serviceCost, electricCost, waterCost]);
 
-  const formatVnd = (value) => `${Number(value || 0).toLocaleString("vi-VN")}đ`;
+  const formatUsd = (value) =>
+    new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      maximumFractionDigits: 2,
+    }).format(Number(value || 0));
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -49,22 +87,41 @@ export default function EditInvoiceModal({
       return toast.error("Năm không hợp lệ");
     }
 
+    if (Number(form.electricMeterAfter) < previousElectric) {
+      return toast.error(
+        "Chỉ số điện mới phải lớn hơn hoặc bằng chỉ số trước đó",
+      );
+    }
+
+    if (Number(form.waterMeterAfter) < previousWater) {
+      return toast.error(
+        "Chỉ số nước mới phải lớn hơn hoặc bằng chỉ số trước đó",
+      );
+    }
+
     if (totalAmount <= 0) {
       return toast.error("Tổng tiền phải lớn hơn 0");
     }
 
     try {
       setLoading(true);
-      await api.put(`/api/owner/rooms/${roomId}/invoices/${invoice.id}`, {
-        month: Number(form.month),
-        year: Number(form.year),
-        roomPrice: Number(form.roomPrice),
-        electricCost: Number(form.electricCost),
-        waterCost: Number(form.waterCost),
-        serviceCost: Number(form.serviceCost),
-        status: form.status,
-      });
-      toast.success("Đã cập nhật hóa đơn");
+      const result = await api.put(
+        `/api/owner/rooms/${roomId}/invoices/${invoice.id}`,
+        {
+          month: Number(form.month),
+          year: Number(form.year),
+          roomPrice: Number(form.roomPrice),
+          electricMeterAfter: Number(form.electricMeterAfter),
+          waterMeterAfter: Number(form.waterMeterAfter),
+          serviceCost: Number(form.serviceCost),
+          status: form.status,
+        },
+      );
+      toast.success(
+        result?.emailResent
+          ? "Đã cập nhật hóa đơn và gửi lại email cho tenant"
+          : "Đã cập nhật hóa đơn",
+      );
       onUpdated();
       onClose();
     } catch (err) {
@@ -122,21 +179,31 @@ export default function EditInvoiceModal({
             <label className="block text-sm font-medium mb-1">Tiền điện</label>
             <input
               type="number"
-              name="electricCost"
-              value={form.electricCost}
+              min={previousElectric}
+              name="electricMeterAfter"
+              value={form.electricMeterAfter}
               onChange={handleChange}
               className="w-full border rounded-md p-2"
             />
+            <div className="text-xs text-gray-500 mt-1">
+              Chỉ số cũ: {previousElectric} • Đơn giá: {formatUsd(electricFee)}{" "}
+              • Thành tiền: {formatUsd(electricCost)}
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Tiền nước</label>
             <input
               type="number"
-              name="waterCost"
-              value={form.waterCost}
+              min={previousWater}
+              name="waterMeterAfter"
+              value={form.waterMeterAfter}
               onChange={handleChange}
               className="w-full border rounded-md p-2"
             />
+            <div className="text-xs text-gray-500 mt-1">
+              Chỉ số cũ: {previousWater} • Đơn giá: {formatUsd(waterFee)} •
+              Thành tiền: {formatUsd(waterCost)}
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Dịch vụ</label>
@@ -167,7 +234,7 @@ export default function EditInvoiceModal({
         </div>
 
         <div className="bg-blue-50 border border-blue-200 rounded-md p-3 text-sm text-gray-700">
-          Tổng tiền: <strong>{formatVnd(totalAmount)}</strong>
+          Tổng tiền: <strong>{formatUsd(totalAmount)}</strong>
         </div>
 
         <div className="flex justify-end gap-3 pt-2 border-t">

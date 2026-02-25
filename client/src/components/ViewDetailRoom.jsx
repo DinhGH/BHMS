@@ -552,8 +552,12 @@ export default function ViewDetailRoom({ roomId, onBack }) {
         <EditInvoiceModal
           invoice={editingInvoice}
           roomId={room.id}
+          room={room}
           onClose={() => setEditingInvoice(null)}
-          onUpdated={fetchRoomInvoices}
+          onUpdated={() => {
+            fetchRoomInvoices();
+            fetchRoomDetail();
+          }}
         />
       )}
 

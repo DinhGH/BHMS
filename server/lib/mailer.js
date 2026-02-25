@@ -284,15 +284,15 @@ export const sendInvoicePaidEmail = async ({
           .map(
             (item, idx) => `
             <tr>
-              <td style="padding: 6px 10px; border-bottom: 1px solid #f3f4f6;">${idx + 1}. ${item.serviceName}</td>
-              <td style="padding: 6px 10px; border-bottom: 1px solid #f3f4f6; text-align: center;">${item.quantity}</td>
-              <td style="padding: 6px 10px; border-bottom: 1px solid #f3f4f6; text-align: right;">${formatCurrency(item.unitPrice)}</td>
-              <td style="padding: 6px 10px; border-bottom: 1px solid #f3f4f6; text-align: right;">${formatCurrency(item.totalPrice)}</td>
+              <td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0; color: #1e293b;">${idx + 1}. ${item.serviceName}</td>
+              <td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0; text-align: center; color: #334155;">${item.quantity}</td>
+              <td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0; text-align: right; color: #334155;">${formatCurrency(item.unitPrice)}</td>
+              <td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0; text-align: right; color: #0f172a; font-weight: 600;">${formatCurrency(item.totalPrice)}</td>
             </tr>
           `,
           )
           .join("")
-      : `<tr><td colspan="4" style="padding: 8px 10px; color: #6b7280;">No additional services</td></tr>`;
+      : `<tr><td colspan="4" style="padding: 10px; color: #64748b;">No additional services</td></tr>`;
 
   const text =
     `Hello ${tenantName || "there"},\n\n` +
@@ -312,71 +312,122 @@ export const sendInvoicePaidEmail = async ({
     `Thank you.`;
 
   const html = `
-    <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111;">
-      <h2 style="margin: 0 0 12px; color: #166534;">✅ Payment Confirmed</h2>
-      <p>Hello <strong>${tenantName || "there"}</strong>,</p>
-      <p>Your payment for invoice <strong>#${invoiceId}</strong> has been received successfully.</p>
+    <div style="margin: 0; padding: 0; background: #f3f6fb; font-family: 'Segoe UI', Arial, sans-serif; color: #0f172a;">
+      <div style="display: none; max-height: 0; overflow: hidden; opacity: 0;">
+        Payment received for invoice #${invoiceId}. Total paid: ${formatCurrency(totalAmount)}.
+      </div>
 
-      <table style="border-collapse: collapse; width: 100%; max-width: 560px; margin: 12px 0; border: 1px solid #e5e7eb;">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background: #f3f6fb; padding: 24px 12px;">
         <tr>
-          <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; background: #f9fafb;">Room</td>
-          <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb;">${roomName}${houseName ? ` - ${houseName}` : ""}</td>
+          <td align="center">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width: 680px; background: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #dbeafe; box-shadow: 0 8px 30px rgba(15, 23, 42, 0.08);">
+              <tr>
+                <td style="padding: 24px 28px; background: linear-gradient(135deg, #16a34a, #0ea5e9); color: #ffffff;">
+                  <div style="font-size: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; opacity: 0.9;">Payment Confirmation</div>
+                  <h2 style="margin: 8px 0 4px; font-size: 26px; line-height: 1.3;">✅ Payment Received</h2>
+                  <div style="font-size: 14px; opacity: 0.95;">Invoice #${invoiceId} • ${month}/${year}</div>
+                </td>
+              </tr>
+
+              <tr>
+                <td style="padding: 22px 28px 8px;">
+                  <p style="margin: 0 0 8px; font-size: 16px; color: #334155;">Hello <strong style="color: #0f172a;">${tenantName || "there"}</strong>,</p>
+                  <p style="margin: 0; font-size: 15px; color: #475569; line-height: 1.7;">
+                    Your payment for invoice <strong style="color: #0f172a;">#${invoiceId}</strong> has been received successfully.
+                  </p>
+                </td>
+              </tr>
+
+              <tr>
+                <td style="padding: 14px 28px 8px;">
+                  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; overflow: hidden;">
+                    <tr>
+                      <td style="padding: 14px 16px; font-size: 13px; color: #15803d; text-transform: uppercase; letter-spacing: 0.4px;">Total Paid</td>
+                      <td style="padding: 14px 16px; font-size: 24px; font-weight: 700; color: #166534; text-align: right;">${formatCurrency(totalAmount)}</td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+
+              <tr>
+                <td style="padding: 10px 28px 6px;">
+                  <h3 style="margin: 0 0 10px; font-size: 18px; color: #0f172a;">Payment summary</h3>
+                  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
+                    <tr style="background: #f8fafc;">
+                      <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; color: #334155;">Room</td>
+                      <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; color: #0f172a;">${roomName}${houseName ? ` - ${houseName}` : ""}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; color: #334155;">Billing period</td>
+                      <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; color: #0f172a;">${month}/${year}</td>
+                    </tr>
+                    <tr style="background: #f8fafc;">
+                      <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; color: #334155;">Payment method</td>
+                      <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; color: #0f172a;">${paymentMethod}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; color: #334155;">Paid at</td>
+                      <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; color: #0f172a;">${paidAtDisplay}</td>
+                    </tr>
+                    ${
+                      transactionId
+                        ? `<tr style="background: #f8fafc;"><td style="padding: 10px 12px; color: #334155;">Transaction</td><td style="padding: 10px 12px; color: #0f172a;">${transactionId}</td></tr>`
+                        : ""
+                    }
+                  </table>
+                </td>
+              </tr>
+
+              <tr>
+                <td style="padding: 14px 28px 6px;">
+                  <h3 style="margin: 0 0 10px; font-size: 18px; color: #0f172a;">Detailed invoice</h3>
+                  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
+                    <tr style="background: #f8fafc;">
+                      <td style="padding: 10px 14px; font-size: 14px; color: #334155; border-bottom: 1px solid #e2e8f0;">Room rent</td>
+                      <td style="padding: 10px 14px; font-size: 14px; color: #0f172a; text-align: right; border-bottom: 1px solid #e2e8f0;">${formatCurrency(roomPrice)}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 10px 14px; font-size: 14px; color: #334155; border-bottom: 1px solid #e2e8f0;">Electricity</td>
+                      <td style="padding: 10px 14px; font-size: 14px; color: #0f172a; text-align: right; border-bottom: 1px solid #e2e8f0;">${formatCurrency(electricCost)}</td>
+                    </tr>
+                    <tr style="background: #f8fafc;">
+                      <td style="padding: 10px 14px; font-size: 14px; color: #334155; border-bottom: 1px solid #e2e8f0;">Water</td>
+                      <td style="padding: 10px 14px; font-size: 14px; color: #0f172a; text-align: right; border-bottom: 1px solid #e2e8f0;">${formatCurrency(waterCost)}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 10px 14px; font-size: 14px; color: #334155; border-bottom: 1px solid #e2e8f0;">Services</td>
+                      <td style="padding: 10px 14px; font-size: 14px; color: #0f172a; text-align: right; border-bottom: 1px solid #e2e8f0;">${formatCurrency(serviceCost)}</td>
+                    </tr>
+                    <tr style="background: #dcfce7;">
+                      <td style="padding: 12px 14px; font-size: 15px; font-weight: 700; color: #166534;">Total paid</td>
+                      <td style="padding: 12px 14px; font-size: 16px; font-weight: 700; color: #166534; text-align: right;">${formatCurrency(totalAmount)}</td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+
+              <tr>
+                <td style="padding: 14px 28px 20px;">
+                  <h3 style="margin: 0 0 10px; font-size: 18px; color: #0f172a;">Service details</h3>
+                  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
+                    <tr style="background: #eff6ff;">
+                      <th style="padding: 9px 10px; text-align: left; border-bottom: 1px solid #dbeafe; color: #1e3a8a;">Service</th>
+                      <th style="padding: 9px 10px; text-align: center; border-bottom: 1px solid #dbeafe; color: #1e3a8a;">Qty</th>
+                      <th style="padding: 9px 10px; text-align: right; border-bottom: 1px solid #dbeafe; color: #1e3a8a;">Unit</th>
+                      <th style="padding: 9px 10px; text-align: right; border-bottom: 1px solid #dbeafe; color: #1e3a8a;">Amount</th>
+                    </tr>
+                    ${serviceItemsHtml}
+                  </table>
+                </td>
+              </tr>
+            </table>
+
+            <div style="max-width: 680px; margin-top: 10px; color: #94a3b8; font-size: 12px; line-height: 1.5; text-align: center;">
+              This is an automated payment confirmation email. Need support? Just reply to this message.
+            </div>
+          </td>
         </tr>
-        <tr>
-          <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; background: #f9fafb;">Billing period</td>
-          <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb;">${month}/${year}</td>
-        </tr>
-        <tr>
-          <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; background: #f9fafb;">Payment method</td>
-          <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb;">${paymentMethod}</td>
-        </tr>
-        <tr>
-          <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; background: #f9fafb;">Paid at</td>
-          <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb;">${paidAtDisplay}</td>
-        </tr>
-        ${
-          transactionId
-            ? `<tr><td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; background: #f9fafb;">Transaction</td><td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb;">${transactionId}</td></tr>`
-            : ""
-        }
       </table>
-
-      <h3 style="margin: 16px 0 8px;">Detailed invoice</h3>
-      <table style="border-collapse: collapse; width: 100%; max-width: 560px; margin: 8px 0; border: 1px solid #e5e7eb;">
-        <tr>
-          <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb;">Room rent</td>
-          <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; text-align: right;">${formatCurrency(roomPrice)}</td>
-        </tr>
-        <tr>
-          <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb;">Electricity</td>
-          <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; text-align: right;">${formatCurrency(electricCost)}</td>
-        </tr>
-        <tr>
-          <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb;">Water</td>
-          <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; text-align: right;">${formatCurrency(waterCost)}</td>
-        </tr>
-        <tr>
-          <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb;">Services</td>
-          <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; text-align: right;">${formatCurrency(serviceCost)}</td>
-        </tr>
-        <tr>
-          <td style="padding: 10px 12px; font-weight: bold; color: #1d4ed8; background: #eff6ff;">Total paid</td>
-          <td style="padding: 10px 12px; font-weight: bold; color: #1d4ed8; text-align: right; background: #eff6ff;">${formatCurrency(totalAmount)}</td>
-        </tr>
-      </table>
-
-      <h3 style="margin: 16px 0 8px;">Service details</h3>
-      <table style="border-collapse: collapse; width: 100%; max-width: 560px; margin: 8px 0; border: 1px solid #e5e7eb;">
-        <tr style="background: #f9fafb;">
-          <th style="padding: 8px 10px; text-align: left; border-bottom: 1px solid #e5e7eb;">Service</th>
-          <th style="padding: 8px 10px; text-align: center; border-bottom: 1px solid #e5e7eb;">Qty</th>
-          <th style="padding: 8px 10px; text-align: right; border-bottom: 1px solid #e5e7eb;">Unit</th>
-          <th style="padding: 8px 10px; text-align: right; border-bottom: 1px solid #e5e7eb;">Amount</th>
-        </tr>
-        ${serviceItemsHtml}
-      </table>
-
-      <p style="margin-top: 12px;">Thank you!</p>
     </div>
   `;
 

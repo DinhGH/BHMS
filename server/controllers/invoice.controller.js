@@ -24,6 +24,48 @@ const ensureSuccessUrlHasSessionId = (url) => {
   return `${url}${separator}session_id={CHECKOUT_SESSION_ID}`;
 };
 
+const createStripePaymentLink = async ({
+  stripe,
+  invoiceId,
+  roomId,
+  roomName,
+  month,
+  year,
+  totalAmount,
+}) => {
+  const baseSuccessUrl =
+    process.env.STRIPE_SUCCESS_URL || "http://localhost:5173/payment/success";
+  const successUrl = ensureSuccessUrlHasSessionId(baseSuccessUrl);
+  const cancelUrl =
+    process.env.STRIPE_CANCEL_URL || "http://localhost:5173/payment/cancel";
+
+  const stripeAmount = Math.round(Number(totalAmount) * 100);
+
+  const session = await stripe.checkout.sessions.create({
+    mode: "payment",
+    line_items: [
+      {
+        quantity: 1,
+        price_data: {
+          currency: "usd",
+          unit_amount: stripeAmount,
+          product_data: {
+            name: `Invoice ${roomName} - ${month}/${year}`,
+          },
+        },
+      },
+    ],
+    success_url: successUrl,
+    cancel_url: cancelUrl,
+    metadata: {
+      invoiceId: String(invoiceId),
+      roomId: String(roomId),
+    },
+  });
+
+  return session.url || null;
+};
+
 export const makeInvoice = async (req, res) => {
   try {
     const roomId = Number(req.params.id);
@@ -216,38 +258,15 @@ export const makeInvoice = async (req, res) => {
 
     let paymentLink = null;
     try {
-      const baseSuccessUrl =
-        process.env.STRIPE_SUCCESS_URL ||
-        "http://localhost:5173/payment/success";
-      const successUrl = ensureSuccessUrlHasSessionId(baseSuccessUrl);
-      const cancelUrl =
-        process.env.STRIPE_CANCEL_URL || "http://localhost:5173/payment/cancel";
-
-      const stripeAmount = Math.round(Number(totalAmount) * 100);
-
-      const session = await stripe.checkout.sessions.create({
-        mode: "payment",
-        line_items: [
-          {
-            quantity: 1,
-            price_data: {
-              currency: "usd",
-              unit_amount: stripeAmount,
-              product_data: {
-                name: `Invoice ${room.name} - ${month}/${year}`,
-              },
-            },
-          },
-        ],
-        success_url: successUrl,
-        cancel_url: cancelUrl,
-        metadata: {
-          invoiceId: String(invoice.id),
-          roomId: String(room.id),
-        },
+      paymentLink = await createStripePaymentLink({
+        stripe,
+        invoiceId: invoice.id,
+        roomId: room.id,
+        roomName: room.name,
+        month,
+        year,
+        totalAmount,
       });
-
-      paymentLink = session.url || null;
     } catch (stripeError) {
       console.error("CREATE STRIPE SESSION ERROR:", {
         message: stripeError?.message,
@@ -371,6 +390,36 @@ export const updateInvoice = async (req, res) => {
 
     const invoice = await prisma.invoice.findUnique({
       where: { id: invoiceId },
+      include: {
+        Room: {
+          select: {
+            id: true,
+            name: true,
+            electricMeterNow: true,
+            electricMeterAfter: true,
+            waterMeterNow: true,
+            waterMeterAfter: true,
+            house: {
+              select: {
+                name: true,
+                electricFee: true,
+                waterFee: true,
+                owner: {
+                  select: {
+                    qrImageUrl: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+        Tenant: {
+          select: {
+            fullName: true,
+            email: true,
+          },
+        },
+      },
     });
 
     if (!invoice || invoice.roomId !== roomId) {
@@ -409,15 +458,81 @@ export const updateInvoice = async (req, res) => {
       req.body?.roomPrice,
       invoice.roomPrice,
     );
-    const nextElectric = normalizeNumber(
+    let nextElectric = normalizeNumber(
       req.body?.electricCost,
       invoice.electricCost,
     );
-    const nextWater = normalizeNumber(req.body?.waterCost, invoice.waterCost);
+    let nextWater = normalizeNumber(req.body?.waterCost, invoice.waterCost);
     const nextService = normalizeNumber(
       req.body?.serviceCost,
       invoice.serviceCost,
     );
+
+    const hasElectricMeterAfter =
+      req.body?.electricMeterAfter !== undefined &&
+      req.body?.electricMeterAfter !== null &&
+      req.body?.electricMeterAfter !== "";
+    const hasWaterMeterAfter =
+      req.body?.waterMeterAfter !== undefined &&
+      req.body?.waterMeterAfter !== null &&
+      req.body?.waterMeterAfter !== "";
+
+    let roomMeterPatch = null;
+
+    if (hasElectricMeterAfter || hasWaterMeterAfter) {
+      const previousElectric = Number(
+        invoice.Room?.electricMeterNow ?? invoice.Room?.electricMeterAfter ?? 0,
+      );
+      const previousWater = Number(
+        invoice.Room?.waterMeterNow ?? invoice.Room?.waterMeterAfter ?? 0,
+      );
+
+      const nextElectricMeterAfter = hasElectricMeterAfter
+        ? Number(req.body?.electricMeterAfter)
+        : Number(invoice.Room?.electricMeterAfter ?? previousElectric);
+      const nextWaterMeterAfter = hasWaterMeterAfter
+        ? Number(req.body?.waterMeterAfter)
+        : Number(invoice.Room?.waterMeterAfter ?? previousWater);
+
+      if (
+        Number.isNaN(nextElectricMeterAfter) ||
+        nextElectricMeterAfter < previousElectric
+      ) {
+        return res.status(400).json({
+          message: "Invalid electric meter reading",
+        });
+      }
+
+      if (
+        Number.isNaN(nextWaterMeterAfter) ||
+        nextWaterMeterAfter < previousWater
+      ) {
+        return res.status(400).json({
+          message: "Invalid water meter reading",
+        });
+      }
+
+      const electricFee = Number(invoice.Room?.house?.electricFee ?? 0);
+      const waterFee = Number(invoice.Room?.house?.waterFee ?? 0);
+
+      nextElectric =
+        Math.max(0, nextElectricMeterAfter - previousElectric) * electricFee;
+      nextWater = Math.max(0, nextWaterMeterAfter - previousWater) * waterFee;
+
+      roomMeterPatch = {
+        electricMeterAfter: nextElectricMeterAfter,
+        waterMeterAfter: nextWaterMeterAfter,
+      };
+    }
+
+    if (
+      Number(nextRoomPrice) < 0 ||
+      Number(nextElectric) < 0 ||
+      Number(nextWater) < 0 ||
+      Number(nextService) < 0
+    ) {
+      return res.status(400).json({ message: "Costs cannot be negative" });
+    }
 
     const totalAmount =
       Number(nextRoomPrice || 0) +
@@ -435,18 +550,29 @@ export const updateInvoice = async (req, res) => {
     const statusChanged = invoice.status !== nextStatus;
     const nowPaid = nextStatus === "PAID" && invoice.status !== "PAID";
 
-    const updated = await prisma.invoice.update({
-      where: { id: invoiceId },
-      data: {
-        roomPrice: nextRoomPrice,
-        electricCost: nextElectric,
-        waterCost: nextWater,
-        serviceCost: nextService,
-        totalAmount,
-        month: nextMonth,
-        year: nextYear,
-        status: nextStatus,
-      },
+    const updated = await prisma.$transaction(async (tx) => {
+      const updatedInvoice = await tx.invoice.update({
+        where: { id: invoiceId },
+        data: {
+          roomPrice: nextRoomPrice,
+          electricCost: nextElectric,
+          waterCost: nextWater,
+          serviceCost: nextService,
+          totalAmount,
+          month: nextMonth,
+          year: nextYear,
+          status: nextStatus,
+        },
+      });
+
+      if (roomMeterPatch) {
+        await tx.room.update({
+          where: { id: roomId },
+          data: roomMeterPatch,
+        });
+      }
+
+      return updatedInvoice;
     });
 
     // Send email notification when status changes to PAID
@@ -472,7 +598,61 @@ export const updateInvoice = async (req, res) => {
       }
     }
 
-    res.json({ message: "Invoice updated", invoice: updated });
+    let emailResent = false;
+    if (invoice.Tenant?.email) {
+      try {
+        const stripe = getStripeClient();
+        if (!stripe) {
+          throw new Error("Stripe is not configured");
+        }
+
+        const paymentLink = await createStripePaymentLink({
+          stripe,
+          invoiceId: updated.id,
+          roomId,
+          roomName: invoice.Room?.name || `Room ${roomId}`,
+          month: updated.month,
+          year: updated.year,
+          totalAmount: updated.totalAmount,
+        });
+
+        if (!paymentLink) {
+          throw new Error("Stripe payment link is not available");
+        }
+
+        await sendInvoiceEmail({
+          to: invoice.Tenant.email,
+          tenantName: invoice.Tenant.fullName,
+          roomName: invoice.Room?.name || `Room ${roomId}`,
+          houseName: invoice.Room?.house?.name || "",
+          month: updated.month,
+          year: updated.year,
+          roomPrice: updated.roomPrice,
+          electricCost: updated.electricCost,
+          waterCost: updated.waterCost,
+          serviceCost: updated.serviceCost,
+          totalAmount: updated.totalAmount,
+          paymentLink,
+          qrImageUrl: invoice.Room?.house?.owner?.qrImageUrl || null,
+        });
+
+        emailResent = true;
+      } catch (emailError) {
+        console.error("INVOICE UPDATE: Failed to resend invoice email", {
+          message: emailError?.message,
+          invoiceId: updated.id,
+          tenantEmail: invoice.Tenant?.email,
+        });
+      }
+    }
+
+    res.json({
+      message: emailResent
+        ? "Invoice updated and email resent"
+        : "Invoice updated",
+      invoice: updated,
+      emailResent,
+    });
   } catch (error) {
     console.error("UPDATE INVOICE ERROR:", error);
     res.status(500).json({ message: "Update invoice failed" });
