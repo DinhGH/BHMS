@@ -241,15 +241,12 @@ enum InvoiceStatus {
   OVERDUE
 }
 
-<<<<<<< HEAD
 enum Payment_method {
   GATEWAY
   QR_TRANSFER
   CASH
 }
 
-=======
->>>>>>> 7455255e3e3494d8da14b858487ef72915a0d1a6
 enum Service_priceType {
   FIXED
   UNIT_BASED

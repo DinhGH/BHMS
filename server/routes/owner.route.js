@@ -39,6 +39,18 @@ import {
   changePassword,
 } from "../controllers/owner.profile.controller.js";
 import { uploadOwnerImage } from "../controllers/owner.upload.controller.js";
+
+import {
+  getOwnerContracts,
+  getOwnerContractDetail,
+  getOwnerContractInvoices,
+  getOwnerContractStayHistory,
+  getOwnerContractOptions,
+  createOwnerContract,
+  updateOwnerContract,
+  deleteOwnerContract,
+} from "../controllers/owner.contract.controller.js";
+// import { makeInvoice } from "../controllers/invoice.controller.js";
 import { authOwner } from "../middlewares/owner.middleware.js";
 import upload from "../middlewares/upload.middleware.js";
 
@@ -96,4 +108,15 @@ router.post("/rooms/:roomId/services", addServiceToRoom);
 router.get("/rooms/:roomId/services", getServicesOfRoom);
 router.put("/rooms/:roomId/services/:serviceId", updateServiceQuantity);
 router.delete("/rooms/:roomId/services/:serviceId", removeServiceFromRoom);
+
+// contracts
+router.get("/contracts", getOwnerContracts);
+router.get("/contracts/options", getOwnerContractOptions);
+router.get("/contracts/:id", getOwnerContractDetail);
+router.get("/contracts/:id/invoices", getOwnerContractInvoices);
+router.get("/contracts/:id/stay-history", getOwnerContractStayHistory);
+router.post("/contracts", createOwnerContract);
+router.put("/contracts/:id", updateOwnerContract);
+router.delete("/contracts/:id", deleteOwnerContract);
+
 export default router;

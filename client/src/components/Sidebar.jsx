@@ -22,7 +22,7 @@ function Sidebar({
   const menuItems = [
     { id: "dashboard", label: "Dashboard", icon: <FaTachometerAlt /> },
     { id: "boarding-house", label: "Boarding House", icon: <FaBuilding /> },
-    { id: "rooms", label: "Room Management", icon: <FaDoorOpen /> },
+    { id: "contracts", label: "Contract Management", icon: <FaDoorOpen /> },
     { id: "services", label: "Services", icon: <FaWrench /> },
     { id: "tenants", label: "Tenants", icon: <FaUsers /> },
     { id: "notifications", label: "Notifications", icon: <FaBell /> },
