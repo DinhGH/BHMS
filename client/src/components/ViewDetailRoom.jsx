@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import InfoBox from "../components/ui/InfoBox";
 import ActionButton from "../components/ui/ActionButton";
 import TenantItem from "../components/ui/TenantItem";
@@ -9,18 +9,14 @@ import RemoveTenantModal from "../components/RemoveTenantModal";
 import {
   getRoomServicesApi,
   removeServiceFromRoomApi,
-} from "../services/roomServiceApi";
-import { getRoomDetail, deleteRoom } from "../services/boardingHouse";
-import EditQuantityModal from "../components/EditQuantityModal";
+} from "../server/roomServiceApi";
 import AddServiceModal from "./AddServiceModal";
 import MakeInvoiceModal from "./MakeInvoiceModal";
 import EditInvoiceModal from "./EditInvoiceModal";
 import EditServiceQuantityModal from "./EditServiceQuantityModal";
 import Loading from "./loading.jsx";
-// import api from "../server/api";
-
+import api from "../server/api";
 import { toast } from "react-hot-toast";
-import InvoicePreviewModal from "./InvoicePreviewModal";
 
 export default function ViewDetailRoom({ roomId, onBack }) {
   const [room, setRoom] = useState(null);
@@ -31,22 +27,18 @@ export default function ViewDetailRoom({ roomId, onBack }) {
   const [showRemoveTenant, setShowRemoveTenant] = useState(false);
   const [roomServices, setRoomServices] = useState([]);
   const [showAddService, setShowAddService] = useState(false);
-  const [showEditQuantity, setShowEditQuantity] = useState(false);
-  const [editingService, setEditingService] = useState(null);
-  const [openInvoice, setOpenInvoice] = useState(false);
+  const [showMakeInvoice, setShowMakeInvoice] = useState(false);
+  const [invoices, setInvoices] = useState([]);
+  const [editingInvoice, setEditingInvoice] = useState(null);
+  const [showEditServiceQuantity, setShowEditServiceQuantity] = useState(false);
+  const [serviceToEdit, setServiceToEdit] = useState(null);
 
   /* ================= FETCH ================= */
 
-  useEffect(() => {
-    if (roomId) fetchRoomDetail();
-    fetchRoomServices();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roomId]);
-
-  const fetchRoomDetail = async () => {
+  const fetchRoomDetail = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await getRoomDetail(roomId);
+      const res = await api.get(`/api/owner/rooms/${roomId}`);
       setRoom(res);
     } catch (err) {
       console.error(err);
@@ -54,16 +46,33 @@ export default function ViewDetailRoom({ roomId, onBack }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [roomId]);
 
-  const fetchRoomServices = async () => {
+  const fetchRoomServices = useCallback(async () => {
     try {
       const res = await getRoomServicesApi(roomId);
       setRoomServices(res);
     } catch {
       toast.error("Failed to load services");
     }
-  };
+  }, [roomId]);
+
+  const fetchRoomInvoices = useCallback(async () => {
+    try {
+      const res = await api.get(`/api/owner/rooms/${roomId}/invoices`);
+      setInvoices(Array.isArray(res) ? res : []);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to load invoices");
+      setInvoices([]);
+    }
+  }, [roomId]);
+
+  useEffect(() => {
+    if (roomId) fetchRoomDetail();
+    fetchRoomServices();
+    fetchRoomInvoices();
+  }, [roomId, fetchRoomDetail, fetchRoomInvoices, fetchRoomServices]);
 
   const renderInvoiceStatus = (status) => {
     switch (status) {
@@ -117,6 +126,13 @@ export default function ViewDetailRoom({ roomId, onBack }) {
     );
   };
 
+  const formatUsd = (value) =>
+    new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      maximumFractionDigits: 2,
+    }).format(Number(value || 0));
+
   /* ================= ACTIONS ================= */
 
   const handleDeleteRoom = async () => {
@@ -130,7 +146,7 @@ export default function ViewDetailRoom({ roomId, onBack }) {
 
     try {
       setDeleting(true);
-      await deleteRoom(room.id);
+      await api.delete(`/api/owner/rooms/${room.id}`);
       toast.success(`Room "${room.name}" deleted successfully`);
       onBack(true);
     } catch (err) {
@@ -141,6 +157,10 @@ export default function ViewDetailRoom({ roomId, onBack }) {
     } finally {
       setDeleting(false);
     }
+  };
+
+  const handleMakeInvoice = async () => {
+    setShowMakeInvoice(true);
   };
 
   /* ================= UI ================= */
@@ -176,7 +196,11 @@ export default function ViewDetailRoom({ roomId, onBack }) {
           <div className="flex flex-col items-center">
             <div className="w-full h-52 rounded-lg overflow-hidden border bg-slate-100">
               <img
-                src={room.imageUrl || "/no-image.png"}
+                src={
+                  room.imageUrl && room.imageUrl.startsWith("http")
+                    ? room.imageUrl
+                    : "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=800&h=600&fit=crop"
+                }
                 alt={room.name}
                 className="w-full h-full object-cover"
               />
@@ -198,7 +222,7 @@ export default function ViewDetailRoom({ roomId, onBack }) {
               value={renderInvoiceStatus(room.paymentStatus)}
             />
 
-            <InfoBox label="Rent" value={`${room.price}$ / month`} />
+            <InfoBox label="Rent" value={`${formatUsd(room.price)} / month`} />
 
             <InfoBox
               label="Contract Start"
@@ -220,22 +244,19 @@ export default function ViewDetailRoom({ roomId, onBack }) {
 
             <InfoBox
               label="Electric Cost"
-              value={`${calcElectricCost().toLocaleString()}$`}
+              value={formatUsd(calcElectricCost())}
             />
 
-            <InfoBox
-              label="Water Cost"
-              value={`${calcWaterCost().toLocaleString()}$`}
-            />
+            <InfoBox label="Water Cost" value={formatUsd(calcWaterCost())} />
 
             <InfoBox
               label="Service Cost"
-              value={`${calcServiceCost().toLocaleString()}$`}
+              value={formatUsd(calcServiceCost())}
             />
 
             <InfoBox
               label="Total Estimated Cost"
-              value={`${calcTotalCost().toLocaleString()}$`}
+              value={formatUsd(calcTotalCost())}
             />
           </div>
         </div>
@@ -253,7 +274,7 @@ export default function ViewDetailRoom({ roomId, onBack }) {
           ) : (
             <div className="flex flex-col items-center gap-2 text-gray-400">
               <FaUsers />
-              <div className="italic text-sm">Chưa có người thuê</div>
+              <div className="italic text-sm">No tenants yet</div>
             </div>
           )}
         </div>
@@ -284,16 +305,16 @@ export default function ViewDetailRoom({ roomId, onBack }) {
                     <div className="text-sm text-gray-600 mt-1">
                       {isUnitBased ? (
                         <>
-                          {Number(s.price).toLocaleString()}$ ×{" "}
-                          {s.quantity || 1} {s.service.unit || "units"}
+                          {formatUsd(s.price)} × {s.quantity || 1}{" "}
+                          {s.service.unit || "units"}
                           {" = "}
                           <span className="font-semibold text-gray-800">
-                            {totalPrice.toLocaleString()}$
+                            {formatUsd(totalPrice)}
                           </span>
                         </>
                       ) : (
                         <span className="font-semibold text-gray-800">
-                          {Number(s.price).toLocaleString()}$ / room
+                          {formatUsd(s.price)} / room
                         </span>
                       )}
                     </div>
@@ -304,27 +325,20 @@ export default function ViewDetailRoom({ roomId, onBack }) {
                       </div>
                     )}
                   </div>
-                  {/* Edit Quantity */}
+
                   <div className="flex gap-2">
                     {isUnitBased && (
                       <button
                         onClick={() => {
-                          setEditingService(s);
-                          setShowEditQuantity(true);
+                          setServiceToEdit(s);
+                          setShowEditServiceQuantity(true);
                         }}
                         className="text-blue-500 text-sm hover:underline px-2 py-1 hover:bg-blue-50 rounded"
                       >
                         Edit Quantity
                       </button>
                     )}
-                    {showEditQuantity && editingService && (
-                      <EditQuantityModal
-                        service={editingService}
-                        roomId={room.id}
-                        onClose={() => setShowEditQuantity(false)}
-                        onUpdated={fetchRoomServices}
-                      />
-                    )}
+
                     <button
                       onClick={async () => {
                         const confirmed = window.confirm(
@@ -356,7 +370,7 @@ export default function ViewDetailRoom({ roomId, onBack }) {
             <div className="border-t pt-3 flex justify-between items-center font-semibold">
               <span>Total Services Cost:</span>
               <span className="text-lg text-blue-600">
-                {calcServiceCost().toLocaleString()}đ
+                {formatUsd(calcServiceCost())}
               </span>
             </div>
           </div>
@@ -368,6 +382,79 @@ export default function ViewDetailRoom({ roomId, onBack }) {
         )}
       </div>
 
+      {/* INVOICES SECTION */}
+      <div className="bg-white rounded-xl shadow p-6 space-y-4">
+        <div className="flex justify-between items-center">
+          <h3 className="font-semibold">Room Invoices</h3>
+          <span className="text-sm text-gray-500">
+            Total: {invoices.length}
+          </span>
+        </div>
+
+        {invoices.length > 0 ? (
+          <div className="space-y-3">
+            {invoices.map((invoice) => (
+              <div
+                key={invoice.id}
+                className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 border border-slate-200 rounded-lg p-4 bg-slate-50"
+              >
+                <div className="space-y-1">
+                  <div className="font-medium">
+                    Period: {invoice.month}/{invoice.year}
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    Status: <strong>{invoice.status}</strong>
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    Total: <strong>{formatUsd(invoice.totalAmount)}</strong>
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    Created at:{" "}
+                    {new Date(invoice.createdAt).toLocaleString("en-US")}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setEditingInvoice(invoice)}
+                    className="px-3 py-2 rounded-md border border-blue-200 text-blue-600 hover:bg-blue-50 text-sm"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={async () => {
+                      const confirmed = window.confirm(
+                        "Are you sure you want to delete this invoice?",
+                      );
+                      if (!confirmed) return;
+                      try {
+                        await api.delete(
+                          `/api/owner/rooms/${roomId}/invoices/${invoice.id}`,
+                        );
+                        toast.success("Invoice deleted successfully");
+                        fetchRoomInvoices();
+                      } catch (err) {
+                        toast.error(
+                          err?.response?.data?.message ||
+                            "Failed to delete invoice",
+                        );
+                      }
+                    }}
+                    className="px-3 py-2 rounded-md border border-red-200 text-red-600 hover:bg-red-50 text-sm"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8 text-gray-400">
+            <div className="text-3xl mb-2">🧾</div>
+            <div className="italic text-sm">No invoices yet</div>
+          </div>
+        )}
+      </div>
+
       {/* ACTIONS */}
       <div className="flex justify-center gap-4">
         {/* Make Invoice */}
@@ -375,12 +462,7 @@ export default function ViewDetailRoom({ roomId, onBack }) {
           label="Make Invoice"
           variant="success"
           disabled={!isOccupied}
-          onClick={() => setOpenInvoice(true)}
-        />
-        <InvoicePreviewModal
-          room={room}
-          open={openInvoice}
-          onClose={() => setOpenInvoice(false)}
+          onClick={handleMakeInvoice}
         />
         {/* Add Services */}
         <ActionButton
@@ -432,7 +514,7 @@ export default function ViewDetailRoom({ roomId, onBack }) {
         </>
 
         <ActionButton
-          label="Edit Contract"
+          label="Edit"
           variant="info"
           onClick={() => setShowEdit(true)}
         />
@@ -454,6 +536,41 @@ export default function ViewDetailRoom({ roomId, onBack }) {
           onUpdated={fetchRoomDetail}
         />
       )}
+
+      {showMakeInvoice && (
+        <MakeInvoiceModal
+          room={room}
+          onClose={() => setShowMakeInvoice(false)}
+          onCreated={() => {
+            fetchRoomDetail();
+            fetchRoomInvoices();
+          }}
+        />
+      )}
+
+      {editingInvoice && (
+        <EditInvoiceModal
+          invoice={editingInvoice}
+          roomId={room.id}
+          room={room}
+          onClose={() => setEditingInvoice(null)}
+          onUpdated={() => {
+            fetchRoomInvoices();
+            fetchRoomDetail();
+          }}
+        />
+      )}
+
+      <EditServiceQuantityModal
+        isOpen={showEditServiceQuantity}
+        onClose={() => {
+          setShowEditServiceQuantity(false);
+          setServiceToEdit(null);
+        }}
+        roomId={roomId}
+        service={serviceToEdit}
+        onSuccess={fetchRoomServices}
+      />
     </div>
   );
 }

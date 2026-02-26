@@ -25,7 +25,6 @@ function Sidebar({
     { id: "contracts", label: "Contract Management", icon: <FaDoorOpen /> },
     { id: "services", label: "Services", icon: <FaWrench /> },
     { id: "tenants", label: "Tenants", icon: <FaUsers /> },
-    { id: "notifications", label: "Notifications", icon: <FaBell /> },
     {
       id: "reports",
       label: "Report Management",

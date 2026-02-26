@@ -5,7 +5,6 @@ import Dashboard from "../../components/Dashboard";
 import BoardingHouseManagement from "../../components/BoardingHouseManagement";
 import ContractManagement from "../../components/ContractManagement";
 import TenantsManagement from "../../components/TenantsManagement";
-import NotificationManagement from "../../components/NotificationManagement";
 import ReportManagement from "../../components/ReportManagement";
 import ReportIssue from "../../components/ReportIssue";
 import Loading from "../../components/loading.jsx";
@@ -119,8 +118,6 @@ function HomePageOwner() {
         return <ContractManagement />;
       case "tenants":
         return <TenantsManagement />;
-      case "notifications":
-        return <NotificationManagement />;
       case "reports":
         return <ReportManagement />;
       case "report-issue":

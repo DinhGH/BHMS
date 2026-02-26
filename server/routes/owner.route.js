@@ -27,11 +27,12 @@ import {
 import {
   sendInvoice,
   previewInvoice,
-} from "../controllers/invoice.controller.js";
-import {
   createInvoiceAndSend,
   uploadInvoiceImage,
   createStripeSession,
+  getInvoicesByRoom,
+  updateInvoice,
+  deleteInvoice,
 } from "../controllers/invoice.controller.js";
 import {
   getOwnerProfile,
@@ -85,6 +86,9 @@ router.get("/rooms/:roomId/tenants/search", searchTenantsInRoom);
 //invoice
 router.get("/rooms/:id/invoice-preview", previewInvoice);
 router.post("/rooms/:id/invoice", sendInvoice);
+router.get("/rooms/:id/invoices", getInvoicesByRoom);
+router.put("/rooms/:roomId/invoices/:invoiceId", updateInvoice);
+router.delete("/rooms/:roomId/invoices/:invoiceId", deleteInvoice);
 // create invoice with optional QR upload
 router.post(
   "/rooms/:id/invoice/create",
