@@ -84,13 +84,25 @@ export default function ReportAdmin() {
     if (!agreed) return;
 
     try {
-      await api.patch(`/api/report-admins/${reportId}/status`, {
-        status: newStatus,
-      });
+      const response = await api.patch(
+        `/api/report-admins/${reportId}/status`,
+        {
+          status: newStatus,
+          confirm: true,
+        },
+      );
       setReports((prev) =>
         prev.map((r) => (r.id === reportId ? { ...r, status: newStatus } : r)),
       );
-      alert("Status updated successfully");
+
+      const emailStats = response?.email;
+      if (emailStats) {
+        alert(
+          `Status updated successfully. Email: attempted ${emailStats.attempted}, sent ${emailStats.sent}, failed ${emailStats.failed}.`,
+        );
+      } else {
+        alert("Status updated successfully");
+      }
     } catch (error) {
       console.error("Update status error:", error);
       alert("Failed to update status");
@@ -107,7 +119,7 @@ export default function ReportAdmin() {
     if (!agreed) return;
 
     try {
-      await api.delete(`/api/report-admins/${reportId}`);
+      await api.delete(`/api/report-admins/${reportId}`, { confirm: true });
       setReports((prev) => prev.filter((r) => r.id !== reportId));
       alert("Report deleted successfully");
     } catch (error) {
@@ -144,7 +156,7 @@ export default function ReportAdmin() {
 
     try {
       for (const id of selectedIds) {
-        await api.delete(`/api/report-admins/${id}`);
+        await api.delete(`/api/report-admins/${id}`, { confirm: true });
       }
       setReports((prev) => prev.filter((r) => !selectedIds.includes(r.id)));
       setSelectedIds([]);
@@ -160,7 +172,7 @@ export default function ReportAdmin() {
   }
 
   return (
-    <div className="h-full flex flex-col max-w-7xl mx-auto p-6">
+    <div className="h-full flex flex-col max-w-7xl mx-auto p-3 sm:p-4 lg:p-6">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-black mb-2">Admin Reports</h1>
@@ -179,7 +191,7 @@ export default function ReportAdmin() {
         <select
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="app-select md:min-w-44"
         >
           <option value="all">All Status</option>
           {STATUS_OPTIONS.map((status) => (
@@ -195,13 +207,13 @@ export default function ReportAdmin() {
         <div className="mb-4 flex gap-2">
           <button
             onClick={handleBulkDelete}
-            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+            className="app-btn-danger"
           >
             Delete Selected ({selectedIds.length})
           </button>
           <button
             onClick={() => setSelectedIds([])}
-            className="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition"
+            className="app-btn-muted"
           >
             Clear Selection
           </button>
@@ -209,7 +221,7 @@ export default function ReportAdmin() {
       )}
 
       {/* Table Container - Scrollable */}
-      <div className="flex-1 bg-white shadow-lg rounded-lg overflow-hidden flex flex-col min-h-0">
+      <div className="flex-1 app-panel overflow-hidden flex flex-col min-h-0">
         {reports.length === 0 ? (
           <div className="p-8 text-center text-gray-500">
             <p>No reports found</p>
@@ -217,7 +229,7 @@ export default function ReportAdmin() {
         ) : (
           <>
             <div className="overflow-auto flex-1">
-              <table className="w-full">
+              <table className="w-full min-w-220 text-sm">
                 <thead className="bg-gray-100 border-b border-gray-200 sticky top-0 z-10">
                   <tr>
                     <th className="px-6 py-3 text-left">
@@ -239,7 +251,7 @@ export default function ReportAdmin() {
                     <th className="px-6 py-3 text-left font-semibold">
                       Content
                     </th>
-                    <th className="px-6 py-3 text-left font-semibold">
+                    <th className="px-6 py-3 text-left font-semibold min-w-55">
                       Status
                     </th>
                     <th className="px-6 py-3 text-left font-semibold">Date</th>
@@ -275,13 +287,13 @@ export default function ReportAdmin() {
                       <td className="px-6 py-3 text-sm max-w-xs truncate">
                         {report.content}
                       </td>
-                      <td className="px-6 py-3">
+                      <td className="px-6 py-3 min-w-55">
                         <select
                           value={report.status || ""}
                           onChange={(e) =>
                             handleStatusChange(report.id, e.target.value)
                           }
-                          className={`w-full rounded-lg px-3 py-2 text-xs font-semibold uppercase cursor-pointer border-2 shadow-sm transition focus:outline-none focus:ring-2 focus:ring-offset-1 ${
+                          className={`w-full min-h-12 rounded-xl px-4 py-3 text-sm font-bold uppercase cursor-pointer border-2 shadow-sm transition focus:outline-none focus:ring-2 focus:ring-offset-1 ${
                             STATUS_COLORS[report.status] ||
                             "bg-gray-100 text-gray-800 ring-1 ring-gray-200"
                           } border-current`}

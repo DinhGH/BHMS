@@ -298,8 +298,3 @@ enum Subscription_status {
   EXPIRED
 }
 
-enum Payment_method {
-  GATEWAY
-  QR_TRANSFER
-  CASH
-}

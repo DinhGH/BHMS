@@ -26,8 +26,6 @@ const getNextRunTime = (hour, minute) => {
  */
 export async function checkAndMarkOverdueInvoices() {
   try {
-    console.log("🔄 Starting overdue invoice check...");
-
     // Calculate cutoff date based on each invoice createdAt
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - OVERDUE_AFTER_DAYS);
@@ -63,11 +61,8 @@ export async function checkAndMarkOverdueInvoices() {
     });
 
     if (overdueInvoices.length === 0) {
-      console.log("✅ No overdue invoices found");
       return { processed: 0, sent: 0 };
     }
-
-    console.log(`📧 Found ${overdueInvoices.length} overdue invoices`);
 
     let emailsSent = 0;
     const processedIds = [];
@@ -92,10 +87,6 @@ export async function checkAndMarkOverdueInvoices() {
           },
         });
 
-        console.log(
-          `📍 Invoice ${invoice.id} (Room: ${invoice.Room.name}) → ${roomTenants.length} tenants`,
-        );
-
         // Send overdue email to each tenant
         for (const tenant of roomTenants) {
           try {
@@ -115,9 +106,6 @@ export async function checkAndMarkOverdueInvoices() {
             });
 
             emailsSent++;
-            console.log(
-              `✉️ Overdue email sent to ${tenant.fullName} (${tenant.email})`,
-            );
           } catch (emailError) {
             console.error(
               `❌ Failed to send overdue email to ${tenant.email}`,
@@ -140,8 +128,6 @@ export async function checkAndMarkOverdueInvoices() {
       sent: emailsSent,
       invoiceIds: processedIds,
     };
-
-    console.log("✅ Overdue check completed:", result);
     return result;
   } catch (error) {
     console.error("❌ Overdue invoice check failed:", {
@@ -168,10 +154,6 @@ export function scheduleOverdueCheck() {
   const scheduleNextRun = () => {
     const nextRun = getNextRunTime(OVERDUE_CHECK_HOUR, OVERDUE_CHECK_MINUTE);
     const delayMs = nextRun.getTime() - Date.now();
-
-    console.log(
-      `⏰ Next overdue check scheduled at ${nextRun.toISOString()} (after ${Math.round(delayMs / 1000)}s)`,
-    );
 
     setTimeout(async () => {
       await checkAndMarkOverdueInvoices();

@@ -246,7 +246,10 @@ function ReportIssue() {
     if (!recallModal.reportId || recallSubmitting) return;
     setRecallSubmitting(true);
     try {
-      await deleteReportAdmin(recallModal.reportId, { senderId: user?.id });
+      await deleteReportAdmin(recallModal.reportId, {
+        senderId: user?.id,
+        confirm: true,
+      });
       setPopup({
         open: true,
         type: "success",

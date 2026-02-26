@@ -12,6 +12,7 @@ import PaymentManagement from "../../components/PaymentManagement";
 import ServiceManagement from "../../components/ServiceManagement";
 import OwnerProfileModal from "../../components/OwnerProfileModal";
 import { useAuth } from "../../contexts/AuthContext";
+import { getNotifications, markNotificationsRead } from "../../services/api";
 import api from "../../services/api";
 
 function HomePageOwner() {
@@ -20,8 +21,14 @@ function HomePageOwner() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
-  const notifications = useMemo(() => [], []);
+  const [notifications, setNotifications] = useState([]);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+
+  const unreadCount = useMemo(
+    () => notifications.filter((n) => !n.isRead).length,
+    [notifications],
+  );
 
   useEffect(() => {
     if (!user?.id) return;
@@ -59,7 +66,36 @@ function HomePageOwner() {
     };
   }, [updateUser, user?.email, user?.fullName, user?.id, user?.imageUrl]);
 
-  // Lọc client-side theo searchQuery (title/content)
+  // Fetch notifications when user is ready (filtering is client-side)
+  useEffect(() => {
+    if (!user?.id) return;
+    let cancelled = false;
+
+    const loadNotifications = async () => {
+      setNotificationsLoading(true);
+      try {
+        const data = await getNotifications();
+        if (!cancelled) {
+          setNotifications(Array.isArray(data) ? data : []);
+        }
+      } catch (err) {
+        console.error("Failed to fetch notifications:", err);
+        if (!cancelled) setNotifications([]);
+      } finally {
+        if (!cancelled) setNotificationsLoading(false);
+      }
+    };
+
+    loadNotifications();
+    const intervalId = setInterval(loadNotifications, 15000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(intervalId);
+    };
+  }, [user?.id]);
+
+  // Client-side filter by searchQuery (title/content)
   const filteredNotifications = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     if (!q) return notifications;
@@ -105,8 +141,20 @@ function HomePageOwner() {
     }
   };
 
-  const toggleNotifications = () => {
-    setShowNotifications((prev) => !prev);
+  const toggleNotifications = async () => {
+    const nextOpen = !showNotifications;
+    setShowNotifications(nextOpen);
+
+    if (!nextOpen) return;
+
+    try {
+      await markNotificationsRead();
+      setNotifications((prev) =>
+        prev.map((notification) => ({ ...notification, isRead: true })),
+      );
+    } catch (error) {
+      console.error("Failed to mark notifications as read:", error);
+    }
   };
 
   const handleProfileUpdate = (updatedData) => {
@@ -115,7 +163,7 @@ function HomePageOwner() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-white overflow-hidden">
+    <div className="flex flex-col h-dvh bg-slate-50 overflow-hidden">
       <Navbar
         onMenuClick={() => setSidebarOpen(!sidebarOpen)}
         onBellClick={toggleNotifications}
@@ -126,8 +174,9 @@ function HomePageOwner() {
         onLogout={logout}
         sidebarOpen={sidebarOpen}
         user={user}
+        notificationCount={unreadCount}
       />
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 min-h-0 overflow-hidden">
         <Sidebar
           activeSection={activeSection}
           setActiveSection={setActiveSection}
@@ -136,10 +185,10 @@ function HomePageOwner() {
           onLogout={logout}
         />
         <main
-          className={`flex-1 overflow-y-auto bg-gray-50 ${
+          className={`flex-1 min-w-0 overflow-y-auto bg-slate-50 ${
             activeSection === "reports" || activeSection === "report-issue"
               ? "p-0"
-              : "p-3 sm:p-4 md:p-6"
+              : "p-3 sm:p-4 lg:p-6"
           }`}
         >
           {renderContent()}
@@ -158,12 +207,12 @@ function HomePageOwner() {
 
       {/* Notifications Panel */}
       <div
-        className={`fixed right-0 w-full sm:w-80 bg-white border-l border-slate-200 z-50 transform transition-transform duration-300 ease-in-out shadow-xl ${
+        className={`fixed right-0 w-full sm:w-96 app-surface border-y-0 border-r-0 z-50 transform transition-transform duration-300 ease-in-out ${
           showNotifications ? "translate-x-0" : "translate-x-full"
         }`}
         style={{
-          height: "calc(100vh - 65px)",
-          top: "65px",
+          height: "calc(100dvh - 3.5rem)",
+          top: "3.5rem",
         }}
       >
         <div className="h-full flex flex-col">
@@ -176,11 +225,15 @@ function HomePageOwner() {
               placeholder="Search notifications..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="app-input"
             />
           </div>
           <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50">
-            {filteredNotifications.length > 0 ? (
+            {notificationsLoading ? (
+              <div className="text-center text-sm text-slate-500 py-4">
+                Loading notifications...
+              </div>
+            ) : filteredNotifications.length > 0 ? (
               filteredNotifications.map((notification) => (
                 <div
                   key={notification.id}

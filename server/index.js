@@ -81,11 +81,5 @@ app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 
   // Initialize scheduled tasks
-  console.log("📅 Initializing scheduled tasks...");
   scheduleOverdueCheck();
-  const hour = Number(process.env.OVERDUE_CHECK_HOUR || 6);
-  const minute = Number(process.env.OVERDUE_CHECK_MINUTE || 0);
-  console.log(
-    `✓ Overdue check scheduled (runs daily at ${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")})`,
-  );
 });

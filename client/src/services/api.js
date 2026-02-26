@@ -108,6 +108,35 @@ export const deleteService = async (serviceId) => {
   return await response.json();
 };
 
+// Notifications API (implement basic fetch)
+export const getNotifications = async () => {
+  const token = localStorage.getItem("token");
+  const headers = token ? { Authorization: `Bearer ${token}` } : {};
+  const res = await fetch(`${API_BASE_URL}/api/user/notifications`, {
+    headers,
+  });
+  if (!res.ok) throw new Error("Failed to fetch notifications");
+  return res.json();
+};
+
+export const markNotificationsRead = async () => {
+  const token = localStorage.getItem("token");
+  const headers = token
+    ? {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      }
+    : { "Content-Type": "application/json" };
+
+  const res = await fetch(`${API_BASE_URL}/api/user/notifications/read-all`, {
+    method: "PATCH",
+    headers,
+  });
+
+  if (!res.ok) throw new Error("Failed to mark notifications as read");
+  return res.json();
+};
+
 async function request(url, options = {}) {
   const token = localStorage.getItem("token");
 
@@ -297,7 +326,7 @@ export async function deleteReport(reportId) {
 export async function createReportAdmin(payload) {
   const res = await fetch(`${API_BASE_URL}/api/report-admins`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...withAuthHeaders() },
     credentials: "include",
     body: JSON.stringify(payload),
   });
@@ -336,6 +365,7 @@ export async function getReportAdmins({
 
   const url = `${API_BASE_URL}/api/report-admins?${params.toString()}`;
   const res = await fetch(url, {
+    headers: { ...withAuthHeaders() },
     credentials: "include",
   });
   if (!res.ok) throw new Error("Failed to fetch admin reports");
@@ -345,7 +375,7 @@ export async function getReportAdmins({
 export async function updateReportAdmin(reportId, payload) {
   const res = await fetch(`${API_BASE_URL}/api/report-admins/${reportId}`, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...withAuthHeaders() },
     credentials: "include",
     body: JSON.stringify(payload),
   });
@@ -357,7 +387,7 @@ export async function updateReportAdmin(reportId, payload) {
 export async function deleteReportAdmin(reportId, payload) {
   const res = await fetch(`${API_BASE_URL}/api/report-admins/${reportId}`, {
     method: "DELETE",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...withAuthHeaders() },
     credentials: "include",
     body: JSON.stringify(payload || {}),
   });
