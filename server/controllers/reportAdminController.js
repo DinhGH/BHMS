@@ -16,86 +16,111 @@ export const listReportAdmins = async (req, res) => {
     const { page, limit, skip } = parsePagination(req);
 
     const where = {};
-    const senderIdNum = Number(senderId);
-    const hasSenderId = Number.isFinite(senderIdNum) && senderIdNum > 0;
-    if (hasSenderId) {
-      const ownerById = await prisma.owner.findUnique({
-        where: { id: senderIdNum },
-        select: { id: true },
-      });
-      const ownerByUserId = ownerById
-        ? null
-        : await prisma.owner.findUnique({
-            where: { userId: senderIdNum },
-            select: { id: true },
-          });
-      const owner = ownerById || ownerByUserId;
-      where.senderId = owner ? owner.id : -1;
+
+    // Filter sender (hỗ trợ cả ownerId và userId)
+    if (senderId) {
+      const ownerId = await resolveOwnerIdFromSender(senderId);
+      where.senderId = ownerId ?? -1; // -1 để không trả về tất cả
     }
+
+    // Filter status
     if (status) {
       where.status = status;
     }
-    if (target) {
-      where.target = target;
+
+    // Filter target
+    if (target && typeof target === "string") {
+      where.target = {
+        contains: target.trim(),
+      };
     }
-    if (search) {
-      const q = search.toString();
-      const ownerMatches = await prisma.owner.findMany({
-        where: {
-          User: {
-            email: { contains: q },
+
+    // Search (nhẹ, không join owner để tránh tốn RAM MySQL)
+    if (search && search.trim()) {
+      const q = search.trim();
+      where.OR = [
+        {
+          content: {
+            contains: q,
           },
         },
-        select: { id: true },
-      });
-
-      const senderIds = ownerMatches.map((o) => o.id);
-      const orClauses = [{ content: { contains: q } }];
-      if (senderIds.length > 0) {
-        orClauses.push({ senderId: { in: senderIds } });
-      }
-      where.OR = orClauses;
+        {
+          target: {
+            contains: q,
+          },
+        },
+      ];
     }
 
+    // OrderBy an toàn
     const allowedOrderBy = ["id", "createdAt"];
     const safeOrderBy = allowedOrderBy.includes(orderBy)
       ? orderBy
       : "createdAt";
     const safeOrder = order === "asc" ? "asc" : "desc";
 
+    // Query song song (tối ưu hiệu năng)
     const [total, reports] = await Promise.all([
       prisma.reportAdmin.count({ where }),
       prisma.reportAdmin.findMany({
         where,
         skip,
-        take: limit,
-        orderBy: { [safeOrderBy]: safeOrder },
+        take: limit, // QUAN TRỌNG: luôn có take để tránh load full DB
+        orderBy: {
+          [safeOrderBy]: safeOrder,
+        },
+        select: {
+          id: true,
+          senderId: true,
+          target: true,
+          content: true,
+          status: true,
+          createdAt: true,
+          // ❌ KHÔNG select images (Json base64 rất nặng)
+        },
       }),
     ]);
 
+    // Lấy danh sách senderId duy nhất
     const senderIds = [...new Set(reports.map((r) => r.senderId))];
+
+    // Batch query owner + email (ĐÚNG theo schema: owner.user)
     const owners = senderIds.length
       ? await prisma.owner.findMany({
-          where: { id: { in: senderIds } },
+          where: {
+            id: { in: senderIds },
+          },
           select: {
             id: true,
-            user: { select: { email: true } },
+            user: {
+              select: {
+                email: true,
+              },
+            },
           },
         })
       : [];
-    const ownerById = new Map(owners.map((o) => [o.id, o]));
-    const reportsWithSender = reports.map((report) => {
-      const owner = ownerById.get(report.senderId);
+
+    // Map owner theo id
+    const ownerMap = new Map(owners.map((o) => [o.id, o]));
+
+    // Gắn sender info vào report (để FE hiển thị history)
+    const data = reports.map((report) => {
+      const owner = ownerMap.get(report.senderId);
+
       return {
         ...report,
         sender: owner
-          ? { id: owner.id, email: owner.User?.email ?? null }
+          ? {
+              id: owner.id,
+              email: owner.user?.email ?? null, // ⚠️ đúng: user (không phải User)
+            }
           : null,
       };
     });
 
-    res.json({
-      data: reportsWithSender,
+    return res.json({
+      data,
       pagination: {
         page,
         limit,
@@ -105,7 +130,9 @@ export const listReportAdmins = async (req, res) => {
     });
   } catch (error) {
     console.error("listReportAdmins error:", error);
-    res.status(500).json({ message: "Failed to fetch admin reports" });
+    return res.status(500).json({
+      message: "Failed to fetch admin reports",
+    });
   }
 };
 

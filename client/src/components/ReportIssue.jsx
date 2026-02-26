@@ -16,8 +16,9 @@ const TARGET_OPTIONS = [
   "Reports / Analytics",
   "Other",
 ];
+import { toast } from "react-hot-toast";
 
-const MAX_IMAGE_SIZE_MB = 2;
+const MAX_IMAGE_SIZE_MB = 5;
 const MAX_IMAGE_SIZE_BYTES = MAX_IMAGE_SIZE_MB * 1024 * 1024;
 
 function ReportIssue() {
@@ -36,6 +37,10 @@ function ReportIssue() {
   const [editContent, setEditContent] = useState("");
   const [editImages, setEditImages] = useState([]);
   const [editSubmitting, setEditSubmitting] = useState(false);
+  const MIN_CONTENT_LENGTH = 20;
+  const MAX_CONTENT_LENGTH = 500;
+  const MAX_IMAGES = 5;
+  const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
   const [recallModal, setRecallModal] = useState({
     open: false,
     reportId: null,
@@ -87,48 +92,70 @@ function ReportIssue() {
     const files = Array.from(event.target.files || []);
     if (!files.length) return;
 
-    const imageFiles = files.filter((file) => file.type.startsWith("image/"));
-    if (!imageFiles.length) {
-      setPopup({
-        open: true,
-        type: "error",
-        message: "Please select image files only.",
-      });
-      return;
-    }
-
-    const oversizedFiles = imageFiles.filter(
-      (file) => file.size > MAX_IMAGE_SIZE_BYTES,
-    );
-    if (oversizedFiles.length) {
-      setPopup({
-        open: true,
-        type: "error",
-        message: `Image too large. Max ${MAX_IMAGE_SIZE_MB}MB per image.`,
-      });
-    }
-
-    const validImages = imageFiles.filter(
-      (file) => file.size <= MAX_IMAGE_SIZE_BYTES,
-    );
-    if (!validImages.length) {
+    // Limit total images
+    if (images.length + files.length > MAX_IMAGES) {
+      toast.error(`Maximum ${MAX_IMAGES} images allowed`);
       event.target.value = "";
       return;
     }
 
-    const readFile = (file) =>
-      new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = () =>
-          resolve({ name: file.name, dataUrl: reader.result });
-        reader.readAsDataURL(file);
-      });
+    const invalidType = files.find(
+      (file) => !ALLOWED_IMAGE_TYPES.includes(file.type),
+    );
 
-    const newImages = await Promise.all(validImages.map(readFile));
-    setImages((prev) => [...prev, ...newImages]);
-    event.target.value = "";
+    if (invalidType) {
+      toast.error("Only JPG, PNG, WEBP images are allowed");
+      event.target.value = "";
+      return;
+    }
+
+    const oversized = files.find((file) => file.size > MAX_IMAGE_SIZE_BYTES);
+
+    if (oversized) {
+      toast.error(`Each image must be under ${MAX_IMAGE_SIZE_MB}MB`);
+      event.target.value = "";
+      return;
+    }
+
+    try {
+      const readFile = (file) =>
+        new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () =>
+            resolve({ name: file.name, dataUrl: reader.result });
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+
+      const newImages = await Promise.all(files.map(readFile));
+
+      setImages((prev) => [...prev, ...newImages]);
+      toast.success("Images added successfully");
+      // eslint-disable-next-line no-unused-vars
+    } catch (err) {
+      toast.error("Failed to process images");
+    } finally {
+      event.target.value = "";
+    }
   };
+  const validateEditForm = () => {
+    if (!editTarget.trim()) {
+      toast.error("Please select a category");
+      return false;
+    }
 
+    if (!editContent.trim()) {
+      toast.error("Content cannot be empty");
+      return false;
+    }
+
+    if (editContent.trim().length < MIN_CONTENT_LENGTH) {
+      toast.error(`Content must be at least ${MIN_CONTENT_LENGTH} characters`);
+      return false;
+    }
+
+    return true;
+  };
   const removeImage = (indexToRemove) => {
     setImages((prev) => prev.filter((_, index) => index !== indexToRemove));
   };
@@ -199,36 +226,31 @@ function ReportIssue() {
 
   const handleSaveEdit = async (reportId) => {
     if (editSubmitting) return;
-    if (!editTarget.trim() || editContent.trim().length < 20) {
-      setPopup({
-        open: true,
-        type: "error",
-        message: "Please complete all required fields (min 20 characters).",
-      });
-      return;
-    }
 
-    setEditSubmitting(true);
+    if (!validateEditForm()) return;
+
     try {
-      await updateReportAdmin(reportId, {
-        senderId: user?.id,
-        target: editTarget.trim(),
-        content: editContent.trim(),
-        images: editImages.length ? editImages : null,
-      });
-      setPopup({
-        open: true,
-        type: "success",
-        message: "Report updated successfully.",
-      });
+      setEditSubmitting(true);
+
+      await toast.promise(
+        updateReportAdmin(reportId, {
+          senderId: user?.id,
+          target: editTarget.trim(),
+          content: editContent.trim(),
+          images: editImages.length ? editImages : null,
+        }),
+        {
+          loading: "Updating report...",
+          success: "Report updated successfully!",
+          error: "Failed to update report",
+        },
+      );
+
       await loadMyReports(user?.id);
       cancelEdit();
     } catch (error) {
-      setPopup({
-        open: true,
-        type: "error",
-        message: error?.message || "Failed to update report.",
-      });
+      console.error(error);
+    } finally {
       setEditSubmitting(false);
     }
   };
@@ -244,35 +266,73 @@ function ReportIssue() {
 
   const confirmRecall = async () => {
     if (!recallModal.reportId || recallSubmitting) return;
-    setRecallSubmitting(true);
+
     try {
-      await deleteReportAdmin(recallModal.reportId, { senderId: user?.id });
-      setPopup({
-        open: true,
-        type: "success",
-        message: "Report has been withdrawn successfully.",
-      });
+      setRecallSubmitting(true);
+
+      await toast.promise(
+        deleteReportAdmin(recallModal.reportId, {
+          senderId: user?.id,
+        }),
+        {
+          loading: "Withdrawing report...",
+          success: "Report withdrawn successfully!",
+          error: "Failed to withdraw report",
+        },
+      );
+
       await loadMyReports(user?.id);
       setRecallModal({ open: false, reportId: null });
     } catch (error) {
-      setPopup({
-        open: true,
-        type: "error",
-        message: error?.message || "Failed to withdraw report.",
-      });
+      console.error(error);
     } finally {
       setRecallSubmitting(false);
     }
   };
+  const validateForm = () => {
+    if (!user?.id) {
+      toast.error("You must be logged in to send a report");
+      return false;
+    }
 
+    if (!target.trim()) {
+      toast.error("Please select an issue category");
+      return false;
+    }
+
+    if (!content.trim()) {
+      toast.error("Report content cannot be empty");
+      return false;
+    }
+
+    if (content.trim().length < MIN_CONTENT_LENGTH) {
+      toast.error(`Content must be at least ${MIN_CONTENT_LENGTH} characters`);
+      return false;
+    }
+
+    if (content.trim().length > MAX_CONTENT_LENGTH) {
+      toast.error(`Content cannot exceed ${MAX_CONTENT_LENGTH} characters`);
+      return false;
+    }
+
+    if (images.length > MAX_IMAGES) {
+      toast.error(`You can upload maximum ${MAX_IMAGES} images`);
+      return false;
+    }
+
+    return true;
+  };
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (!isValid || isSubmitting) return;
 
-    setIsSubmitting(true);
-    setStatus({ type: "idle", message: "" });
+    if (isSubmitting) return;
+
+    // Validate trước khi submit
+    if (!validateForm()) return;
 
     try {
+      setIsSubmitting(true);
+
       const payload = {
         senderId: user.id,
         senderEmail: user?.email,
@@ -281,30 +341,16 @@ function ReportIssue() {
         images: images.length ? images.map((item) => item.dataUrl) : null,
       };
 
-      await createReportAdmin(payload);
-      setStatus({
-        type: "success",
-        message: "Report submitted successfully. Admin will respond soon.",
+      await toast.promise(createReportAdmin(payload), {
+        loading: "Sending report...",
+        success: "Report submitted successfully! Admin will respond soon.",
+        error: "Failed to submit report. Please try again.",
       });
-      setPopup({
-        open: true,
-        type: "success",
-        message: "Report submitted successfully.",
-      });
+
       resetForm();
       await loadMyReports(user?.id);
-    } catch {
-      setStatus({
-        type: "error",
-        message:
-          "Failed to submit report. Please check your inputs and try again.",
-      });
-      setPopup({
-        open: true,
-        type: "error",
-        message:
-          "Failed to submit report. Please check your inputs and try again.",
-      });
+    } catch (error) {
+      console.error("Submit error:", error);
     } finally {
       setIsSubmitting(false);
     }

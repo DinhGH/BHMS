@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Search, MoreHorizontal } from "lucide-react";
+import toast from "react-hot-toast";
 import UserFormModal from "../../components/Admin/UserFormModal.jsx";
 import Pagination from "../../components/Admin/Pagination.jsx";
 import SearchInput from "../../components/Admin/SearchInput.jsx";
@@ -24,37 +24,39 @@ export default function AdminUsers() {
     status: "ACTIVE",
   });
 
-  const defaultForm = { ...form };
+  const defaultForm = {
+    email: "",
+    password: "",
+    fullName: "",
+    role: "TENANT",
+    status: "ACTIVE",
+  };
 
   const fetchUsers = async () => {
     try {
       const res = await api.get("/api/users");
-
       const usersData = Array.isArray(res) ? res : res?.data;
-
       setUsers(usersData);
     } catch {
+      toast.error("Failed to load users.");
       setUsers([]);
     }
   };
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchUsers();
   }, []);
 
-  // Pagination
+  // Filter & search
   const filteredUsers = users
     .filter((u) => {
       if (filter === "active") return u.status === "ACTIVE";
       if (filter === "blocked") return u.status === "BLOCKED";
-
       if (filter === "inactive") {
         const sixMonthsAgo = new Date();
         sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
         return u.active === "NO" && new Date(u.createdAt) < sixMonthsAgo;
       }
-
       return true;
     })
     .filter(
@@ -66,21 +68,19 @@ export default function AdminUsers() {
   const totalPages = Math.ceil(filteredUsers.length / pageSize);
   const startIndex = (currentPage - 1) * pageSize;
   const paginatedUsers = filteredUsers.slice(startIndex, startIndex + pageSize);
-  // Pagination
+
   const handleSubmit = async () => {
     const newErrors = {};
 
-    // EMAIL
     if (!form.email) {
       newErrors.email = "Email is required";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
       newErrors.email = "Invalid email format";
     }
 
-    // PASSWORD (required when creating, optional when editing)
+    const strongPwd =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9])[^\s]{8,}$/;
     if (!editingId) {
-      const strongPwd =
-        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9])[^\s]{8,}$/;
       if (!form.password) {
         newErrors.password = "Password is required";
       } else if (!strongPwd.test(form.password)) {
@@ -88,55 +88,44 @@ export default function AdminUsers() {
           "Password ≥ 8 chars, include upper, lower, number & special char";
       }
     } else {
-      // Khi edit: nếu có nhập password mới thì validate
-      if (form.password) {
-        const strongPwd =
-          /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9])[^\s]{8,}$/;
-        if (!strongPwd.test(form.password)) {
-          newErrors.password =
-            "Password ≥ 8 chars, include upper, lower, number & special char";
-        }
+      if (form.password && !strongPwd.test(form.password)) {
+        newErrors.password =
+          "Password ≥ 8 chars, include upper, lower, number & special char";
       }
     }
 
-    // FULL NAME
     if (!form.fullName?.trim()) {
       newErrors.fullName = "Full name is required";
     } else if (!/^[\p{L} .'-]+$/u.test(form.fullName)) {
       newErrors.fullName = "Full name contains invalid characters";
     }
 
-    // Nếu có lỗi → dừng
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
+      toast.error("Please fix the highlighted fields before saving.");
       return;
     }
 
-    // Clear lỗi
     setErrors({});
 
     try {
       const payload = { ...form };
-
-      // Khi edit: nếu không nhập password mới thì xóa field password khỏi payload
-      if (editingId && !payload.password) {
-        delete payload.password;
-      }
+      if (editingId && !payload.password) delete payload.password;
 
       if (editingId) {
         await api.put(`/api/users/${editingId}`, payload);
+        toast.success(`"${form.fullName}" updated successfully.`);
       } else {
         await api.post("/api/users/add", payload);
+        toast.success(`"${form.fullName}" added successfully.`);
       }
 
       setOpen(false);
       setEditingId(null);
       setForm(defaultForm);
       fetchUsers();
-      alert("Save successful!");
     } catch (err) {
-      console.error("Save error:", err);
-      alert("Save failed: " + (err.message || "Unknown error"));
+      toast.error("Save failed: " + (err.message || "Unknown error"));
     }
   };
 
@@ -149,17 +138,12 @@ export default function AdminUsers() {
       status: user.status || "ACTIVE",
     });
     setEditingId(user.id);
+    setErrors({});
     setOpen(true);
   };
 
   const handleOpenAdd = () => {
-    setForm({
-      email: "",
-      password: "",
-      fullName: "",
-      role: "TENANT",
-      status: "ACTIVE",
-    });
+    setForm(defaultForm);
     setEditingId(null);
     setErrors({});
     setOpen(true);
@@ -201,7 +185,6 @@ export default function AdminUsers() {
               </button>
             ))}
           </div>
-          {/* Search */}
           <div className="flex">
             <div className="w-full sm:w-64">
               <SearchInput
@@ -240,13 +223,11 @@ export default function AdminUsers() {
                       </div>
                       <div className="text-xs text-gray-400">Address</div>
                     </td>
-
                     <td className="px-4 py-3">{u.email}</td>
                     <td className="px-4 py-3 hidden md:table-cell">{u.role}</td>
                     <td className="px-4 py-3 hidden lg:table-cell">
                       {new Date(u.createdAt).toLocaleDateString()}
                     </td>
-
                     <td className="px-4 py-3">
                       <span
                         className={`px-3 py-1 rounded-full text-xs font-semibold ${
@@ -258,16 +239,13 @@ export default function AdminUsers() {
                         {u.status}
                       </span>
                     </td>
-
                     <td className="px-4 py-3 text-right">
-                      <div className="flex gap-2 justify-end">
-                        <button
-                          className="px-3 py-1 rounded bg-blue-500 text-white text-xs"
-                          onClick={() => startEdit(u)}
-                        >
-                          Edit
-                        </button>
-                      </div>
+                      <button
+                        className="px-3 py-1 rounded bg-blue-500 text-white text-xs"
+                        onClick={() => startEdit(u)}
+                      >
+                        Edit
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -276,7 +254,6 @@ export default function AdminUsers() {
           </div>
         </div>
 
-        {/* User Form Modal */}
         <UserFormModal
           open={open}
           onClose={() => {
@@ -291,7 +268,6 @@ export default function AdminUsers() {
           isEditing={!!editingId}
         />
 
-        {/* Pagination */}
         <Pagination
           currentPage={currentPage}
           totalPages={totalPages}

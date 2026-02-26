@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { FaTimes } from "react-icons/fa";
+import toast from "react-hot-toast";
 import api from "../server/api";
 import Loading from "./loading.jsx";
 
@@ -8,8 +9,6 @@ export default function OwnerProfileModal({ open, onClose, onProfileUpdate }) {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [profileData, setProfileData] = useState(null);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [editForm, setEditForm] = useState({
     fullName: "",
     email: "",
@@ -19,28 +18,28 @@ export default function OwnerProfileModal({ open, onClose, onProfileUpdate }) {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingQr, setUploadingQr] = useState(false);
 
-  // Fetch owner profile when modal opens
+  // Fetch profile khi mở modal
   useEffect(() => {
-    if (open && !profileData) {
+    if (open) {
       fetchProfile();
     }
-  }, [open, profileData]);
+  }, [open]);
 
   const fetchProfile = async () => {
     try {
       setLoading(true);
-      setError("");
       const data = await api.get("/api/owner/profile");
+
       setProfileData(data);
       setEditForm({
-        fullName: data.fullName || "",
-        email: data.email || "",
-        imageUrl: data.imageUrl || "",
-        qrImageUrl: data.qrImageUrl || "",
+        fullName: data?.fullName || "",
+        email: data?.email || "",
+        imageUrl: data?.imageUrl || "",
+        qrImageUrl: data?.qrImageUrl || "",
       });
     } catch (err) {
-      setError(err.message || "Failed to load profile");
       console.error("Fetch profile error:", err);
+      toast.error(err.message || "Failed to load profile");
     } finally {
       setLoading(false);
     }
@@ -52,28 +51,38 @@ export default function OwnerProfileModal({ open, onClose, onProfileUpdate }) {
       ...prev,
       [name]: value,
     }));
-    setError("");
+  };
+
+  const validateForm = () => {
+    if (!editForm.fullName.trim()) {
+      toast.error("Full name is required");
+      return false;
+    }
+
+    if (!editForm.email.trim()) {
+      toast.error("Email is required");
+      return false;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(editForm.email.trim())) {
+      toast.error("Invalid email format");
+      return false;
+    }
+
+    return true;
   };
 
   const handleSaveProfile = async () => {
+    if (!validateForm()) return;
+
+    const confirmed = window.confirm(
+      "Are you sure you want to update your profile?",
+    );
+    if (!confirmed) return;
+
     try {
       setLoading(true);
-      setError("");
-      setSuccess("");
-
-      if (!editForm.fullName.trim()) {
-        setError("Full name is required");
-        setLoading(false);
-        return;
-      }
-
-      const confirmed = window.confirm(
-        "Are you sure you want to update your profile?",
-      );
-      if (!confirmed) {
-        setLoading(false);
-        return;
-      }
 
       const result = await api.put("/api/owner/profile", {
         fullName: editForm.fullName.trim(),
@@ -82,18 +91,20 @@ export default function OwnerProfileModal({ open, onClose, onProfileUpdate }) {
         qrImageUrl: editForm.qrImageUrl || null,
       });
 
-      if (result.success) {
-        setSuccess("Profile updated successfully!");
+      if (result?.success) {
+        toast.success("Profile updated successfully!");
         setProfileData(result.data);
         setIsEditing(false);
+
         if (onProfileUpdate) {
           onProfileUpdate(result.data);
         }
-        setTimeout(() => setSuccess(""), 3000);
+      } else {
+        toast.error(result?.message || "Update failed");
       }
     } catch (err) {
-      setError(err.message || "Failed to update profile");
       console.error("Update profile error:", err);
+      toast.error(err.message || "Failed to update profile");
     } finally {
       setLoading(false);
     }
@@ -101,6 +112,11 @@ export default function OwnerProfileModal({ open, onClose, onProfileUpdate }) {
 
   const handleImageUpload = async (file, target) => {
     if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Only image files are allowed");
+      return;
+    }
 
     const body = new FormData();
     body.append("image", file);
@@ -110,7 +126,7 @@ export default function OwnerProfileModal({ open, onClose, onProfileUpdate }) {
 
     try {
       setUploading(true);
-      setError("");
+
       const result = await api.post(
         `/api/owner/uploads/image?target=${encodeURIComponent(target)}`,
         body,
@@ -118,7 +134,7 @@ export default function OwnerProfileModal({ open, onClose, onProfileUpdate }) {
 
       const uploadedUrl = result?.url || "";
       if (!uploadedUrl) {
-        throw new Error("Upload succeeded but no URL was returned");
+        throw new Error("Upload succeeded but no URL returned");
       }
 
       setEditForm((prev) => ({
@@ -127,11 +143,24 @@ export default function OwnerProfileModal({ open, onClose, onProfileUpdate }) {
           ? { imageUrl: uploadedUrl }
           : { qrImageUrl: uploadedUrl }),
       }));
+
+      toast.success("Image uploaded successfully!");
     } catch (err) {
-      setError(err.message || "Failed to upload image");
+      console.error("Upload error:", err);
+      toast.error(err.message || "Failed to upload image");
     } finally {
       setUploading(false);
     }
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditForm({
+      fullName: profileData?.fullName || "",
+      email: profileData?.email || "",
+      imageUrl: profileData?.imageUrl || "",
+      qrImageUrl: profileData?.qrImageUrl || "",
+    });
   };
 
   if (!open) return null;
@@ -156,8 +185,6 @@ export default function OwnerProfileModal({ open, onClose, onProfileUpdate }) {
           <button
             onClick={() => {
               setActiveTab("profile");
-              setError("");
-              setSuccess("");
             }}
             className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
               activeTab === "profile"
@@ -173,20 +200,7 @@ export default function OwnerProfileModal({ open, onClose, onProfileUpdate }) {
         <div className="flex-1 overflow-y-auto p-6">
           <Loading isLoading={loading} />
 
-          {/* Error and Success messages */}
-          {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-100 rounded-lg text-red-700 text-sm">
-              {error}
-            </div>
-          )}
-
-          {success && (
-            <div className="mb-4 p-3 bg-green-50 border border-green-100 rounded-lg text-green-700 text-sm">
-              {success}
-            </div>
-          )}
-
-          {/* Profile Tab */}
+          {/* VIEW MODE */}
           {activeTab === "profile" && profileData && !isEditing && (
             <div className="space-y-4">
               <div className="flex justify-center mb-6">
@@ -197,51 +211,34 @@ export default function OwnerProfileModal({ open, onClose, onProfileUpdate }) {
                     className="w-24 h-24 rounded-full border border-slate-200 object-cover shadow-lg"
                   />
                 ) : (
-                  <div className="w-24 h-24 rounded-full bg-linear-to-br from-slate-600 to-slate-700 flex items-center justify-center text-white text-4xl font-bold shadow-lg">
-                    {profileData.fullName
-                      ? profileData.fullName.charAt(0).toUpperCase()
-                      : profileData.email.charAt(0).toUpperCase()}
+                  <div className="w-24 h-24 rounded-full bg-gradient-to-br from-slate-600 to-slate-700 flex items-center justify-center text-white text-4xl font-bold shadow-lg">
+                    {(profileData.fullName || profileData.email || "O")
+                      .charAt(0)
+                      .toUpperCase()}
                   </div>
                 )}
               </div>
 
               <div className="space-y-4 bg-slate-50 rounded-lg p-4 border border-slate-200">
-                <div className="border-b border-slate-200 pb-3">
-                  <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">
-                    Email
-                  </p>
-                  <p className="text-sm text-slate-900 mt-1">
-                    {profileData.email}
-                  </p>
-                </div>
+                <InfoItem label="Email" value={profileData.email} />
+                <InfoItem
+                  label="Full Name"
+                  value={profileData.fullName || "Not updated"}
+                />
+                <InfoItem
+                  label="Boarding Houses"
+                  value={profileData.totalHouses}
+                />
 
                 <div className="border-b border-slate-200 pb-3">
-                  <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">
-                    Full Name
-                  </p>
-                  <p className="text-sm text-slate-900 mt-1">
-                    {profileData.fullName || "Not updated"}
-                  </p>
-                </div>
-
-                <div className="border-b border-slate-200 pb-3">
-                  <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">
-                    Boarding Houses
-                  </p>
-                  <p className="text-sm text-slate-900 mt-1">
-                    {profileData.totalHouses}
-                  </p>
-                </div>
-
-                <div className="border-b border-slate-200 pb-3">
-                  <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">
+                  <p className="text-xs font-semibold text-slate-700 uppercase">
                     Payment QR
                   </p>
                   {profileData.qrImageUrl ? (
                     <img
                       src={profileData.qrImageUrl}
-                      alt="Owner payment QR"
-                      className="mt-2 w-28 h-28 rounded border border-slate-200 object-cover"
+                      alt="QR"
+                      className="mt-2 w-28 h-28 rounded border object-cover"
                     />
                   ) : (
                     <p className="text-sm text-slate-500 mt-1">
@@ -250,145 +247,106 @@ export default function OwnerProfileModal({ open, onClose, onProfileUpdate }) {
                   )}
                 </div>
 
-                <div>
-                  <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">
-                    Member Since
-                  </p>
-                  <p className="text-sm text-slate-900 mt-1">
-                    {new Date(profileData.createdAt).toLocaleDateString(
-                      "en-US",
-                    )}
-                  </p>
-                </div>
+                <InfoItem
+                  label="Member Since"
+                  value={new Date(profileData.createdAt).toLocaleDateString(
+                    "en-US",
+                  )}
+                />
               </div>
 
               <button
                 onClick={() => setIsEditing(true)}
-                className="w-full mt-4 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800 transition-colors font-medium text-sm"
+                className="w-full mt-4 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800 transition font-medium text-sm"
               >
                 Edit Profile
               </button>
             </div>
           )}
 
-          {/* Edit Profile Form */}
+          {/* EDIT MODE */}
           {activeTab === "profile" && isEditing && (
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Full Name
-                </label>
-                <input
-                  type="text"
-                  name="fullName"
-                  value={editForm.fullName}
-                  onChange={handleEditChange}
-                  placeholder="Enter your full name"
-                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-700 text-slate-900 text-sm"
-                />
-              </div>
+              <InputField
+                label="Full Name"
+                name="fullName"
+                value={editForm.fullName}
+                onChange={handleEditChange}
+                placeholder="Enter your full name"
+              />
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={editForm.email}
-                  onChange={handleEditChange}
-                  placeholder="owner@example.com"
-                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-700 text-slate-900 text-sm"
-                />
-              </div>
+              <InputField
+                label="Email"
+                name="email"
+                type="email"
+                value={editForm.email}
+                onChange={handleEditChange}
+                placeholder="owner@example.com"
+              />
 
+              {/* Avatar Upload */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
                   Profile Image
                 </label>
-                <div className="flex gap-2 items-center">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) =>
-                      handleImageUpload(e.target.files?.[0], "owner-avatar")
-                    }
-                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-900 text-sm"
-                  />
-                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) =>
+                    handleImageUpload(e.target.files?.[0], "owner-avatar")
+                  }
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                />
                 {uploadingAvatar && (
                   <p className="text-xs text-blue-600 mt-1">
-                    Uploading profile image...
+                    Uploading avatar...
                   </p>
                 )}
                 {editForm.imageUrl && (
                   <img
                     src={editForm.imageUrl}
-                    alt="Owner avatar"
-                    className="mt-2 w-24 h-24 rounded-full border border-slate-200 object-cover"
+                    alt="Avatar"
+                    className="mt-2 w-24 h-24 rounded-full object-cover border"
                   />
                 )}
               </div>
 
+              {/* QR Upload */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
                   Payment QR (Optional)
                 </label>
-                <div className="flex gap-2 items-center">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) =>
-                      handleImageUpload(e.target.files?.[0], "owner-qr")
-                    }
-                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-900 text-sm"
-                  />
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setEditForm((prev) => ({ ...prev, qrImageUrl: "" }))
-                    }
-                    className="px-3 py-2 border border-slate-300 rounded-lg text-sm hover:bg-slate-100"
-                  >
-                    Clear
-                  </button>
-                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) =>
+                    handleImageUpload(e.target.files?.[0], "owner-qr")
+                  }
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                />
                 {uploadingQr && (
-                  <p className="text-xs text-blue-600 mt-1">
-                    Uploading payment QR...
-                  </p>
+                  <p className="text-xs text-blue-600 mt-1">Uploading QR...</p>
                 )}
-                {editForm.qrImageUrl ? (
+                {editForm.qrImageUrl && (
                   <img
                     src={editForm.qrImageUrl}
-                    alt="Payment QR"
-                    className="mt-2 w-28 h-28 rounded border border-slate-200 object-cover"
+                    alt="QR"
+                    className="mt-2 w-28 h-28 border rounded object-cover"
                   />
-                ) : (
-                  <p className="text-xs text-slate-500 mt-1">No QR uploaded</p>
                 )}
               </div>
 
               <div className="flex gap-2 pt-4">
                 <button
-                  onClick={() => {
-                    setIsEditing(false);
-                    setEditForm({
-                      fullName: profileData.fullName || "",
-                      email: profileData.email || "",
-                      imageUrl: profileData.imageUrl || "",
-                      qrImageUrl: profileData.qrImageUrl || "",
-                    });
-                    setError("");
-                  }}
-                  className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-100 transition-colors font-medium text-sm"
+                  onClick={handleCancelEdit}
+                  className="flex-1 px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-100 text-sm"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSaveProfile}
                   disabled={loading}
-                  className="flex-1 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800 disabled:opacity-50 transition-colors font-medium text-sm"
+                  className="flex-1 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800 disabled:opacity-50 text-sm"
                 >
                   {loading ? "Saving..." : "Save Changes"}
                 </button>
@@ -397,6 +355,41 @@ export default function OwnerProfileModal({ open, onClose, onProfileUpdate }) {
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+/* Reusable Components */
+function InfoItem({ label, value }) {
+  return (
+    <div className="border-b border-slate-200 pb-3">
+      <p className="text-xs font-semibold text-slate-700 uppercase">{label}</p>
+      <p className="text-sm text-slate-900 mt-1">{value}</p>
+    </div>
+  );
+}
+
+function InputField({
+  label,
+  name,
+  value,
+  onChange,
+  placeholder,
+  type = "text",
+}) {
+  return (
+    <div>
+      <label className="block text-sm font-medium text-slate-700 mb-2">
+        {label}
+      </label>
+      <input
+        type={type}
+        name={name}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-700 text-sm"
+      />
     </div>
   );
 }
