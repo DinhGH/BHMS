@@ -108,15 +108,6 @@ export const deleteService = async (serviceId) => {
   return await response.json();
 };
 
-// Notifications API (implement basic fetch)
-export const getNotifications = async () => {
-  const token = localStorage.getItem("token");
-  const headers = token ? { Authorization: `Bearer ${token}` } : {};
-  const res = await fetch(`${API_BASE_URL}/api/notifications`, { headers });
-  if (!res.ok) throw new Error("Failed to fetch notifications");
-  return res.json();
-};
-
 async function request(url, options = {}) {
   const token = localStorage.getItem("token");
 
@@ -142,13 +133,6 @@ async function request(url, options = {}) {
     headers,
   };
 
-  console.log("🌐 API Request:", {
-    url: `${API_BASE_URL}${url}`,
-    method: config.method,
-    isFormData: options.body instanceof FormData,
-    headers: config.headers,
-  });
-
   const res = await fetch(`${API_BASE_URL}${url}`, config);
 
   if (!res.ok) {
@@ -159,7 +143,6 @@ async function request(url, options = {}) {
       // ignore JSON parse error
     }
 
-    console.error("❌ API Error:", errorData);
     throw {
       status: res.status,
       message: errorData.message || "Unauthorized",

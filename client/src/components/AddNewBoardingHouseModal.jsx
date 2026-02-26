@@ -74,12 +74,6 @@ export default function AddNewBoardingHouseModal({ open, onClose, onSuccess }) {
         formData.append("image", form.image);
       }
 
-      // ✅ DEBUG: Xem FormData
-      console.log("📦 FormData contents:");
-      for (let [key, value] of formData.entries()) {
-        console.log(`  ${key}:`, value);
-      }
-
       const existed = await checkBoardingHouseByName(form.name.trim());
 
       if (existed?.id) {
@@ -93,7 +87,6 @@ export default function AddNewBoardingHouseModal({ open, onClose, onSuccess }) {
       onSuccess();
       onClose();
     } catch (err) {
-      console.error("❌ Submit error:", err);
       toast.error(err.message || "Something went wrong. Please try again.");
     } finally {
       setLoading(false);

@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { toast } from "react-hot-toast";
+import useConfirmDialog from "../hooks/useConfirmDialog";
 
 export default function DeleteHouseModal({ open, onClose, houses, onDelete }) {
+  const { confirm, confirmDialog } = useConfirmDialog();
   const [value, setValue] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -26,11 +28,14 @@ export default function DeleteHouseModal({ open, onClose, houses, onDelete }) {
       return;
     }
 
-    if (
-      !window.confirm(
-        `Are you sure you want to delete "${existed.name}"?\nThis action cannot be undone.`,
-      )
-    ) {
+    const agreed = await confirm({
+      title: "Delete boarding house",
+      message: `Are you sure you want to delete "${existed.name}"?\nThis action cannot be undone.`,
+      confirmText: "Delete",
+      variant: "danger",
+    });
+
+    if (!agreed) {
       return;
     }
 
@@ -111,6 +116,8 @@ export default function DeleteHouseModal({ open, onClose, houses, onDelete }) {
           </button>
         </div>
       </div>
+
+      {confirmDialog}
     </div>
   );
 }

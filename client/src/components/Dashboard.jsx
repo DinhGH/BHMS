@@ -9,10 +9,12 @@ import {
   FaUsers,
 } from "react-icons/fa";
 import api from "../server/api";
+import Loading from "./loading.jsx";
 
 const formatCompactCurrency = (value) => {
   const amount = Number(value || 0);
-  if (amount >= 1_000_000_000) return `$${(amount / 1_000_000_000).toFixed(1)}B`;
+  if (amount >= 1_000_000_000)
+    return `$${(amount / 1_000_000_000).toFixed(1)}B`;
   if (amount >= 1_000_000) return `$${(amount / 1_000_000).toFixed(1)}M`;
   if (amount >= 1_000) return `$${(amount / 1_000).toFixed(1)}K`;
   return `$${amount.toLocaleString("en-US")}`;
@@ -41,7 +43,9 @@ function Dashboard() {
   const [error, setError] = useState("");
 
   const yearOptions = useMemo(() => {
-    const apiYears = Array.isArray(data?.availableYears) ? data.availableYears : [];
+    const apiYears = Array.isArray(data?.availableYears)
+      ? data.availableYears
+      : [];
     if (apiYears.length > 0) {
       return apiYears;
     }
@@ -65,7 +69,11 @@ function Dashboard() {
         if (!cancelled) {
           setData(response);
 
-          if (!hasManualYearSelection && response?.year && response.year !== year) {
+          if (
+            !hasManualYearSelection &&
+            response?.year &&
+            response.year !== year
+          ) {
             setYear(response.year);
           }
         }
@@ -100,6 +108,7 @@ function Dashboard() {
   const propertyPerformance = data?.propertyPerformance || [];
   const recentInvoices = data?.recentInvoices || [];
   const alerts = data?.alerts || [];
+  const isInitialLoading = loading && !data;
 
   const maxMonthlyRevenue = Math.max(
     ...monthlyRevenue.map((item) => Number(item.value || 0)),
@@ -133,7 +142,9 @@ function Dashboard() {
   };
 
   const statusBarMax = Math.max(
-    ...invoiceStatusTrend.map((item) => item.paid + item.pending + item.overdue),
+    ...invoiceStatusTrend.map(
+      (item) => item.paid + item.pending + item.overdue,
+    ),
     1,
   );
 
@@ -184,10 +195,19 @@ function Dashboard() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-5 text-slate-900">
+      <Loading isLoading={isInitialLoading} />
+
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-3xl font-bold">Owner Dashboard</h1>
-        <div className="rounded-md bg-slate-100 px-3 py-1 text-sm text-slate-600">
-          Currency: {data?.currency || "USD"}
+        <div className="flex items-center gap-2">
+          {loading && data ? (
+            <div className="rounded-md bg-amber-100 px-3 py-1 text-sm text-amber-700">
+              Updating data...
+            </div>
+          ) : null}
+          <div className="rounded-md bg-slate-100 px-3 py-1 text-sm text-slate-600">
+            Currency: {data?.currency || "USD"}
+          </div>
         </div>
       </div>
 
@@ -208,10 +228,14 @@ function Dashboard() {
               <span>{item.icon}</span>
             </div>
             <div className="text-3xl font-semibold leading-tight">
-              {loading ? "..." : item.value}
+              {loading ? (
+                <div className="h-8 w-24 animate-pulse rounded bg-slate-200" />
+              ) : (
+                item.value
+              )}
             </div>
             <div className="mt-2 inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">
-              {loading ? "Loading" : item.extra}
+              {loading ? "Loading data..." : item.extra}
             </div>
           </div>
         ))}
@@ -239,8 +263,22 @@ function Dashboard() {
 
           <div className="h-64 rounded-sm border border-slate-300 bg-slate-50 p-3">
             <svg viewBox="0 0 100 100" className="w-full h-full">
-              <line x1="0" y1="100" x2="100" y2="100" stroke="#94a3b8" strokeWidth="0.6" />
-              <line x1="0" y1="0" x2="0" y2="100" stroke="#94a3b8" strokeWidth="0.6" />
+              <line
+                x1="0"
+                y1="100"
+                x2="100"
+                y2="100"
+                stroke="#94a3b8"
+                strokeWidth="0.6"
+              />
+              <line
+                x1="0"
+                y1="0"
+                x2="0"
+                y2="100"
+                stroke="#94a3b8"
+                strokeWidth="0.6"
+              />
               {[25, 50, 75].map((yAxis) => (
                 <line
                   key={yAxis}
@@ -272,10 +310,12 @@ function Dashboard() {
           <h2 className="text-lg font-semibold mb-3">Room</h2>
           <div className="flex items-center gap-4 text-sm text-slate-600 mb-5">
             <span className="inline-flex items-center gap-2">
-              <span className="h-2.5 w-2.5 rounded-full bg-slate-600" /> Available
+              <span className="h-2.5 w-2.5 rounded-full bg-slate-600" />{" "}
+              Available
             </span>
             <span className="inline-flex items-center gap-2">
-              <span className="h-2.5 w-2.5 rounded-full bg-slate-300" /> Occupied
+              <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />{" "}
+              Occupied
             </span>
             <span className="inline-flex items-center gap-2">
               <span className="h-2.5 w-2.5 rounded-full bg-slate-400" /> Locked
@@ -311,15 +351,21 @@ function Dashboard() {
                   <div className="h-2.5 w-full rounded-full bg-slate-100 overflow-hidden">
                     <div
                       className="h-full bg-emerald-500 float-left"
-                      style={{ width: `${total > 0 ? (item.paid / total) * widthPercent : 0}%` }}
+                      style={{
+                        width: `${total > 0 ? (item.paid / total) * widthPercent : 0}%`,
+                      }}
                     />
                     <div
                       className="h-full bg-amber-400 float-left"
-                      style={{ width: `${total > 0 ? (item.pending / total) * widthPercent : 0}%` }}
+                      style={{
+                        width: `${total > 0 ? (item.pending / total) * widthPercent : 0}%`,
+                      }}
                     />
                     <div
                       className="h-full bg-rose-500 float-left"
-                      style={{ width: `${total > 0 ? (item.overdue / total) * widthPercent : 0}%` }}
+                      style={{
+                        width: `${total > 0 ? (item.overdue / total) * widthPercent : 0}%`,
+                      }}
                     />
                   </div>
                 </div>
@@ -370,7 +416,10 @@ function Dashboard() {
                   .map((item, idx) => {
                     const before = costBreakdown
                       .slice(0, idx)
-                      .reduce((sum, cost) => sum + Number(cost.percent || 0), 0);
+                      .reduce(
+                        (sum, cost) => sum + Number(cost.percent || 0),
+                        0,
+                      );
                     const after = before + Number(item.percent || 0);
                     return `${chartColors[item.key] || "#cbd5e1"} ${before}% ${after}%`;
                   })
@@ -386,15 +435,19 @@ function Dashboard() {
                 key={item.key}
                 className="flex items-center justify-between gap-4 text-sm"
               >
-                <div className="flex items-center gap-2 min-w-[130px]">
+                <div className="flex items-center gap-2 min-w-32.5">
                   <span
                     className="h-2.5 w-2.5 rounded-full"
-                    style={{ backgroundColor: chartColors[item.key] || "#cbd5e1" }}
+                    style={{
+                      backgroundColor: chartColors[item.key] || "#cbd5e1",
+                    }}
                   />
                   <span className="text-slate-600">{item.label}</span>
                 </div>
                 <div className="flex items-center gap-2 ml-auto">
-                  <span className="text-slate-500">{formatCompactCurrency(item.amount)}</span>
+                  <span className="text-slate-500">
+                    {formatCompactCurrency(item.amount)}
+                  </span>
                   <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">
                     +{item.percent || 0}%
                   </span>
@@ -407,7 +460,9 @@ function Dashboard() {
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
         <section className="rounded-md border border-slate-200 bg-white p-4">
-          <h2 className="text-lg font-semibold mb-3">Top Property Performance</h2>
+          <h2 className="text-lg font-semibold mb-3">
+            Top Property Performance
+          </h2>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -430,7 +485,9 @@ function Dashboard() {
                     <tr key={item.id} className="border-b border-slate-100">
                       <td className="py-2">
                         <div className="font-medium">{item.name}</div>
-                        <div className="text-xs text-slate-500">{item.address}</div>
+                        <div className="text-xs text-slate-500">
+                          {item.address}
+                        </div>
                       </td>
                       <td className="py-2">{item.rooms}</td>
                       <td className="py-2">{item.occupancyRate}%</td>
@@ -447,9 +504,11 @@ function Dashboard() {
 
         <section className="rounded-md border border-slate-200 bg-white p-4">
           <h2 className="text-lg font-semibold mb-3">Recent Invoices</h2>
-          <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+          <div className="space-y-2 max-h-75 overflow-y-auto pr-1">
             {recentInvoices.length === 0 ? (
-              <div className="text-sm text-slate-500">No recent invoices found.</div>
+              <div className="text-sm text-slate-500">
+                No recent invoices found.
+              </div>
             ) : (
               recentInvoices.map((item) => (
                 <div

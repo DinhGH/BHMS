@@ -6,8 +6,10 @@ import {
   updateTenant,
   deleteTenant,
 } from "../services/api";
+import useConfirmDialog from "../hooks/useConfirmDialog";
 
 function TenantsManagement() {
+  const { confirm, confirmDialog } = useConfirmDialog();
   const [tenants, setTenants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -127,6 +129,14 @@ function TenantsManagement() {
       };
 
       if (editingId) {
+        const agreed = await confirm({
+          title: "Update tenant",
+          message: "Are you sure you want to update this tenant information?",
+          confirmText: "Update",
+          variant: "default",
+        });
+        if (!agreed) return;
+
         await updateTenant(editingId, payload);
         alert("Tenant updated successfully");
       } else {
@@ -144,15 +154,22 @@ function TenantsManagement() {
 
   // Delete single tenant
   const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this tenant?")) {
-      try {
-        await deleteTenant(id);
-        alert("Deleted successfully");
-        fetchTenants();
-      } catch (err) {
-        console.error("Delete error:", err);
-        alert("Error: " + (err.message || "Unable to delete"));
-      }
+    const agreed = await confirm({
+      title: "Delete tenant",
+      message: "Are you sure you want to delete this tenant?",
+      confirmText: "Delete",
+      variant: "danger",
+    });
+
+    if (!agreed) return;
+
+    try {
+      await deleteTenant(id);
+      alert("Deleted successfully");
+      fetchTenants();
+    } catch (err) {
+      console.error("Delete error:", err);
+      alert("Error: " + (err.message || "Unable to delete"));
     }
   };
 
@@ -187,22 +204,25 @@ function TenantsManagement() {
       return;
     }
 
-    if (
-      window.confirm(
-        `Delete ${selectedIds.length} tenants? This cannot be undone!`,
-      )
-    ) {
-      try {
-        for (const id of selectedIds) {
-          await deleteTenant(id);
-        }
-        alert("Deleted successfully");
-        fetchTenants();
-        setSelectedIds([]);
-      } catch (err) {
-        console.error("Bulk delete error:", err);
-        alert("Error: " + (err.message || "Unable to delete"));
+    const agreed = await confirm({
+      title: "Bulk delete tenants",
+      message: `Delete ${selectedIds.length} tenants? This cannot be undone!`,
+      confirmText: "Delete all",
+      variant: "danger",
+    });
+
+    if (!agreed) return;
+
+    try {
+      for (const id of selectedIds) {
+        await deleteTenant(id);
       }
+      alert("Deleted successfully");
+      fetchTenants();
+      setSelectedIds([]);
+    } catch (err) {
+      console.error("Bulk delete error:", err);
+      alert("Error: " + (err.message || "Unable to delete"));
     }
   };
 
@@ -499,6 +519,8 @@ function TenantsManagement() {
           </div>
         )}
       </div>
+
+      {confirmDialog}
     </div>
   );
 }

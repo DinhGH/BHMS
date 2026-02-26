@@ -43,15 +43,13 @@ export default function ForgotPassword({ onOtpSent }) {
       // Store email in sessionStorage for next step
       sessionStorage.setItem("resetEmail", email);
 
-      console.log("OTP sent to", email);
       if (typeof onOtpSent === "function") {
         onOtpSent(email);
       }
 
       // Navigate to reset password page
       navigate("/reset-password");
-    } catch (err) {
-      console.error("Error:", err);
+    } catch {
       setError("Network error. Please try again.");
     } finally {
       setLoading(false);

@@ -17,8 +17,10 @@ import EditServiceQuantityModal from "./EditServiceQuantityModal";
 import Loading from "./loading.jsx";
 import api from "../server/api";
 import { toast } from "react-hot-toast";
+import useConfirmDialog from "../hooks/useConfirmDialog";
 
 export default function ViewDetailRoom({ roomId, onBack }) {
+  const { confirm, confirmDialog } = useConfirmDialog();
   const [room, setRoom] = useState(null);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
@@ -138,9 +140,12 @@ export default function ViewDetailRoom({ roomId, onBack }) {
   const handleDeleteRoom = async () => {
     if (!room) return;
 
-    const confirmed = window.confirm(
-      `Are you sure you want to delete room "${room.name}"?\nThis action cannot be undone.`,
-    );
+    const confirmed = await confirm({
+      title: "Delete room",
+      message: `Are you sure you want to delete room "${room.name}"?\nThis action cannot be undone.`,
+      confirmText: "Delete",
+      variant: "danger",
+    });
 
     if (!confirmed) return;
 
@@ -341,9 +346,12 @@ export default function ViewDetailRoom({ roomId, onBack }) {
 
                     <button
                       onClick={async () => {
-                        const confirmed = window.confirm(
-                          `Remove "${s.service.name}" from this room?`,
-                        );
+                        const confirmed = await confirm({
+                          title: "Remove service",
+                          message: `Remove "${s.service.name}" from this room?`,
+                          confirmText: "Remove",
+                          variant: "danger",
+                        });
                         if (!confirmed) return;
 
                         try {
@@ -422,9 +430,13 @@ export default function ViewDetailRoom({ roomId, onBack }) {
                   </button>
                   <button
                     onClick={async () => {
-                      const confirmed = window.confirm(
-                        "Are you sure you want to delete this invoice?",
-                      );
+                      const confirmed = await confirm({
+                        title: "Delete invoice",
+                        message:
+                          "Are you sure you want to delete this invoice?",
+                        confirmText: "Delete",
+                        variant: "danger",
+                      });
                       if (!confirmed) return;
                       try {
                         await api.delete(
@@ -571,6 +583,8 @@ export default function ViewDetailRoom({ roomId, onBack }) {
         service={serviceToEdit}
         onSuccess={fetchRoomServices}
       />
+
+      {confirmDialog}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { getRoomsByHouse } from "../services/boardingHouse.js";
 import SearchInput from "./ui/SearchInput.jsx";
 import Pagination from "./ui/Pagination.jsx";
@@ -42,7 +42,7 @@ export default function ViewDetailBoardingHouse({ house, onBack }) {
   };
 
   /* ================= FETCH ================= */
-  const fetchRooms = async () => {
+  const fetchRooms = useCallback(async () => {
     try {
       setLoading(true);
 
@@ -61,25 +61,20 @@ export default function ViewDetailBoardingHouse({ house, onBack }) {
         params.paymentStatus = filters.paymentStatus;
       }
 
-      console.log("Fetching with params:", params); // Debug log
-
       const data = await getRoomsByHouse(house.id, params);
-
-      console.log("Received rooms:", data); // Debug log
       setRooms(data);
-    } catch (err) {
-      console.error("Fetch rooms error", err);
+    } catch {
+      setRooms([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters, house.id]);
 
   // Fetch when filters change
   useEffect(() => {
-    console.log("Filters changed:", filters); // Debug log
     fetchRooms();
     setCurrentPage(1);
-  }, [filters, house.id]);
+  }, [fetchRooms]);
 
   /* ================= SEARCH (CLIENT) ================= */
   const filteredRooms = useMemo(() => {

@@ -54,14 +54,12 @@ export default function ResetPassword({ onBackToLogin, onResetComplete }) {
         return;
       }
 
-      console.log("Password reset successful for", email);
       sessionStorage.removeItem("resetEmail");
       if (typeof onResetComplete === "function") onResetComplete();
 
       // Navigate back to login
       navigate("/login");
-    } catch (err) {
-      console.error("Error:", err);
+    } catch {
       setErrors({ submit: "Network error. Please try again." });
     } finally {
       setLoading(false);

@@ -4,6 +4,7 @@ import Loading from "../../components/loading.jsx";
 import Pagination from "../../components/Admin/Pagination.jsx";
 import SearchInput from "../../components/Admin/SearchInput.jsx";
 import api from "../../services/api.js";
+import useConfirmDialog from "../../hooks/useConfirmDialog";
 
 const STATUS_COLORS = {
   PENDING: "bg-amber-100 text-amber-800 ring-1 ring-amber-200",
@@ -22,6 +23,7 @@ const STATUS_OPTIONS = [
 ];
 
 export default function ReportAdmin() {
+  const { confirm, confirmDialog } = useConfirmDialog();
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -73,6 +75,14 @@ export default function ReportAdmin() {
   };
 
   const handleStatusChange = async (reportId, newStatus) => {
+    const agreed = await confirm({
+      title: "Update report status",
+      message: `Are you sure you want to change status to ${newStatus}?`,
+      confirmText: "Update",
+      variant: "default",
+    });
+    if (!agreed) return;
+
     try {
       await api.patch(`/api/report-admins/${reportId}/status`, {
         status: newStatus,
@@ -88,7 +98,13 @@ export default function ReportAdmin() {
   };
 
   const handleDelete = async (reportId) => {
-    if (!window.confirm("Are you sure you want to delete this report?")) return;
+    const agreed = await confirm({
+      title: "Delete report",
+      message: "Are you sure you want to delete this report?",
+      confirmText: "Delete",
+      variant: "danger",
+    });
+    if (!agreed) return;
 
     try {
       await api.delete(`/api/report-admins/${reportId}`);
@@ -118,7 +134,13 @@ export default function ReportAdmin() {
       return;
     }
 
-    if (!window.confirm(`Delete ${selectedIds.length} report(s)?`)) return;
+    const agreed = await confirm({
+      title: "Bulk delete reports",
+      message: `Delete ${selectedIds.length} report(s)?`,
+      confirmText: "Delete all",
+      variant: "danger",
+    });
+    if (!agreed) return;
 
     try {
       for (const id of selectedIds) {
@@ -302,6 +324,8 @@ export default function ReportAdmin() {
           </>
         )}
       </div>
+
+      {confirmDialog}
     </div>
   );
 }

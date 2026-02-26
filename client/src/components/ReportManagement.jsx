@@ -7,6 +7,7 @@ import {
   updateReport,
   updateReportStatus,
 } from "../services/api";
+import useConfirmDialog from "../hooks/useConfirmDialog";
 
 // Icon components
 const Plus = () => (
@@ -51,6 +52,7 @@ const Search = () => (
 );
 
 function ReportManagement() {
+  const { confirm, confirmDialog } = useConfirmDialog();
   const [expandedReport, setExpandedReport] = useState(null);
   const [activeTab, setActiveTab] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
@@ -303,6 +305,15 @@ function ReportManagement() {
     }
 
     try {
+      const agreed = await confirm({
+        title: "Update report",
+        message: "Are you sure you want to update this report?",
+        confirmText: "Update",
+        variant: "default",
+      });
+
+      if (!agreed) return;
+
       setEditLoading(true);
       await updateReport(editForm.id, {
         target: editForm.target.trim(),
@@ -322,7 +333,13 @@ function ReportManagement() {
 
   const handleDeleteReport = async (id) => {
     if (!id) return;
-    if (!window.confirm("Delete this report?")) return;
+    const agreed = await confirm({
+      title: "Delete report",
+      message: "Delete this report?",
+      confirmText: "Delete",
+      variant: "danger",
+    });
+    if (!agreed) return;
 
     try {
       setDeleteLoadingId(id);
@@ -338,6 +355,15 @@ function ReportManagement() {
   };
 
   const markStatus = async (id, status) => {
+    const agreed = await confirm({
+      title: "Update report status",
+      message: `Are you sure you want to change status to ${statusLabel(status)}?`,
+      confirmText: "Update",
+      variant: "default",
+    });
+
+    if (!agreed) return;
+
     const previousReports = reports;
     const previousCounts = counts;
 
@@ -1037,6 +1063,8 @@ function ReportManagement() {
           </div>
         </div>
       )}
+
+      {confirmDialog}
     </div>
   );
 }

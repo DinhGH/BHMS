@@ -12,6 +12,7 @@ import {
   deleteContract,
 } from "../services/contractService";
 import api from "../server/api.js";
+import useConfirmDialog from "../hooks/useConfirmDialog";
 
 const defaultForm = {
   houseId: "",
@@ -61,6 +62,7 @@ function Modal({ open, title, onClose, children, maxWidth = "max-w-2xl" }) {
 }
 
 function ContractManagement() {
+  const { confirm, confirmDialog } = useConfirmDialog();
   const [contracts, setContracts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [optionsLoading, setOptionsLoading] = useState(true);
@@ -288,6 +290,17 @@ function ContractManagement() {
     }
 
     try {
+      const agreed = await confirm({
+        title: editingId ? "Update contract" : "Create contract",
+        message: editingId
+          ? "Are you sure you want to update this contract?"
+          : "Are you sure you want to create this contract?",
+        confirmText: editingId ? "Update" : "Create",
+        variant: "default",
+      });
+
+      if (!agreed) return;
+
       setSaving(true);
       const payload = {
         roomId: Number(form.roomId),
@@ -313,9 +326,12 @@ function ContractManagement() {
   };
 
   const handleDelete = async (contract) => {
-    const agreed = window.confirm(
-      `Delete contract #${contract.id} for room ${contract.room?.name || "?"}?`,
-    );
+    const agreed = await confirm({
+      title: "Delete contract",
+      message: `Delete contract #${contract.id} for room ${contract.room?.name || "?"}?`,
+      confirmText: "Delete",
+      variant: "danger",
+    });
     if (!agreed) return;
 
     try {
@@ -990,6 +1006,8 @@ function ContractManagement() {
           </div>
         )}
       </Modal>
+
+      {confirmDialog}
     </div>
   );
 }

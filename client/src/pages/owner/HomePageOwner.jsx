@@ -12,9 +12,7 @@ import PaymentManagement from "../../components/PaymentManagement";
 import ServiceManagement from "../../components/ServiceManagement";
 import OwnerProfileModal from "../../components/OwnerProfileModal";
 import { useAuth } from "../../contexts/AuthContext";
-import { getNotifications } from "../../services/api";
 import api from "../../services/api";
-// import { getNotifications } from "../../services/api";
 
 function HomePageOwner() {
   const { user, loading, logout, updateUser } = useAuth();
@@ -22,8 +20,7 @@ function HomePageOwner() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
-  const [notifications, setNotifications] = useState([]);
-  const [notificationsLoading, setNotificationsLoading] = useState(false);
+  const notifications = useMemo(() => [], []);
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
@@ -50,8 +47,10 @@ function HomePageOwner() {
             email: nextEmail,
           });
         }
-      } catch (error) {
-        console.error("Failed to sync owner profile:", error);
+      } catch {
+        if (!cancelled) {
+          setShowProfileModal(false);
+        }
       }
     })();
 
@@ -59,31 +58,6 @@ function HomePageOwner() {
       cancelled = true;
     };
   }, [updateUser, user?.email, user?.fullName, user?.id, user?.imageUrl]);
-
-  // Fetch notifications once when user is ready (lọc tại client theo searchQuery)
-  useEffect(() => {
-    if (!user?.id) return;
-    let cancelled = false;
-
-    (async () => {
-      setNotificationsLoading(true);
-      try {
-        const data = await getNotifications(); // không truyền tham số
-        if (!cancelled) {
-          setNotifications(Array.isArray(data) ? data : []);
-        }
-      } catch (err) {
-        console.error("Failed to fetch notifications:", err);
-        if (!cancelled) setNotifications([]);
-      } finally {
-        if (!cancelled) setNotificationsLoading(false);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [user?.id]);
 
   // Lọc client-side theo searchQuery (title/content)
   const filteredNotifications = useMemo(() => {
@@ -206,9 +180,7 @@ function HomePageOwner() {
             />
           </div>
           <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50">
-            {notificationsLoading ? (
-              <Loading isLoading={true} />
-            ) : filteredNotifications.length > 0 ? (
+            {filteredNotifications.length > 0 ? (
               filteredNotifications.map((notification) => (
                 <div
                   key={notification.id}
@@ -231,7 +203,7 @@ function HomePageOwner() {
               ))
             ) : (
               <div className="text-center text-sm text-slate-500 py-4">
-                No notifications found
+                No notifications available
               </div>
             )}
           </div>

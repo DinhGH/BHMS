@@ -6,8 +6,10 @@ import {
   updateService,
   deleteService,
 } from "../services/api";
+import useConfirmDialog from "../hooks/useConfirmDialog";
 
 function ServiceManagement() {
+  const { confirm, confirmDialog } = useConfirmDialog();
   const [allServices, setAllServices] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -104,13 +106,20 @@ function ServiceManagement() {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this service?")) {
-      try {
-        await deleteService(id);
-        setAllServices((prev) => prev.filter((s) => s.id !== id));
-      } catch (err) {
-        setError(err.message || "Unable to delete service.");
-      }
+    const agreed = await confirm({
+      title: "Delete service",
+      message: "Are you sure you want to delete this service?",
+      confirmText: "Delete",
+      variant: "danger",
+    });
+
+    if (!agreed) return;
+
+    try {
+      await deleteService(id);
+      setAllServices((prev) => prev.filter((s) => s.id !== id));
+    } catch (err) {
+      setError(err.message || "Unable to delete service.");
     }
   };
 
@@ -413,6 +422,8 @@ function ServiceManagement() {
             </div>
           ))}
       </div>
+
+      {confirmDialog}
     </div>
   );
 }
