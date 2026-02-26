@@ -72,35 +72,26 @@ export default function EditInvoiceModal({
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async () => {
     if (!form.month || form.month < 1 || form.month > 12) {
-      return toast.error("Tháng không hợp lệ");
+      return toast.error("Invalid month (must be 1–12).");
     }
-
     if (!form.year || form.year < 2000) {
-      return toast.error("Năm không hợp lệ");
+      return toast.error("Invalid year (must be 2000 or later).");
     }
-
     if (Number(form.electricMeterAfter) < previousElectric) {
       return toast.error(
-        "Chỉ số điện mới phải lớn hơn hoặc bằng chỉ số trước đó",
+        "New electric meter reading must be ≥ previous reading.",
       );
     }
-
     if (Number(form.waterMeterAfter) < previousWater) {
-      return toast.error(
-        "Chỉ số nước mới phải lớn hơn hoặc bằng chỉ số trước đó",
-      );
+      return toast.error("New water meter reading must be ≥ previous reading.");
     }
-
     if (totalAmount <= 0) {
-      return toast.error("Tổng tiền phải lớn hơn 0");
+      return toast.error("Total amount must be greater than 0.");
     }
 
     try {
@@ -119,13 +110,13 @@ export default function EditInvoiceModal({
       );
       toast.success(
         result?.emailResent
-          ? "Đã cập nhật hóa đơn và gửi lại email cho tenant"
-          : "Đã cập nhật hóa đơn",
+          ? "Invoice updated and email resent to tenant."
+          : "Invoice updated successfully.",
       );
       onUpdated();
       onClose();
     } catch (err) {
-      toast.error(err?.response?.data?.message || "Cập nhật hóa đơn thất bại");
+      toast.error(err?.response?.data?.message || "Failed to update invoice.");
     } finally {
       setLoading(false);
     }
@@ -136,11 +127,11 @@ export default function EditInvoiceModal({
   return (
     <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
       <div className="bg-white rounded-xl shadow-lg w-120 p-6 space-y-4">
-        <h2 className="text-lg font-semibold">Chỉnh sửa hóa đơn</h2>
+        <h2 className="text-lg font-semibold">Edit Invoice</h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Tháng</label>
+            <label className="block text-sm font-medium mb-1">Month</label>
             <input
               type="number"
               min="1"
@@ -152,7 +143,7 @@ export default function EditInvoiceModal({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Năm</label>
+            <label className="block text-sm font-medium mb-1">Year</label>
             <input
               type="number"
               min="2000"
@@ -166,7 +157,7 @@ export default function EditInvoiceModal({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Tiền phòng</label>
+            <label className="block text-sm font-medium mb-1">Room Price</label>
             <input
               type="number"
               name="roomPrice"
@@ -176,7 +167,9 @@ export default function EditInvoiceModal({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Tiền điện</label>
+            <label className="block text-sm font-medium mb-1">
+              Electric Meter (new reading)
+            </label>
             <input
               type="number"
               min={previousElectric}
@@ -186,12 +179,14 @@ export default function EditInvoiceModal({
               className="w-full border rounded-md p-2"
             />
             <div className="text-xs text-gray-500 mt-1">
-              Chỉ số cũ: {previousElectric} • Đơn giá: {formatUsd(electricFee)}{" "}
-              • Thành tiền: {formatUsd(electricCost)}
+              Previous: {previousElectric} · Rate: {formatUsd(electricFee)} ·
+              Cost: {formatUsd(electricCost)}
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Tiền nước</label>
+            <label className="block text-sm font-medium mb-1">
+              Water Meter (new reading)
+            </label>
             <input
               type="number"
               min={previousWater}
@@ -201,12 +196,14 @@ export default function EditInvoiceModal({
               className="w-full border rounded-md p-2"
             />
             <div className="text-xs text-gray-500 mt-1">
-              Chỉ số cũ: {previousWater} • Đơn giá: {formatUsd(waterFee)} •
-              Thành tiền: {formatUsd(waterCost)}
+              Previous: {previousWater} · Rate: {formatUsd(waterFee)} · Cost:{" "}
+              {formatUsd(waterCost)}
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Dịch vụ</label>
+            <label className="block text-sm font-medium mb-1">
+              Service Cost
+            </label>
             <input
               type="number"
               name="serviceCost"
@@ -218,7 +215,7 @@ export default function EditInvoiceModal({
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1">Trạng thái</label>
+          <label className="block text-sm font-medium mb-1">Status</label>
           <select
             name="status"
             value={form.status}
@@ -234,7 +231,7 @@ export default function EditInvoiceModal({
         </div>
 
         <div className="bg-blue-50 border border-blue-200 rounded-md p-3 text-sm text-gray-700">
-          Tổng tiền: <strong>{formatUsd(totalAmount)}</strong>
+          Total: <strong>{formatUsd(totalAmount)}</strong>
         </div>
 
         <div className="flex justify-end gap-3 pt-2 border-t">
@@ -243,14 +240,14 @@ export default function EditInvoiceModal({
             disabled={loading}
             className="px-4 py-2 rounded-md bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
           >
-            Hủy
+            Cancel
           </button>
           <button
             onClick={handleSubmit}
             disabled={loading}
             className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
           >
-            {loading ? "Đang lưu..." : "Lưu"}
+            {loading ? "Saving..." : "Save"}
           </button>
         </div>
       </div>

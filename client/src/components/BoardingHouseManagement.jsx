@@ -26,51 +26,29 @@ export default function BoardingHouseManagement({ ownerId }) {
   const pageSize = 8;
 
   /* =========================
-     VALIDATION
-  ========================= */
-  const validateSearch = (value) => {
-    if (!value) return true;
-    if (value.length > 100) {
-      toast.error("Search text is too long (max 100 characters)");
-      return false;
-    }
-    return true;
-  };
-
-  /* =========================
-     FETCH HOUSES (WITH TOAST)
+     FETCH HOUSES
   ========================= */
   const fetchHouses = async () => {
+    if (search.length > 100) {
+      toast.error("Search text is too long (max 100 characters).");
+      return;
+    }
+
     try {
-      if (!validateSearch(search)) return;
-
       setLoading(true);
-
       const query = search ? `?search=${encodeURIComponent(search)}` : "";
+      const response = await api.get(`/api/owner/boarding-houses${query}`);
 
-      const response = await toast.promise(
-        api.get(`/api/owner/boarding-houses${query}`),
-        {
-          loading: "Loading boarding houses...",
-          success: "Boarding houses loaded",
-          error: "Failed to load boarding houses",
-        },
-      );
-
-      // Validate response
       if (!response || !Array.isArray(response)) {
         throw new Error("Invalid data format from server");
       }
 
       setHouses(response);
     } catch (error) {
-      console.error("Fetch boarding houses error:", error);
-
       const message =
         error?.response?.data?.message ||
         error?.message ||
         "Cannot load boarding houses";
-
       toast.error(message);
       setHouses([]);
     } finally {
@@ -86,47 +64,17 @@ export default function BoardingHouseManagement({ ownerId }) {
       setCurrentPage(1);
       fetchHouses();
     }, 500);
-
     return () => clearTimeout(timer);
   }, [search]);
 
   /* =========================
-     DELETE HOUSE (WITH VALIDATION + TOAST)
+     DELETE HOUSE
   ========================= */
   const handleDelete = async (houseName) => {
-    if (!houseName || houseName.trim() === "") {
-      toast.error("House name is invalid");
-      return;
-    }
-
-    const confirmed = window.confirm(
-      `Are you sure you want to delete "${houseName}"?\nThis action cannot be undone.`,
+    await api.delete(
+      `/api/owner/boarding-houses?name=${encodeURIComponent(houseName)}`,
     );
-
-    if (!confirmed) return;
-
-    try {
-      await toast.promise(
-        api.delete(
-          `/api/owner/boarding-houses?name=${encodeURIComponent(houseName)}`,
-        ),
-        {
-          loading: "Deleting boarding house...",
-          success: "Deleted successfully!",
-          error: "Delete failed. Please check house name again.",
-        },
-      );
-
-      fetchHouses();
-    } catch (error) {
-      console.error("Delete error:", error);
-
-      const message =
-        error?.response?.data?.message ||
-        "Delete failed. Server error occurred.";
-
-      toast.error(message);
-    }
+    fetchHouses();
   };
 
   /* =========================
@@ -138,7 +86,6 @@ export default function BoardingHouseManagement({ ownerId }) {
 
   return (
     <div className="space-y-4">
-      {/* VIEW ROOM MANAGEMENT */}
       {selectedHouse ? (
         <RoomManagement
           house={selectedHouse}
@@ -150,14 +97,10 @@ export default function BoardingHouseManagement({ ownerId }) {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <SearchInput
               value={search}
-              onChange={(e) => {
-                const value = e.target.value;
-                setSearch(value);
-              }}
+              onChange={(e) => setSearch(e.target.value)}
               placeholder="Search boarding house..."
               className="sm:max-w-sm"
             />
-
             <div className="flex gap-3">
               <button
                 className="px-4 py-2 text-sm bg-red-500 hover:bg-red-600 text-white rounded-md transition"
@@ -165,7 +108,6 @@ export default function BoardingHouseManagement({ ownerId }) {
               >
                 Delete
               </button>
-
               <button
                 className="px-4 py-2 text-sm bg-blue-500 hover:bg-blue-600 text-white rounded-md transition shadow"
                 onClick={() => setOpenModal(true)}
@@ -181,7 +123,6 @@ export default function BoardingHouseManagement({ ownerId }) {
             ownerId={ownerId}
             onClose={() => setOpenModal(false)}
             onSuccess={() => {
-              toast.success("Boarding house added successfully!");
               fetchHouses();
             }}
           />
@@ -210,7 +151,6 @@ export default function BoardingHouseManagement({ ownerId }) {
                         key={house.id}
                         className="bg-white rounded-xl border shadow-sm overflow-hidden hover:shadow-xl transition duration-300"
                       >
-                        {/* IMAGE */}
                         <div className="overflow-hidden">
                           <img
                             src={
@@ -223,20 +163,15 @@ export default function BoardingHouseManagement({ ownerId }) {
                             className="w-full h-44 object-cover hover:scale-105 transition duration-300"
                           />
                         </div>
-
-                        {/* INFO */}
                         <div className="p-4 space-y-2">
                           <h3 className="font-semibold text-lg text-gray-800">
                             {house.name}
                           </h3>
-
                           <div className="text-sm text-slate-600 space-y-1">
                             <div>Total Rooms: {house.totalRooms}</div>
                             <div>Occupied: {house.occupied}</div>
                             <div>Available: {house.available}</div>
                           </div>
-
-                          {/* ACTIONS */}
                           <div className="flex justify-between pt-2">
                             <button
                               className="text-sm font-medium text-blue-600 hover:underline"
@@ -244,7 +179,6 @@ export default function BoardingHouseManagement({ ownerId }) {
                             >
                               View Detail →
                             </button>
-
                             <button
                               className="text-sm font-medium text-amber-600 hover:underline"
                               onClick={() => {
@@ -260,18 +194,15 @@ export default function BoardingHouseManagement({ ownerId }) {
                     ))}
                   </div>
 
-                  {/* EDIT MODAL */}
                   <EditBoardingHouseModal
                     open={openEditModal}
                     house={editingHouse}
                     onClose={() => setOpenEditModal(false)}
                     onSuccess={() => {
-                      toast.success("Boarding house updated successfully!");
                       fetchHouses();
                     }}
                   />
 
-                  {/* PAGINATION */}
                   {totalPages > 1 && (
                     <Pagination
                       currentPage={currentPage}
