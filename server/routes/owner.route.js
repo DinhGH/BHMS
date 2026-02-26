@@ -40,6 +40,7 @@ import {
   changePassword,
 } from "../controllers/owner.profile.controller.js";
 import { uploadOwnerImage } from "../controllers/owner.upload.controller.js";
+import { getOwnerDashboard } from "../controllers/owner.dashboard.controller.js";
 
 import {
   getOwnerContracts,
@@ -61,6 +62,7 @@ router.use(authOwner);
 
 // owner profile
 router.get("/profile", getOwnerProfile);
+router.get("/dashboard", getOwnerDashboard);
 router.put("/profile", updateOwnerProfile);
 router.put("/change-password", changePassword);
 router.post("/uploads/image", upload.single("image"), uploadOwnerImage);

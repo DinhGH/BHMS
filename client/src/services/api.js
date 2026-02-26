@@ -229,6 +229,16 @@ const api = {
     }),
 };
 
+export const getOwnerDashboard = async (year) => {
+  const params = new URLSearchParams();
+  if (year) {
+    params.set("year", String(year));
+  }
+
+  const query = params.toString();
+  return api.get(`/api/owner/dashboard${query ? `?${query}` : ""}`);
+};
+
 export default api;
 
 export async function getReports({
