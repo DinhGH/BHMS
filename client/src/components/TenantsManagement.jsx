@@ -246,9 +246,6 @@ function TenantsManagement() {
       alert("Deleted successfully");
       fetchTenants();
       setSelectedIds([]);
-    } catch (err) {
-      console.error("Bulk delete error:", err);
-      alert("Error: " + (err.message || "Unable to delete"));
     }
   };
 

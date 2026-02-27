@@ -61,33 +61,11 @@ export const listReportAdmins = async (req, res) => {
     const { page, limit, skip } = parsePagination(req);
 
     const where = {};
-<<<<<<< HEAD
 
     // Filter sender (hỗ trợ cả ownerId và userId)
     if (senderId) {
       const ownerId = await resolveOwnerIdFromSender(senderId);
       where.senderId = ownerId ?? -1; // -1 để không trả về tất cả
-=======
-    if (actor.role === "OWNER") {
-      where.senderId = actor.ownerId;
-    } else {
-      const senderIdNum = Number(senderId);
-      const hasSenderId = Number.isFinite(senderIdNum) && senderIdNum > 0;
-      if (hasSenderId) {
-        const ownerById = await prisma.owner.findUnique({
-          where: { id: senderIdNum },
-          select: { id: true },
-        });
-        const ownerByUserId = ownerById
-          ? null
-          : await prisma.owner.findUnique({
-              where: { userId: senderIdNum },
-              select: { id: true },
-            });
-        const owner = ownerById || ownerByUserId;
-        where.senderId = owner ? owner.id : -1;
-      }
->>>>>>> b0f12bb313fffa8b9b2e643b133fdba89efcffb0
     }
 
     // Filter status
@@ -101,7 +79,6 @@ export const listReportAdmins = async (req, res) => {
         contains: target.trim(),
       };
     }
-<<<<<<< HEAD
 
     // Search (nhẹ, không join owner để tránh tốn RAM MySQL)
     if (search && search.trim()) {
@@ -110,14 +87,6 @@ export const listReportAdmins = async (req, res) => {
         {
           content: {
             contains: q,
-=======
-    if (search) {
-      const q = search.toString();
-      const ownerMatches = await prisma.owner.findMany({
-        where: {
-          user: {
-            email: { contains: q },
->>>>>>> b0f12bb313fffa8b9b2e643b133fdba89efcffb0
           },
         },
         {
@@ -139,15 +108,10 @@ export const listReportAdmins = async (req, res) => {
       prisma.reportAdmin.findMany({
         where,
         skip,
-<<<<<<< HEAD
         take: limit, // QUAN TRỌNG: luôn có take để tránh load full DB
         orderBy: {
           [safeOrderBy]: safeOrder,
         },
-=======
-        take: limit,
-        orderBy: { [safeOrderBy]: safeOrder },
->>>>>>> b0f12bb313fffa8b9b2e643b133fdba89efcffb0
         select: {
           id: true,
           senderId: true,
@@ -155,10 +119,7 @@ export const listReportAdmins = async (req, res) => {
           content: true,
           status: true,
           createdAt: true,
-<<<<<<< HEAD
           // ❌ KHÔNG select images (Json base64 rất nặng)
-=======
->>>>>>> b0f12bb313fffa8b9b2e643b133fdba89efcffb0
         },
       }),
     ]);
@@ -193,14 +154,10 @@ export const listReportAdmins = async (req, res) => {
       return {
         ...report,
         sender: owner
-<<<<<<< HEAD
           ? {
               id: owner.id,
               email: owner.user?.email ?? null, // ⚠️ đúng: user (không phải User)
             }
-=======
-          ? { id: owner.id, email: owner.user?.email ?? null }
->>>>>>> b0f12bb313fffa8b9b2e643b133fdba89efcffb0
           : null,
       };
     });
@@ -599,12 +556,6 @@ export const deleteReportAdmin = async (req, res) => {
     const actor = await getActorContext(req);
     if (!actor) {
       return res.status(403).json({ message: "Forbidden" });
-    }
-
-    if (!isActionConfirmed(req)) {
-      return res.status(400).json({
-        message: "Action confirmation is required",
-      });
     }
 
     const reportId = Number(req.params.id);
