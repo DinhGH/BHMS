@@ -1,4 +1,5 @@
 import { prisma } from "../lib/prisma.js";
+import { sendReportAdminStatusEmail } from "../lib/mailer.js";
 
 const parsePagination = (req) => {
   const page = Math.max(parseInt(req.query.page || "1", 10), 1);
@@ -10,17 +11,83 @@ const parsePagination = (req) => {
   return { page, limit, skip };
 };
 
+const getActorContext = async (req) => {
+  if (!req.user?.id || !req.user?.role) return null;
+
+  const role = req.user.role;
+  if (role === "ADMIN") {
+    return {
+      role,
+      userId: req.user.id,
+      ownerId: null,
+    };
+  }
+
+  if (role !== "OWNER") return null;
+
+  const owner = await prisma.owner.findUnique({
+    where: { userId: Number(req.user.id) },
+    select: { id: true },
+  });
+
+  if (!owner) return null;
+
+  return {
+    role,
+    userId: req.user.id,
+    ownerId: owner.id,
+  };
+};
+
+const isActionConfirmed = (req) => {
+  const bodyConfirm = req.body?.confirm === true;
+  const headerConfirm =
+    String(req.headers["x-action-confirmed"] || "").toLowerCase() === "true";
+
+  return bodyConfirm || headerConfirm;
+};
+
+const isValidEmail = (value) =>
+  typeof value === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+
 export const listReportAdmins = async (req, res) => {
   try {
+    const actor = await getActorContext(req);
+    if (!actor) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
     const { status, search, target, orderBy, order, senderId } = req.query;
     const { page, limit, skip } = parsePagination(req);
 
     const where = {};
+<<<<<<< HEAD
 
     // Filter sender (hỗ trợ cả ownerId và userId)
     if (senderId) {
       const ownerId = await resolveOwnerIdFromSender(senderId);
       where.senderId = ownerId ?? -1; // -1 để không trả về tất cả
+=======
+    if (actor.role === "OWNER") {
+      where.senderId = actor.ownerId;
+    } else {
+      const senderIdNum = Number(senderId);
+      const hasSenderId = Number.isFinite(senderIdNum) && senderIdNum > 0;
+      if (hasSenderId) {
+        const ownerById = await prisma.owner.findUnique({
+          where: { id: senderIdNum },
+          select: { id: true },
+        });
+        const ownerByUserId = ownerById
+          ? null
+          : await prisma.owner.findUnique({
+              where: { userId: senderIdNum },
+              select: { id: true },
+            });
+        const owner = ownerById || ownerByUserId;
+        where.senderId = owner ? owner.id : -1;
+      }
+>>>>>>> b0f12bb313fffa8b9b2e643b133fdba89efcffb0
     }
 
     // Filter status
@@ -34,6 +101,7 @@ export const listReportAdmins = async (req, res) => {
         contains: target.trim(),
       };
     }
+<<<<<<< HEAD
 
     // Search (nhẹ, không join owner để tránh tốn RAM MySQL)
     if (search && search.trim()) {
@@ -42,6 +110,14 @@ export const listReportAdmins = async (req, res) => {
         {
           content: {
             contains: q,
+=======
+    if (search) {
+      const q = search.toString();
+      const ownerMatches = await prisma.owner.findMany({
+        where: {
+          user: {
+            email: { contains: q },
+>>>>>>> b0f12bb313fffa8b9b2e643b133fdba89efcffb0
           },
         },
         {
@@ -54,9 +130,7 @@ export const listReportAdmins = async (req, res) => {
 
     // OrderBy an toàn
     const allowedOrderBy = ["id", "createdAt"];
-    const safeOrderBy = allowedOrderBy.includes(orderBy)
-      ? orderBy
-      : "createdAt";
+    const safeOrderBy = allowedOrderBy.includes(orderBy) ? orderBy : "id";
     const safeOrder = order === "asc" ? "asc" : "desc";
 
     // Query song song (tối ưu hiệu năng)
@@ -65,10 +139,15 @@ export const listReportAdmins = async (req, res) => {
       prisma.reportAdmin.findMany({
         where,
         skip,
+<<<<<<< HEAD
         take: limit, // QUAN TRỌNG: luôn có take để tránh load full DB
         orderBy: {
           [safeOrderBy]: safeOrder,
         },
+=======
+        take: limit,
+        orderBy: { [safeOrderBy]: safeOrder },
+>>>>>>> b0f12bb313fffa8b9b2e643b133fdba89efcffb0
         select: {
           id: true,
           senderId: true,
@@ -76,7 +155,10 @@ export const listReportAdmins = async (req, res) => {
           content: true,
           status: true,
           createdAt: true,
+<<<<<<< HEAD
           // ❌ KHÔNG select images (Json base64 rất nặng)
+=======
+>>>>>>> b0f12bb313fffa8b9b2e643b133fdba89efcffb0
         },
       }),
     ]);
@@ -111,10 +193,14 @@ export const listReportAdmins = async (req, res) => {
       return {
         ...report,
         sender: owner
+<<<<<<< HEAD
           ? {
               id: owner.id,
               email: owner.user?.email ?? null, // ⚠️ đúng: user (không phải User)
             }
+=======
+          ? { id: owner.id, email: owner.user?.email ?? null }
+>>>>>>> b0f12bb313fffa8b9b2e643b133fdba89efcffb0
           : null,
       };
     });
@@ -138,6 +224,11 @@ export const listReportAdmins = async (req, res) => {
 
 export const createReportAdmin = async (req, res) => {
   try {
+    const actor = await getActorContext(req);
+    if (!actor) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
     const { senderId, senderEmail, target, content, images } = req.body || {};
 
     const senderIdNum = Number(senderId);
@@ -172,7 +263,14 @@ export const createReportAdmin = async (req, res) => {
     let owner = null;
     let user = null;
 
-    if (hasSenderId) {
+    if (actor.role === "OWNER") {
+      owner = await prisma.owner.findUnique({
+        where: { id: actor.ownerId },
+        select: { id: true },
+      });
+    }
+
+    if (!owner && hasSenderId) {
       const ownerById = await prisma.owner.findUnique({
         where: { id: senderIdNum },
         select: { id: true },
@@ -348,6 +446,11 @@ export const updateReportAdmin = async (req, res) => {
  */
 export const getReportAdmin = async (req, res) => {
   try {
+    const actor = await getActorContext(req);
+    if (!actor) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
     const reportId = Number(req.params.id);
     if (!Number.isFinite(reportId)) {
       return res.status(400).json({ message: "Invalid report ID" });
@@ -361,17 +464,21 @@ export const getReportAdmin = async (req, res) => {
       return res.status(404).json({ message: "Report not found" });
     }
 
+    if (actor.role === "OWNER" && report.senderId !== actor.ownerId) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
     const owner = await prisma.owner.findUnique({
       where: { id: report.senderId },
       select: {
         id: true,
-        User: { select: { email: true } },
+        user: { select: { email: true } },
       },
     });
 
     res.json({
       ...report,
-      sender: owner ? { id: owner.id, email: owner.User?.email } : null,
+      sender: owner ? { id: owner.id, email: owner.user?.email } : null,
     });
   } catch (error) {
     console.error("getReportAdmin error:", error);
@@ -385,6 +492,12 @@ export const getReportAdmin = async (req, res) => {
  */
 export const updateReportAdminStatus = async (req, res) => {
   try {
+    if (!isActionConfirmed(req)) {
+      return res.status(400).json({
+        message: "Action confirmation is required",
+      });
+    }
+
     const reportId = Number(req.params.id);
     const { status } = req.body;
 
@@ -407,6 +520,20 @@ export const updateReportAdminStatus = async (req, res) => {
 
     const report = await prisma.reportAdmin.findUnique({
       where: { id: reportId },
+      include: {
+        Owner: {
+          select: {
+            id: true,
+            user: {
+              select: {
+                id: true,
+                email: true,
+                fullName: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!report) {
@@ -418,7 +545,45 @@ export const updateReportAdminStatus = async (req, res) => {
       data: { status },
     });
 
-    res.json(updatedReport);
+    const ownerUserId = report.Owner?.user?.id;
+    if (Number.isFinite(ownerUserId)) {
+      await prisma.notification.create({
+        data: {
+          userId: ownerUserId,
+          title: "New update from admin",
+          content: `Your report #${report.id} status was updated to ${status}.`,
+        },
+      });
+    }
+
+    const email = { attempted: 0, sent: 0, failed: 0 };
+    const recipient = report.Owner?.user?.email;
+    if (isValidEmail(recipient)) {
+      email.attempted = 1;
+      try {
+        await sendReportAdminStatusEmail({
+          to: recipient,
+          ownerName: report.Owner?.user?.fullName || report.Owner?.user?.email,
+          reportId: report.id,
+          status,
+          category: report.target,
+          summary: report.content,
+        });
+        email.sent = 1;
+      } catch (mailError) {
+        email.failed = 1;
+        console.error("sendReportAdminStatusEmail error:", {
+          reportId,
+          recipient,
+          message: mailError?.message,
+        });
+      }
+    }
+
+    res.json({
+      ...updatedReport,
+      email,
+    });
   } catch (error) {
     console.error("updateReportAdminStatus error:", error);
     res.status(500).json({ message: "Failed to update report status" });
@@ -431,12 +596,22 @@ export const updateReportAdminStatus = async (req, res) => {
  */
 export const deleteReportAdmin = async (req, res) => {
   try {
+    const actor = await getActorContext(req);
+    if (!actor) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
+    if (!isActionConfirmed(req)) {
+      return res.status(400).json({
+        message: "Action confirmation is required",
+      });
+    }
+
     const reportId = Number(req.params.id);
     if (!Number.isFinite(reportId) || reportId <= 0) {
       return res.status(400).json({ message: "Invalid report id" });
     }
 
-    const { senderId } = req.body || {};
     const report = await prisma.reportAdmin.findUnique({
       where: { id: reportId },
       select: { id: true, senderId: true },
@@ -446,14 +621,8 @@ export const deleteReportAdmin = async (req, res) => {
       return res.status(404).json({ message: "Report not found" });
     }
 
-    if (senderId !== undefined) {
-      const ownerId = await resolveOwnerIdFromSender(senderId);
-      if (!ownerId) {
-        return res.status(404).json({ message: "Owner not found" });
-      }
-      if (report.senderId !== ownerId) {
-        return res.status(403).json({ message: "Not allowed" });
-      }
+    if (actor.role === "OWNER" && report.senderId !== actor.ownerId) {
+      return res.status(403).json({ message: "Forbidden" });
     }
 
     await prisma.reportAdmin.delete({

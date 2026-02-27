@@ -3,8 +3,10 @@ import { FaTimes } from "react-icons/fa";
 import toast from "react-hot-toast";
 import api from "../server/api";
 import Loading from "./loading.jsx";
+import useConfirmDialog from "../hooks/useConfirmDialog";
 
 export default function OwnerProfileModal({ open, onClose, onProfileUpdate }) {
+  const { confirm, confirmDialog } = useConfirmDialog();
   const [activeTab, setActiveTab] = useState("profile");
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -76,9 +78,13 @@ export default function OwnerProfileModal({ open, onClose, onProfileUpdate }) {
   const handleSaveProfile = async () => {
     if (!validateForm()) return;
 
-    const confirmed = window.confirm(
-      "Are you sure you want to update your profile?",
-    );
+    const confirmed = await confirm({
+      title: "Update profile",
+      message: "Are you sure you want to update your profile?",
+      confirmText: "Update",
+      variant: "default",
+    });
+
     if (!confirmed) return;
 
     try {
@@ -355,6 +361,8 @@ export default function OwnerProfileModal({ open, onClose, onProfileUpdate }) {
           )}
         </div>
       </div>
+
+      {confirmDialog}
     </div>
   );
 }

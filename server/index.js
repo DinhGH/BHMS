@@ -1,5 +1,11 @@
 import dotenv from "dotenv";
-dotenv.config();
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+dotenv.config({ path: path.join(__dirname, ".env") });
 
 import express from "express";
 import cors from "cors";
@@ -7,13 +13,16 @@ import cors from "cors";
 import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import serviceRoutes from "./routes/services.js";
-import paymentRoutes, { handleStripeWebhook } from "./routes/paymentRoutes.js";
+import paymentRoutes from "./routes/paymentRoutes.js";
 import tenantRoutes from "./routes/tenantRoutes.js";
 import reportRoutes from "./routes/reportRoutes.js";
 import reportAdminRoutes from "./routes/reportAdminRoutes.js";
+import stripeRoute from "./routes/stripe.routes.js";
 
 import ownerRoute from "./routes/owner.route.js";
 import adminRoutes from "./routes/admin.routes.js";
+
+import { handleStripeWebhook } from "./controllers/paymentController.js";
 
 // Scheduled tasks
 import { scheduleOverdueCheck } from "./services/overdueService.js";
@@ -27,7 +36,8 @@ app.use(
     credentials: true,
   }),
 );
-
+// Stripe webhook (raw body middleware inside route)
+app.use("/webhook", stripeRoute);
 // Stripe webhook must be registered BEFORE express.json()
 // because it needs raw body for signature verification
 app.post(
@@ -72,11 +82,5 @@ app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 
   // Initialize scheduled tasks
-  console.log("📅 Initializing scheduled tasks...");
   scheduleOverdueCheck();
-  const hour = Number(process.env.OVERDUE_CHECK_HOUR || 6);
-  const minute = Number(process.env.OVERDUE_CHECK_MINUTE || 0);
-  console.log(
-    `✓ Overdue check scheduled (runs daily at ${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")})`,
-  );
 });

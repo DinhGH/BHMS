@@ -8,6 +8,7 @@ import {
   updateReport,
   updateReportStatus,
 } from "../services/api";
+import useConfirmDialog from "../hooks/useConfirmDialog";
 
 // Icon components
 const Plus = () => (
@@ -94,6 +95,7 @@ function validateEditForm(form) {
 
 // ── Main Component ────────────────────────────────────────────────────────────
 function ReportManagement() {
+  const { confirm, confirmDialog } = useConfirmDialog();
   const [expandedReport, setExpandedReport] = useState(null);
   const [activeTab, setActiveTab] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
@@ -331,6 +333,15 @@ function ReportManagement() {
     setEditFieldErrors({});
 
     try {
+      const agreed = await confirm({
+        title: "Update report",
+        message: "Are you sure you want to update this report?",
+        confirmText: "Update",
+        variant: "default",
+      });
+
+      if (!agreed) return;
+
       setEditLoading(true);
       await updateReport(editForm.id, {
         target: editForm.target.trim(),
@@ -365,6 +376,15 @@ function ReportManagement() {
   };
 
   const markStatus = async (id, status) => {
+    const agreed = await confirm({
+      title: "Update report status",
+      message: `Are you sure you want to change status to ${statusLabel(status)}?`,
+      confirmText: "Update",
+      variant: "default",
+    });
+
+    if (!agreed) return;
+
     const previousReports = reports;
     const previousCounts = counts;
 
@@ -1063,6 +1083,8 @@ function ReportManagement() {
           </div>
         </div>
       )}
+
+      {confirmDialog}
     </div>
   );
 }

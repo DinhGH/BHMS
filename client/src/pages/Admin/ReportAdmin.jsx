@@ -5,6 +5,7 @@ import Loading from "../../components/loading.jsx";
 import Pagination from "../../components/Admin/Pagination.jsx";
 import SearchInput from "../../components/Admin/SearchInput.jsx";
 import api from "../../services/api.js";
+import useConfirmDialog from "../../hooks/useConfirmDialog";
 
 const STATUS_COLORS = {
   PENDING: "bg-amber-100 text-amber-800 ring-1 ring-amber-200",
@@ -23,6 +24,7 @@ const STATUS_OPTIONS = [
 ];
 
 export default function ReportAdmin() {
+  const { confirm, confirmDialog } = useConfirmDialog();
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -88,7 +90,7 @@ export default function ReportAdmin() {
   const handleDelete = async (reportId) => {
     if (!window.confirm("Are you sure you want to delete this report?")) return;
     try {
-      await api.delete(`/api/report-admins/${reportId}`);
+      await api.delete(`/api/report-admins/${reportId}`, { confirm: true });
       setReports((prev) => prev.filter((r) => r.id !== reportId));
       toast.success("Report deleted.");
     } catch (error) {
@@ -117,7 +119,7 @@ export default function ReportAdmin() {
 
     try {
       for (const id of selectedIds) {
-        await api.delete(`/api/report-admins/${id}`);
+        await api.delete(`/api/report-admins/${id}`, { confirm: true });
       }
       setReports((prev) => prev.filter((r) => !selectedIds.includes(r.id)));
       setSelectedIds([]);
@@ -130,7 +132,7 @@ export default function ReportAdmin() {
   if (loading) return <Loading isLoading={true} />;
 
   return (
-    <div className="h-full flex flex-col max-w-7xl mx-auto p-6">
+    <div className="h-full flex flex-col max-w-7xl mx-auto p-3 sm:p-4 lg:p-6">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-black mb-2">Admin Reports</h1>
@@ -148,7 +150,7 @@ export default function ReportAdmin() {
         <select
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="app-select md:min-w-44"
         >
           <option value="all">All Status</option>
           {STATUS_OPTIONS.map((status) => (
@@ -162,16 +164,10 @@ export default function ReportAdmin() {
       {/* Bulk Actions */}
       {selectedIds.length > 0 && (
         <div className="mb-4 flex gap-2">
-          <button
-            onClick={handleBulkDelete}
-            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
-          >
+          <button onClick={handleBulkDelete} className="app-btn-danger">
             Delete Selected ({selectedIds.length})
           </button>
-          <button
-            onClick={() => setSelectedIds([])}
-            className="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition"
-          >
+          <button onClick={() => setSelectedIds([])} className="app-btn-muted">
             Clear Selection
           </button>
         </div>
@@ -186,7 +182,7 @@ export default function ReportAdmin() {
         ) : (
           <>
             <div className="overflow-auto flex-1">
-              <table className="w-full">
+              <table className="w-full min-w-220 text-sm">
                 <thead className="bg-gray-100 border-b border-gray-200 sticky top-0 z-10">
                   <tr>
                     <th className="px-6 py-3 text-left">
@@ -208,7 +204,7 @@ export default function ReportAdmin() {
                     <th className="px-6 py-3 text-left font-semibold">
                       Content
                     </th>
-                    <th className="px-6 py-3 text-left font-semibold">
+                    <th className="px-6 py-3 text-left font-semibold min-w-55">
                       Status
                     </th>
                     <th className="px-6 py-3 text-left font-semibold">Date</th>
@@ -242,13 +238,13 @@ export default function ReportAdmin() {
                       <td className="px-6 py-3 text-sm max-w-xs truncate">
                         {report.content}
                       </td>
-                      <td className="px-6 py-3">
+                      <td className="px-6 py-3 min-w-55">
                         <select
                           value={report.status || ""}
                           onChange={(e) =>
                             handleStatusChange(report.id, e.target.value)
                           }
-                          className={`min-w-32 rounded-lg px-3 py-1.5 text-xs font-semibold uppercase cursor-pointer border focus:outline-none focus:ring-2 focus:ring-offset-1 ${
+                          className={`w-full min-h-12 rounded-xl px-4 py-3 text-sm font-bold uppercase cursor-pointer border-2 shadow-sm transition focus:outline-none focus:ring-2 focus:ring-offset-1 ${
                             STATUS_COLORS[report.status] ||
                             "bg-gray-100 text-gray-800"
                           }`}
@@ -290,6 +286,8 @@ export default function ReportAdmin() {
           </>
         )}
       </div>
+
+      {confirmDialog}
     </div>
   );
 }

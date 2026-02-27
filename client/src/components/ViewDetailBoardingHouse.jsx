@@ -1,10 +1,10 @@
-import { useEffect, useState, useMemo } from "react";
-import api from "../server/api.js";
+import { useEffect, useState, useMemo, useCallback } from "react";
+import { getRoomsByHouse } from "../services/boardingHouse.js";
 import SearchInput from "./ui/SearchInput.jsx";
 import Pagination from "./ui/Pagination.jsx";
 import Loading from "./loading.jsx";
 import ViewDetailRoom from "./ViewDetailRoom.jsx";
-import AddNewRoomModal from "./AddNewRoomModel.jsx";
+import RoomFormModal from "./RoomFormModel.jsx";
 import RoomFilter from "./RoomFilter.jsx";
 
 export default function ViewDetailBoardingHouse({ house, onBack }) {
@@ -14,6 +14,7 @@ export default function ViewDetailBoardingHouse({ house, onBack }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedRoomId, setSelectedRoomId] = useState(null);
   const [openAddRoom, setOpenAddRoom] = useState(false);
+  const [editingRoom, setEditingRoom] = useState(null);
 
   const [filters, setFilters] = useState({
     priceRange: null,
@@ -41,7 +42,7 @@ export default function ViewDetailBoardingHouse({ house, onBack }) {
   };
 
   /* ================= FETCH ================= */
-  const fetchRooms = async () => {
+  const fetchRooms = useCallback(async () => {
     try {
       setLoading(true);
 
@@ -60,30 +61,20 @@ export default function ViewDetailBoardingHouse({ house, onBack }) {
         params.paymentStatus = filters.paymentStatus;
       }
 
-      console.log("Fetching with params:", params); // Debug log
-
-      const data = await api.get(
-        `/api/owner/boarding-houses/${house.id}/rooms`,
-        {
-          params,
-        },
-      );
-
-      console.log("Received rooms:", data); // Debug log
+      const data = await getRoomsByHouse(house.id, params);
       setRooms(data);
-    } catch (err) {
-      console.error("Fetch rooms error", err);
+    } catch {
+      setRooms([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters, house.id]);
 
   // Fetch when filters change
   useEffect(() => {
-    console.log("Filters changed:", filters); // Debug log
     fetchRooms();
     setCurrentPage(1);
-  }, [filters, house.id]);
+  }, [fetchRooms]);
 
   /* ================= SEARCH (CLIENT) ================= */
   const filteredRooms = useMemo(() => {
@@ -153,10 +144,14 @@ export default function ViewDetailBoardingHouse({ house, onBack }) {
           </button>
         </div>
 
-        <AddNewRoomModal
+        <RoomFormModal
           open={openAddRoom}
           houseId={house.id}
-          onClose={() => setOpenAddRoom(false)}
+          roomData={editingRoom}
+          onClose={() => {
+            setOpenAddRoom(false);
+            setEditingRoom(null);
+          }}
           onSuccess={fetchRooms}
         />
       </div>
@@ -232,6 +227,24 @@ export default function ViewDetailBoardingHouse({ house, onBack }) {
                         className="text-sm font-medium hover:underline"
                       >
                         View Detail →
+                      </button>
+                    </div>
+
+                    <div className="flex justify-between">
+                      <button
+                        onClick={() => setSelectedRoomId(room.id)}
+                        className="text-sm font-medium hover:underline"
+                      >
+                        View Detail →
+                      </button>
+                      <button
+                        onClick={() => {
+                          setEditingRoom(room);
+                          setOpenAddRoom(true);
+                        }}
+                        className="px-4 py-2 text-sm font-medium hover:underline rounded-md ml-2"
+                      >
+                        Edit Room
                       </button>
                     </div>
                   </div>

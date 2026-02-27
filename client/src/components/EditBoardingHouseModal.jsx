@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import api from "../server/api";
-import { toast } from "react-hot-toast";
+import { updateBoardingHouse } from "../services/boardingHouse";
+import toast from "react-hot-toast";
 
 export default function EditBoardingHouseModal({
   open,
@@ -13,9 +13,10 @@ export default function EditBoardingHouseModal({
     address: "",
     electricFee: "",
     waterFee: "",
-    imageUrl: "",
+    image: null,
+    preview: "",
   });
-  const [uploadingImage, setUploadingImage] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (house) {
@@ -25,7 +26,8 @@ export default function EditBoardingHouseModal({
         address: house.address,
         electricFee: house.electricFee,
         waterFee: house.waterFee,
-        imageUrl: house.imageUrl || "",
+        image: null,
+        preview: house.imageUrl || "",
       });
     }
   }, [house]);
@@ -35,41 +37,40 @@ export default function EditBoardingHouseModal({
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setForm({
+        ...form,
+        image: file,
+        preview: URL.createObjectURL(file),
+      });
+    }
+  };
 
   const handleSubmit = async () => {
     try {
-      await api.put(`/api/owner/boarding-houses/${house.id}`, form);
-      toast.success("Updated successfully");
+      const formData = new FormData();
+      formData.append("name", form.name);
+      formData.append("address", form.address);
+      formData.append("electricFee", form.electricFee);
+      formData.append("waterFee", form.waterFee);
+
+      // 👇 chỉ gửi file nếu người dùng chọn ảnh mới
+      if (form.image) {
+        formData.append("image", form.image);
+      }
+      setLoading(true);
+      await updateBoardingHouse(house.id, formData);
+
+      toast.success("Updated boarding house successfully");
       onSuccess();
       onClose();
     } catch (err) {
       console.error(err);
-      toast.error("Update failed");
-    }
-  };
-
-  const handleUploadHouseImage = async (file) => {
-    if (!file) return;
-
-    try {
-      setUploadingImage(true);
-      const body = new FormData();
-      body.append("image", file);
-      const result = await api.post(
-        "/api/owner/uploads/image?target=boarding-house",
-        body,
-      );
-
-      if (!result?.url) {
-        throw new Error("Upload completed but URL was not returned");
-      }
-
-      setForm((prev) => ({ ...prev, imageUrl: result.url }));
-      toast.success("Image uploaded successfully");
-    } catch (error) {
-      toast.error(error.message || "Image upload failed");
+      toast.error("Update boarding house failed");
     } finally {
-      setUploadingImage(false);
+      setLoading(false);
     }
   };
 
@@ -113,21 +114,19 @@ export default function EditBoardingHouseModal({
         />
 
         <div>
-          <label className="block text-sm font-medium mb-1">Image</label>
+          <label className="block mb-1 font-medium">Boarding House Image</label>
           <input
             type="file"
             accept="image/*"
-            onChange={(e) => handleUploadHouseImage(e.target.files?.[0])}
-            className="w-full border px-3 py-2 rounded"
+            onChange={handleImageChange}
+            className="w-full border px-3 py-2 rounded bg-white"
           />
-          {uploadingImage && (
-            <p className="text-xs text-blue-600 mt-1">Uploading image...</p>
-          )}
-          {form.imageUrl && (
+
+          {form.preview && (
             <img
-              src={form.imageUrl}
-              alt="Boarding house preview"
-              className="mt-2 h-28 w-full object-cover rounded border"
+              src={form.preview}
+              alt="preview"
+              className="mt-3 w-full h-40 object-cover rounded"
             />
           )}
         </div>
@@ -138,9 +137,9 @@ export default function EditBoardingHouseModal({
           </button>
           <button
             onClick={handleSubmit}
-            className="px-4 py-2 bg-blue-500 text-white rounded"
+            className="bg-blue-600 text-white px-4 py-2 rounded"
           >
-            Save
+            {loading ? "Saving..." : "Save"}
           </button>
         </div>
       </div>

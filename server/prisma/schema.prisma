@@ -133,6 +133,7 @@ model Invoice {
   id           Int           @id @default(autoincrement())
   roomId       Int
   tenantId     Int
+  imageUrl     String?
   roomPrice    Float
   electricCost Float
   waterCost    Float
@@ -152,7 +153,7 @@ model Invoice {
 
 model Payment {
   id         Int            @id @default(autoincrement())
-  invoiceId  Int
+  invoiceId  Int         
   method     Payment_method
   amount     Float
   proofImage String?
@@ -296,3 +297,4 @@ enum Subscription_status {
   CANCELED
   EXPIRED
 }
+

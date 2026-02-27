@@ -9,6 +9,7 @@ function Navbar({
   onAvatarClick,
   user,
   onProfileClick,
+  notificationCount = 0,
 }) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
@@ -77,9 +78,11 @@ function Navbar({
               aria-label="Notifications"
             >
               <FaBell className="h-5 w-5 sm:h-6 sm:w-6 md:h-6 md:w-6" />
-              <span className="absolute top-1 sm:top-1.5 -right-0.5 bg-linear-to-r from-red-600 to-red-500 text-white text-xs rounded-full w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center font-bold shadow-md">
-                3
-              </span>
+              {notificationCount > 0 && (
+                <span className="absolute top-1 sm:top-1.5 -right-0.5 bg-linear-to-r from-red-600 to-red-500 text-white text-xs rounded-full w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center font-bold shadow-md">
+                  {notificationCount > 99 ? "99+" : notificationCount}
+                </span>
+              )}
             </button>
 
             {/* Divider */}

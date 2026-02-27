@@ -1,8 +1,10 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 import { useEffect, useState } from "react";
 import SearchInput from "./ui/SearchInput.jsx";
 import Pagination from "./ui/Pagination.jsx";
-import api from "../server/api.js";
+import {
+  getBoardingHouses,
+  deleteBoardingHouseByName,
+} from "../services/boardingHouse.js";
 import AddNewBoardingHouseModal from "./AddNewBoardingHouseModal.jsx";
 import RoomManagement from "./ViewDetailBoardingHouse.jsx";
 import DeleteHouseModal from "./DeleteHouseModal.jsx";
@@ -36,14 +38,8 @@ export default function BoardingHouseManagement({ ownerId }) {
 
     try {
       setLoading(true);
-      const query = search ? `?search=${encodeURIComponent(search)}` : "";
-      const response = await api.get(`/api/owner/boarding-houses${query}`);
-
-      if (!response || !Array.isArray(response)) {
-        throw new Error("Invalid data format from server");
-      }
-
-      setHouses(response);
+      const data = await getBoardingHouses(search);
+      setHouses(data);
     } catch (error) {
       const message =
         error?.response?.data?.message ||
@@ -68,21 +64,22 @@ export default function BoardingHouseManagement({ ownerId }) {
   }, [search]);
 
   /* =========================
-     DELETE HOUSE
-  ========================= */
-  const handleDelete = async (houseName) => {
-    await api.delete(
-      `/api/owner/boarding-houses?name=${encodeURIComponent(houseName)}`,
-    );
-    fetchHouses();
-  };
-
-  /* =========================
      PAGINATION
   ========================= */
   const totalPages = Math.ceil(houses.length / pageSize);
   const startIndex = (currentPage - 1) * pageSize;
   const paginatedHouses = houses.slice(startIndex, startIndex + pageSize);
+  // Pagination logic
+  //handle delete by name
+  const handleDelete = async (houseName) => {
+    try {
+      await deleteBoardingHouseByName(houseName);
+      await fetchHouses();
+    } catch (error) {
+      console.error("Delete error", error);
+      throw error; // 👈 QUAN TRỌNG
+    }
+  };
 
   return (
     <div className="space-y-4">

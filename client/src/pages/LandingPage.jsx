@@ -130,7 +130,10 @@ function LandingPage() {
 
   function Hero() {
     return (
-      <header className="w-full flex flex-col lg:flex-row items-center justify-between gap-8 sm:gap-12 lg:gap-16 pt-24 sm:pt-28 lg:pt-32 pb-16 sm:pb-20 lg:pb-24 px-4 sm:px-6 md:px-10 bg-linear-to-br from-blue-50 via-indigo-50 to-white min-h-screen mt-16 sm:mt-20">
+      <header
+        id="home"
+        className="w-full flex flex-col lg:flex-row items-center justify-between gap-8 sm:gap-12 lg:gap-16 pt-24 sm:pt-28 lg:pt-32 pb-16 sm:pb-20 lg:pb-24 px-4 sm:px-6 md:px-10 bg-linear-to-br from-blue-50 via-indigo-50 to-white min-h-screen"
+      >
         <div className="flex-1 pr-0 lg:pr-8 mb-8 lg:mb-0 text-center lg:text-left w-full">
           <h1 className="text-2xl xs:text-3xl sm:text-4xl lg:text-5xl xl:text-6xl leading-tight mb-3 sm:mb-4 text-slate-900 font-bold">
             Smart & Efficient

@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
-import api from "../server/api";
+import {
+  removeTenantFromRoom,
+  searchTenantsInRoom,
+} from "../services/boardingHouse";
 import { toast } from "react-hot-toast";
 
 export default function RemoveTenantModal({
@@ -23,9 +26,7 @@ export default function RemoveTenantModal({
     const timer = setTimeout(async () => {
       try {
         setSearching(true);
-        const res = await api.get(`/api/owner/rooms/${roomId}/tenants/search`, {
-          params: { query: searchQuery },
-        });
+        const res = await searchTenantsInRoom(roomId, searchQuery.trim());
         setSuggestions(res);
       } catch (err) {
         console.error(err);
@@ -51,9 +52,7 @@ export default function RemoveTenantModal({
 
     try {
       setLoading(true);
-      await api.delete(
-        `/api/owner/rooms/${roomId}/tenants/${selectedTenant.id}`,
-      );
+      await removeTenantFromRoom(roomId, selectedTenant.id);
       toast.success(`${selectedTenant.fullName} removed from room`);
       onRemoved();
       onClose();

@@ -63,10 +63,8 @@ export const resetPassword = async (email, otp, newPassword) => {
 
 export const loginWithGoogle = () => {
   // Implementation for Google login
-  console.log("Google login not implemented");
 };
 
 export const loginWithFacebook = () => {
   // Implementation for Facebook login
-  console.log("Facebook login not implemented");
 };

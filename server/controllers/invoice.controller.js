@@ -1,6 +1,7 @@
 import Stripe from "stripe";
 import { prisma } from "../lib/prisma.js";
 import { sendInvoiceEmail } from "../lib/mailer.js";
+import { uploadSingle } from "../lib/uploadToCloudinary.js";
 
 const getStripeClient = () => {
   const secretKey = process.env.STRIPE_SECRET_KEY;
@@ -685,5 +686,263 @@ export const deleteInvoice = async (req, res) => {
   } catch (error) {
     console.error("DELETE INVOICE ERROR:", error);
     res.status(500).json({ message: "Delete invoice failed" });
+  }
+};
+
+// ===== Backward-compatible exports for existing routes =====
+
+export const previewInvoice = async (req, res) => {
+  try {
+    const roomId = Number(req.params.id);
+    if (Number.isNaN(roomId)) {
+      return res.status(400).json({ message: "Invalid room id" });
+    }
+
+    const now = new Date();
+    const room = await prisma.room.findUnique({
+      where: { id: roomId },
+      include: {
+        house: true,
+        roomServices: { include: { service: true } },
+        RentalContract: {
+          where: {
+            OR: [{ endDate: null }, { endDate: { gte: now } }],
+          },
+          include: { Tenant: true },
+        },
+      },
+    });
+
+    if (!room) return res.status(404).json({ message: "Room not found" });
+
+    const numberOfTenants = room.RentalContract.length;
+    if (numberOfTenants === 0) {
+      return res.status(400).json({ message: "No active rental contract" });
+    }
+
+    const electricCost =
+      (Number(room.electricMeterAfter || 0) -
+        Number(room.electricMeterNow || 0)) *
+      Number(room.house?.electricFee || 0);
+
+    const waterCost =
+      (Number(room.waterMeterAfter || 0) - Number(room.waterMeterNow || 0)) *
+      Number(room.house?.waterFee || 0);
+
+    const services = room.roomServices.map((rs) => {
+      const quantity = Number(rs.quantity || 1);
+      const unitPrice = Number(rs.service?.price || rs.price || 0);
+      const total = Number(rs.totalPrice ?? unitPrice * quantity);
+
+      return {
+        name: rs.service?.name || "Service",
+        price: unitPrice,
+        quantity,
+        total,
+      };
+    });
+
+    const serviceCost = services.reduce(
+      (sum, s) => sum + Number(s.total || 0),
+      0,
+    );
+    const roomPrice = Number(room.price || 0);
+    const total = roomPrice + electricCost + waterCost + serviceCost;
+
+    return res.json({
+      roomPrice,
+      electricCost,
+      waterCost,
+      serviceCost,
+      numberOfTenants,
+      total,
+      services,
+    });
+  } catch (err) {
+    console.error("PREVIEW INVOICE ERROR:", err);
+    return res
+      .status(500)
+      .json({ message: err.message || "Preview invoice failed" });
+  }
+};
+
+export const sendInvoice = async (req, res) => makeInvoice(req, res);
+
+export const createInvoiceAndSend = async (req, res) => makeInvoice(req, res);
+
+export const uploadInvoiceImage = async (req, res) => {
+  try {
+    const invoiceId = Number(req.params.id);
+    if (Number.isNaN(invoiceId)) {
+      return res.status(400).json({ message: "Invalid invoice id" });
+    }
+
+    if (!req.file?.buffer) {
+      return res.status(400).json({ message: "Image file is required" });
+    }
+
+    const imageUrl = await uploadSingle(req.file.buffer, "invoices");
+    const invoice = await prisma.invoice.update({
+      where: { id: invoiceId },
+      data: { imageUrl },
+    });
+
+    return res.json(invoice);
+  } catch (err) {
+    console.error("UPLOAD INVOICE IMAGE ERROR:", err);
+    return res.status(500).json({ message: "Upload invoice image failed" });
+  }
+};
+
+export const createStripeSession = async (req, res) => {
+  try {
+    const invoiceId = Number(req.body?.invoiceId);
+    if (Number.isNaN(invoiceId)) {
+      return res.status(400).json({ message: "Invalid invoice id" });
+    }
+
+    const invoice = await prisma.invoice.findUnique({
+      where: { id: invoiceId },
+      include: {
+        Room: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    if (!invoice) return res.status(404).json({ message: "Invoice not found" });
+
+    const stripe = getStripeClient();
+    if (!stripe) {
+      return res.status(500).json({ message: "Stripe is not configured" });
+    }
+
+    const url = await createStripePaymentLink({
+      stripe,
+      invoiceId: invoice.id,
+      roomId: invoice.roomId,
+      roomName: invoice.Room?.name || `Room ${invoice.roomId}`,
+      month: invoice.month,
+      year: invoice.year,
+      totalAmount: invoice.totalAmount,
+    });
+
+    if (!url) {
+      return res
+        .status(500)
+        .json({ message: "Stripe payment link is not available" });
+    }
+
+    return res.json({ url });
+  } catch (err) {
+    console.error("CREATE STRIPE SESSION ERROR:", err);
+    return res
+      .status(500)
+      .json({ message: err.message || "Create Stripe session failed" });
+  }
+};
+
+export const confirmPayment = async (req, res) => {
+  try {
+    const invoiceId = Number(req.params.id);
+    const { method, amount } = req.body;
+
+    const ALLOWED_METHODS = ["QR_TRANSFER", "CASH", "GATEWAY"];
+    if (!ALLOWED_METHODS.includes(method)) {
+      return res.status(400).json({
+        message: `Invalid payment method. Allowed: ${ALLOWED_METHODS.join(", ")}`,
+      });
+    }
+
+    const invoice = await prisma.invoice.findUnique({
+      where: { id: invoiceId },
+      include: {
+        payment: true,
+      },
+    });
+
+    if (!invoice) {
+      return res.status(404).json({ message: "Invoice not found" });
+    }
+
+    let proofImageUrl = null;
+    if (req.file && method === "QR_TRANSFER") {
+      proofImageUrl = await uploadSingle(req.file.buffer, "payment_proof");
+    }
+
+    const totalPaid = invoice.payment
+      .filter((p) => p.confirmed)
+      .reduce((sum, p) => sum + Number(p.amount || 0), 0);
+
+    const remaining = Number(invoice.totalAmount || 0) - totalPaid;
+    const payAmount = amount ? Number(amount) : remaining;
+
+    if (payAmount <= 0) {
+      return res.status(400).json({
+        message: "Payment amount must be greater than 0",
+      });
+    }
+
+    if (payAmount > remaining) {
+      return res.status(400).json({
+        message: "Payment exceeds remaining amount",
+        remaining,
+      });
+    }
+
+    const payment = await prisma.payment.create({
+      data: {
+        invoiceId,
+        method,
+        amount: payAmount,
+        proofImage: proofImageUrl,
+        confirmed: false,
+      },
+    });
+
+    return res.json({
+      message: "Payment submitted successfully",
+      invoiceId,
+      payment,
+      remainingBefore: remaining,
+      remainingAfter: remaining - payAmount,
+      status: "PENDING_CONFIRMATION",
+    });
+  } catch (err) {
+    console.error("CONFIRM PAYMENT ERROR:", err);
+    return res.status(500).json({
+      message: "Payment confirmation failed",
+      error: err.message,
+    });
+  }
+};
+
+export const getInvoiceDetails = async (req, res) => {
+  try {
+    const invoiceId = Number(req.params.id);
+
+    const invoice = await prisma.invoice.findUnique({
+      where: { id: invoiceId },
+      include: {
+        Room: {
+          include: {
+            house: true,
+          },
+        },
+        payment: true,
+      },
+    });
+
+    if (!invoice) {
+      return res.status(404).json({ message: "Invoice not found" });
+    }
+
+    return res.json(invoice);
+  } catch (err) {
+    console.error("GET INVOICE DETAILS ERROR:", err);
+    return res.status(500).json({ message: "Fetch invoice details failed" });
   }
 };

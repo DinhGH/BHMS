@@ -7,6 +7,7 @@ import {
   updateService,
   deleteService,
 } from "../services/api";
+import useConfirmDialog from "../hooks/useConfirmDialog";
 
 // ── Validation ────────────────────────────────────────────────────────────────
 function validateServiceForm(formData) {
@@ -47,6 +48,7 @@ function validateServiceForm(formData) {
 
 // ── Main Component ────────────────────────────────────────────────────────────
 function ServiceManagement() {
+  const { confirm, confirmDialog } = useConfirmDialog();
   const [allServices, setAllServices] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -482,6 +484,8 @@ function ServiceManagement() {
             </div>
           ))}
       </div>
+
+      {confirmDialog}
     </div>
   );
 }

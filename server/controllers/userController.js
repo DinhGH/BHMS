@@ -79,7 +79,11 @@ export const updateMyProfile = async (req, res) => {
       return res.status(400).json({ message: "Full name must be a string" });
     }
 
-    if (imageUrl !== undefined && imageUrl !== null && typeof imageUrl !== "string") {
+    if (
+      imageUrl !== undefined &&
+      imageUrl !== null &&
+      typeof imageUrl !== "string"
+    ) {
       return res.status(400).json({ message: "Image URL must be a string" });
     }
 
@@ -111,5 +115,48 @@ export const updateMyProfile = async (req, res) => {
   } catch (error) {
     console.error("Update profile error:", error);
     return res.status(500).json({ message: "Failed to update profile" });
+  }
+};
+
+export const getMyNotifications = async (req, res) => {
+  try {
+    const userId = Number(req.user?.id);
+    if (!Number.isFinite(userId) || userId <= 0) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const notifications = await prisma.notification.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return res.json(notifications);
+  } catch (error) {
+    console.error("Get notifications error:", error);
+    return res.status(500).json({ message: "Failed to get notifications" });
+  }
+};
+
+export const markMyNotificationsRead = async (req, res) => {
+  try {
+    const userId = Number(req.user?.id);
+    if (!Number.isFinite(userId) || userId <= 0) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const result = await prisma.notification.updateMany({
+      where: { userId, isRead: false },
+      data: { isRead: true },
+    });
+
+    return res.json({
+      success: true,
+      updatedCount: result.count,
+    });
+  } catch (error) {
+    console.error("Mark notifications read error:", error);
+    return res
+      .status(500)
+      .json({ message: "Failed to mark notifications as read" });
   }
 };

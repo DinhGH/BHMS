@@ -1,7 +1,11 @@
 import { FaHome } from "react-icons/fa";
 import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
-import api from "../server/api.js";
+import {
+  checkBoardingHouseByName,
+  createBoardingHouse,
+  updateBoardingHouse,
+} from "../services/boardingHouse";
 
 export default function AddNewBoardingHouseModal({ open, onClose, onSuccess }) {
   const [form, setForm] = useState({
@@ -9,13 +13,12 @@ export default function AddNewBoardingHouseModal({ open, onClose, onSuccess }) {
     address: "",
     electricFee: "",
     waterFee: "",
-    imageUrl: "",
+    image: null,
   });
 
   const [errors, setErrors] = useState({});
   const [isValid, setIsValid] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [uploadingImage, setUploadingImage] = useState(false);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -58,60 +61,35 @@ export default function AddNewBoardingHouseModal({ open, onClose, onSuccess }) {
     try {
       setLoading(true);
 
-      const payload = {
-        name: form.name.trim(),
-        address: form.address.trim(),
-        electricFee: form.electricFee ? Number(form.electricFee) : 0,
-        waterFee: form.waterFee ? Number(form.waterFee) : 0,
-        imageUrl: form.imageUrl?.trim() || null,
-      };
-
-      const existed = await api.get(
-        `/api/owner/boarding-houses/check?name=${encodeURIComponent(payload.name)}`,
+      const formData = new FormData();
+      formData.append("name", form.name.trim());
+      formData.append("address", form.address.trim());
+      formData.append(
+        "electricFee",
+        form.electricFee ? Number(form.electricFee) : 0,
       );
+      formData.append("waterFee", form.waterFee ? Number(form.waterFee) : 0);
+
+      if (form.image) {
+        formData.append("image", form.image);
+      }
+
+      const existed = await checkBoardingHouseByName(form.name.trim());
 
       if (existed?.id) {
-        await api.put(`/api/owner/boarding-houses/${existed.id}`, payload);
+        await updateBoardingHouse(existed.id, formData);
         toast.success("Boarding house updated successfully");
       } else {
-        await api.post("/api/owner/boarding-houses", payload);
+        await createBoardingHouse(formData);
         toast.success("Boarding house added successfully");
       }
 
       onSuccess();
       onClose();
     } catch (err) {
-      console.error(err);
-      toast.error("Something went wrong. Please try again.");
+      toast.error(err.message || "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleUploadHouseImage = async (file) => {
-    if (!file) return;
-
-    try {
-      setUploadingImage(true);
-      const body = new FormData();
-      body.append("image", file);
-
-      const result = await api.post(
-        "/api/owner/uploads/image?target=boarding-house",
-        body,
-      );
-
-      if (!result?.url) {
-        throw new Error("Upload completed but URL was not returned");
-      }
-
-      setForm((prev) => ({ ...prev, imageUrl: result.url }));
-      toast.success("Image uploaded successfully");
-    } catch (err) {
-      console.error(err);
-      toast.error(err.message || "Failed to upload image");
-    } finally {
-      setUploadingImage(false);
     }
   };
 
@@ -128,7 +106,7 @@ export default function AddNewBoardingHouseModal({ open, onClose, onSuccess }) {
         </div>
 
         <h2 className="text-2xl font-semibold mb-6 text-center">
-          Add / Update Boarding House
+          Add Boarding House
         </h2>
 
         {/* Name */}
@@ -191,25 +169,15 @@ export default function AddNewBoardingHouseModal({ open, onClose, onSuccess }) {
 
         {/* Image */}
         <div className="mb-6">
-          <label className="block mb-1 font-medium">Image</label>
+          <label className="block mb-1 font-medium">Boarding House Image</label>
           <input
             type="file"
             accept="image/*"
-            onChange={(e) => handleUploadHouseImage(e.target.files?.[0])}
-            className="w-full border p-2 rounded"
+            onChange={(e) => setForm({ ...form, image: e.target.files[0] })}
+            className="w-full border p-2 rounded bg-white"
           />
-          {uploadingImage && (
-            <p className="text-blue-500 text-sm mt-1">Uploading image...</p>
-          )}
-          {form.imageUrl && (
-            <img
-              src={form.imageUrl}
-              alt="Boarding house preview"
-              className="mt-2 h-28 w-full object-cover rounded border"
-            />
-          )}
-          {errors.imageUrl && (
-            <p className="text-red-500 text-sm">{errors.imageUrl}</p>
+          {errors.image && (
+            <p className="text-red-500 text-sm">{errors.image}</p>
           )}
         </div>
 
@@ -220,7 +188,7 @@ export default function AddNewBoardingHouseModal({ open, onClose, onSuccess }) {
             className={`px-4 py-2 rounded text-white ${
               isValid && !loading
                 ? "bg-blue-600 hover:bg-blue-700"
-                : "bg-gray-400 cursor-not-allowed"
+                : "bg-blue-500 cursor-not-allowed"
             }`}
           >
             {loading ? "Saving..." : "Save"}

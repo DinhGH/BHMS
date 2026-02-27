@@ -112,8 +112,28 @@ export const deleteService = async (serviceId) => {
 export const getNotifications = async () => {
   const token = localStorage.getItem("token");
   const headers = token ? { Authorization: `Bearer ${token}` } : {};
-  const res = await fetch(`${API_BASE_URL}/api/notifications`, { headers });
+  const res = await fetch(`${API_BASE_URL}/api/user/notifications`, {
+    headers,
+  });
   if (!res.ok) throw new Error("Failed to fetch notifications");
+  return res.json();
+};
+
+export const markNotificationsRead = async () => {
+  const token = localStorage.getItem("token");
+  const headers = token
+    ? {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      }
+    : { "Content-Type": "application/json" };
+
+  const res = await fetch(`${API_BASE_URL}/api/user/notifications/read-all`, {
+    method: "PATCH",
+    headers,
+  });
+
+  if (!res.ok) throw new Error("Failed to mark notifications as read");
   return res.json();
 };
 
@@ -124,18 +144,25 @@ async function request(url, options = {}) {
     ...(options.headers || {}),
   };
 
+  // ✅ QUAN TRỌNG: Không set Content-Type cho FormData
+  // Browser tự động set với boundary đúng
   if (!(options.body instanceof FormData)) {
     headers["Content-Type"] = "application/json";
+  } else {
+    // ✅ Xóa Content-Type nếu có để browser tự set
+    delete headers["Content-Type"];
   }
 
   if (token) {
     headers.Authorization = `Bearer ${token}`;
   }
 
-  const res = await fetch(`${API_BASE_URL}${url}`, {
+  const config = {
     ...options,
     headers,
-  });
+  };
+
+  const res = await fetch(`${API_BASE_URL}${url}`, config);
 
   if (!res.ok) {
     let errorData = {};
@@ -156,31 +183,72 @@ async function request(url, options = {}) {
 }
 
 const api = {
-  get: (url) => request(url),
+  get: (url, config = {}) => {
+    let finalUrl = url;
+    if (config.params) {
+      const params = new URLSearchParams();
+      Object.keys(config.params).forEach((key) => {
+        const value = config.params[key];
+        if (value !== undefined && value !== null) {
+          params.append(key, value);
+        }
+      });
 
-  post: (url, data) =>
-    request(url, {
-      method: "POST",
-      body: JSON.stringify(data),
-    }),
+      const queryString = params.toString();
+      if (queryString) {
+        finalUrl = `${url}?${queryString}`;
+      }
+    }
 
-  put: (url, data) =>
-    request(url, {
-      method: "PUT",
-      body: JSON.stringify(data),
-    }),
+    return request(finalUrl, {
+      method: "GET",
+      ...config,
+    });
+  },
+  patch: (url, data, config = {}) => {
+    const isFormData = data instanceof FormData;
 
-  patch: (url, data) =>
-    request(url, {
+    return request(url, {
       method: "PATCH",
-      body: JSON.stringify(data),
-    }),
+      body: isFormData ? data : JSON.stringify(data),
+      ...config,
+    });
+  },
+  post: (url, data, config = {}) => {
+    const isFormData = data instanceof FormData;
+
+    return request(url, {
+      method: "POST",
+      body: isFormData ? data : JSON.stringify(data),
+      ...config,
+    });
+  },
+
+  put: (url, data, config = {}) => {
+    const isFormData = data instanceof FormData;
+
+    return request(url, {
+      method: "PUT",
+      body: isFormData ? data : JSON.stringify(data),
+      ...config,
+    });
+  },
 
   delete: (url, data) =>
     request(url, {
       method: "DELETE",
-      body: JSON.stringify(data),
+      body: data ? JSON.stringify(data) : undefined,
     }),
+};
+
+export const getOwnerDashboard = async (year) => {
+  const params = new URLSearchParams();
+  if (year) {
+    params.set("year", String(year));
+  }
+
+  const query = params.toString();
+  return api.get(`/api/owner/dashboard${query ? `?${query}` : ""}`);
 };
 
 export default api;
@@ -258,7 +326,7 @@ export async function deleteReport(reportId) {
 export async function createReportAdmin(payload) {
   const res = await fetch(`${API_BASE_URL}/api/report-admins`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...withAuthHeaders() },
     credentials: "include",
     body: JSON.stringify(payload),
   });
@@ -297,6 +365,7 @@ export async function getReportAdmins({
 
   const url = `${API_BASE_URL}/api/report-admins?${params.toString()}`;
   const res = await fetch(url, {
+    headers: { ...withAuthHeaders() },
     credentials: "include",
   });
   if (!res.ok) throw new Error("Failed to fetch admin reports");
@@ -306,7 +375,7 @@ export async function getReportAdmins({
 export async function updateReportAdmin(reportId, payload) {
   const res = await fetch(`${API_BASE_URL}/api/report-admins/${reportId}`, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...withAuthHeaders() },
     credentials: "include",
     body: JSON.stringify(payload),
   });
@@ -318,7 +387,7 @@ export async function updateReportAdmin(reportId, payload) {
 export async function deleteReportAdmin(reportId, payload) {
   const res = await fetch(`${API_BASE_URL}/api/report-admins/${reportId}`, {
     method: "DELETE",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...withAuthHeaders() },
     credentials: "include",
     body: JSON.stringify(payload || {}),
   });

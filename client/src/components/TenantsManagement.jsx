@@ -7,6 +7,7 @@ import {
   updateTenant,
   deleteTenant,
 } from "../services/api";
+import useConfirmDialog from "../hooks/useConfirmDialog";
 
 // ── Validation ────────────────────────────────────────────────────────────────
 function validateTenantForm(formData) {
@@ -57,6 +58,7 @@ function validateTenantForm(formData) {
 
 // ── Main Component ────────────────────────────────────────────────────────────
 function TenantsManagement() {
+  const { confirm, confirmDialog } = useConfirmDialog();
   const [tenants, setTenants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -162,6 +164,14 @@ function TenantsManagement() {
       };
 
       if (editingId) {
+        const agreed = await confirm({
+          title: "Update tenant",
+          message: "Are you sure you want to update this tenant information?",
+          confirmText: "Update",
+          variant: "default",
+        });
+        if (!agreed) return;
+
         await updateTenant(editingId, payload);
         toast.success(`"${payload.fullName}" updated successfully.`);
       } else {
@@ -233,6 +243,12 @@ function TenantsManagement() {
       } catch (err) {
         toast.error(err.message || "Unable to delete.");
       }
+      alert("Deleted successfully");
+      fetchTenants();
+      setSelectedIds([]);
+    } catch (err) {
+      console.error("Bulk delete error:", err);
+      alert("Error: " + (err.message || "Unable to delete"));
     }
   };
 
@@ -557,6 +573,8 @@ function TenantsManagement() {
           </div>
         )}
       </div>
+
+      {confirmDialog}
     </div>
   );
 }
