@@ -76,6 +76,7 @@ export default function ReportAdmin() {
     try {
       await api.patch(`/api/report-admins/${reportId}/status`, {
         status: newStatus,
+        confirm: true,
       });
       toast.success(`Status updated to ${newStatus}.`);
     } catch (error) {
