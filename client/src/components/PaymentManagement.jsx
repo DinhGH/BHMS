@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import toast from "react-hot-toast";
 import Loading from "./loading.jsx";
 import { getPayments } from "../services/api";
 
@@ -90,25 +91,40 @@ function PaymentManagement() {
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [selectedPayment, setSelectedPayment] = useState(null);
 
   const itemsPerPage = 5;
 
+  const loadPayments = (isRefresh = false) => {
+    setLoading(true);
+    getPayments()
+      .then((data) => {
+        setPayments(Array.isArray(data) ? data : []);
+        if (isRefresh) toast.success("Payments refreshed.");
+      })
+      .catch((err) => {
+        toast.error(err?.message || "Failed to load payments.");
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  };
+
   useEffect(() => {
     let isMounted = true;
+    setLoading(true);
     getPayments()
       .then((data) => {
         if (!isMounted) return;
         setPayments(Array.isArray(data) ? data : []);
-        setLoading(false);
       })
       .catch((err) => {
         if (!isMounted) return;
-        setError(err?.message || "Failed to load payments");
-        setLoading(false);
+        toast.error(err?.message || "Failed to load payments.");
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false);
       });
-
     return () => {
       isMounted = false;
     };
@@ -177,26 +193,13 @@ function PaymentManagement() {
 
   const handleRefresh = () => {
     setCurrentPage(1);
-    setLoading(true);
-    setError("");
-
-    getPayments()
-      .then((data) => {
-        setPayments(Array.isArray(data) ? data : []);
-        setLoading(false);
-      })
-      .catch((err) => {
-        setError(err?.message || "Failed to load payments");
-        setLoading(false);
-      });
+    loadPayments(true);
   };
 
   const getPageNumbers = () => {
     const pages = [];
     if (totalPages <= 7) {
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i);
-      }
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
     } else {
       if (currentPage <= 3) {
         pages.push(1, 2, 3, 4, "...", totalPages);
@@ -316,30 +319,15 @@ function PaymentManagement() {
                         <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase">
                           Payment Status
                         </div>
-                        <button
-                          onClick={() => handleFilterChange("all")}
-                          className={`w-full text-left px-3 py-2 rounded-md hover:bg-gray-100 transition-colors ${statusFilter === "all" ? "bg-blue-50 text-blue-700 font-medium" : "text-gray-700"}`}
-                        >
-                          All
-                        </button>
-                        <button
-                          onClick={() => handleFilterChange("Paid")}
-                          className={`w-full text-left px-3 py-2 rounded-md hover:bg-gray-100 transition-colors ${statusFilter === "Paid" ? "bg-blue-50 text-blue-700 font-medium" : "text-gray-700"}`}
-                        >
-                          Paid
-                        </button>
-                        <button
-                          onClick={() => handleFilterChange("Pending")}
-                          className={`w-full text-left px-3 py-2 rounded-md hover:bg-gray-100 transition-colors ${statusFilter === "Pending" ? "bg-blue-50 text-blue-700 font-medium" : "text-gray-700"}`}
-                        >
-                          Pending
-                        </button>
-                        <button
-                          onClick={() => handleFilterChange("Overdue")}
-                          className={`w-full text-left px-3 py-2 rounded-md hover:bg-gray-100 transition-colors ${statusFilter === "Overdue" ? "bg-blue-50 text-blue-700 font-medium" : "text-gray-700"}`}
-                        >
-                          Overdue
-                        </button>
+                        {["all", "Paid", "Pending", "Overdue"].map((f) => (
+                          <button
+                            key={f}
+                            onClick={() => handleFilterChange(f)}
+                            className={`w-full text-left px-3 py-2 rounded-md hover:bg-gray-100 transition-colors ${statusFilter === f ? "bg-blue-50 text-blue-700 font-medium" : "text-gray-700"}`}
+                          >
+                            {f === "all" ? "All" : f}
+                          </button>
+                        ))}
                       </div>
                     </div>
                   </>
@@ -371,16 +359,16 @@ function PaymentManagement() {
         </div>
 
         <Loading isLoading={loading} />
-        {!loading && !error && (
+        {!loading && (
           <div className="mb-4 text-sm text-gray-600">
-            Showing {startIndex + 1} -{" "}
+            Showing {filteredPayments.length === 0 ? 0 : startIndex + 1} –{" "}
             {Math.min(endIndex, filteredPayments.length)} of{" "}
             {filteredPayments.length} results
           </div>
         )}
 
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-          {loading || error || currentPayments.length === 0 ? (
+          {loading || currentPayments.length === 0 ? (
             <div className="p-12 text-center">
               <svg
                 className="mx-auto h-12 w-12 text-gray-400"
@@ -396,48 +384,36 @@ function PaymentManagement() {
                 />
               </svg>
               <h3 className="mt-2 text-sm font-medium text-gray-900">
-                {loading
-                  ? "Loading payments..."
-                  : error
-                    ? "Failed to load payments"
-                    : "No results found"}
+                {loading ? "Loading payments..." : "No results found"}
               </h3>
               <p className="mt-1 text-sm text-gray-500">
-                {error
-                  ? "Please try again later"
-                  : "Try adjusting your filters or search term"}
+                {!loading && "Try adjusting your filters or search term"}
               </p>
             </div>
           ) : (
             <>
+              {/* Desktop table */}
               <div className="hidden md:block overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-gray-50 border-b border-gray-200">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
-                        Tenant
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
-                        Payment ID
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
-                        Date Created
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
-                        Image
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
-                        Amount
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
-                        Method
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
-                        Status
-                      </th>
-                      <th className="px-6 py-3 text-right text-xs font-semibold text-gray-700 uppercase">
-                        Action
-                      </th>
+                      {[
+                        "Tenant",
+                        "Payment ID",
+                        "Date Created",
+                        "Image",
+                        "Amount",
+                        "Method",
+                        "Status",
+                        "Action",
+                      ].map((h) => (
+                        <th
+                          key={h}
+                          className={`px-6 py-3 text-xs font-semibold text-gray-700 uppercase ${h === "Action" ? "text-right" : "text-left"}`}
+                        >
+                          {h}
+                        </th>
+                      ))}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
@@ -548,6 +524,7 @@ function PaymentManagement() {
                 </table>
               </div>
 
+              {/* Mobile cards */}
               <div className="md:hidden divide-y divide-gray-200">
                 {currentPayments.map((payment) => (
                   <div
@@ -728,6 +705,7 @@ function PaymentManagement() {
         )}
       </div>
 
+      {/* Detail Modal */}
       {selectedPayment && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import toast from "react-hot-toast";
 import Loading from "./loading.jsx";
 import {
   getTenants,
@@ -8,17 +9,65 @@ import {
 } from "../services/api";
 import useConfirmDialog from "../hooks/useConfirmDialog";
 
+// ── Validation ────────────────────────────────────────────────────────────────
+function validateTenantForm(formData) {
+  const errors = {};
+
+  if (!formData.fullName.trim()) {
+    errors.fullName = "Name is required.";
+  } else if (formData.fullName.trim().length < 2) {
+    errors.fullName = "Name must be at least 2 characters.";
+  } else if (formData.fullName.trim().length > 100) {
+    errors.fullName = "Name must not exceed 100 characters.";
+  }
+
+  if (!formData.email.trim()) {
+    errors.email = "Email is required.";
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
+    errors.email = "Please enter a valid email address.";
+  }
+
+  if (formData.phone && !/^[0-9+\-\s()]{7,15}$/.test(formData.phone.trim())) {
+    errors.phone = "Please enter a valid phone number.";
+  }
+
+  if (formData.age !== "" && formData.age !== null) {
+    const age = parseInt(formData.age);
+    if (isNaN(age)) {
+      errors.age = "Age must be a valid number.";
+    } else if (age < 18) {
+      errors.age = "Age must be at least 18 years old.";
+    } else if (age > 120) {
+      errors.age = "Age must not exceed 120.";
+    }
+  }
+
+  if (formData.roomId !== "" && formData.roomId !== null) {
+    const roomId = parseInt(formData.roomId);
+    if (isNaN(roomId) || roomId < 1) {
+      errors.roomId = "Please enter a valid room ID (≥ 1).";
+    }
+  }
+
+  if (!formData.startDate) {
+    errors.startDate = "Start date is required.";
+  }
+
+  return errors;
+}
+
+// ── Main Component ────────────────────────────────────────────────────────────
 function TenantsManagement() {
   const { confirm, confirmDialog } = useConfirmDialog();
   const [tenants, setTenants] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
+  const [fieldErrors, setFieldErrors] = useState({});
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -31,7 +80,6 @@ function TenantsManagement() {
 
   const itemsPerPage = 10;
 
-  // Fetch tenants
   useEffect(() => {
     fetchTenants();
   }, []);
@@ -41,10 +89,8 @@ function TenantsManagement() {
       setLoading(true);
       const data = await getTenants();
       setTenants(Array.isArray(data) ? data : []);
-      setError(null);
     } catch (err) {
-      console.error("Failed to fetch tenants:", err);
-      setError(err.message || "Failed to load tenants");
+      toast.error(err.message || "Failed to load tenants.");
       setTenants([]);
     } finally {
       setLoading(false);
@@ -74,13 +120,14 @@ function TenantsManagement() {
     currentPage * itemsPerPage,
   );
 
-  // Handle form change
   const handleFormChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    if (fieldErrors[name]) {
+      setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
+    }
   };
 
-  // Reset form
   const resetForm = () => {
     setFormData({
       fullName: "",
@@ -91,39 +138,27 @@ function TenantsManagement() {
       roomId: "",
       startDate: new Date().toISOString().split("T")[0],
     });
+    setFieldErrors({});
     setEditingId(null);
     setShowForm(false);
   };
 
-  // Save tenant (create or update)
   const handleSave = async () => {
+    const errors = validateTenantForm(formData);
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      toast.error("Please fix the highlighted fields before saving.");
+      return;
+    }
+    setFieldErrors({});
+
     try {
-      if (!formData.fullName || !formData.email) {
-        alert("Please fill in required fields: Name, Email");
-        return;
-      }
-
-      const age = parseInt(formData.age) || 0;
-      const roomId = parseInt(formData.roomId);
-
-      // Validate age >= 18
-      if (age < 18) {
-        alert("Age must be at least 18 years old");
-        return;
-      }
-
-      // Validate roomId >= 1
-      if (roomId < 1) {
-        alert("Please select a valid room");
-        return;
-      }
-
       const payload = {
-        fullName: formData.fullName,
-        email: formData.email,
-        phone: formData.phone,
+        fullName: formData.fullName.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone.trim(),
         gender: formData.gender,
-        age: parseInt(formData.age) || 0,
+        age: formData.age !== "" ? parseInt(formData.age) : 0,
         roomId: formData.roomId ? parseInt(formData.roomId) : null,
         startDate: formData.startDate,
       };
@@ -138,42 +173,32 @@ function TenantsManagement() {
         if (!agreed) return;
 
         await updateTenant(editingId, payload);
-        alert("Tenant updated successfully");
+        toast.success(`"${payload.fullName}" updated successfully.`);
       } else {
         await createTenant(payload);
-        alert("Tenant created successfully");
+        toast.success(`"${payload.fullName}" added successfully.`);
       }
 
       fetchTenants();
       resetForm();
     } catch (err) {
-      console.error("Save error:", err);
-      alert("Error: " + (err.message || "Unable to save data"));
+      toast.error(err.message || "Unable to save data.");
     }
   };
 
-  // Delete single tenant
   const handleDelete = async (id) => {
-    const agreed = await confirm({
-      title: "Delete tenant",
-      message: "Are you sure you want to delete this tenant?",
-      confirmText: "Delete",
-      variant: "danger",
-    });
-
-    if (!agreed) return;
-
-    try {
-      await deleteTenant(id);
-      alert("Deleted successfully");
-      fetchTenants();
-    } catch (err) {
-      console.error("Delete error:", err);
-      alert("Error: " + (err.message || "Unable to delete"));
+    const tenant = tenants.find((t) => t.id === id);
+    if (window.confirm("Are you sure you want to delete this tenant?")) {
+      try {
+        await deleteTenant(id);
+        toast.success(`"${tenant?.fullName || "Tenant"}" deleted.`);
+        fetchTenants();
+      } catch (err) {
+        toast.error(err.message || "Unable to delete.");
+      }
     }
   };
 
-  // Edit tenant
   const handleEdit = (tenant) => {
     setFormData({
       fullName: tenant.fullName || "",
@@ -186,49 +211,52 @@ function TenantsManagement() {
         ? new Date(tenant.startDate).toISOString().split("T")[0]
         : new Date().toISOString().split("T")[0],
     });
+    setFieldErrors({});
     setEditingId(tenant.id);
     setShowForm(true);
   };
 
-  // Toggle checkbox
   const handleCheckboxChange = (id) => {
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((cid) => cid !== id) : [...prev, id],
     );
   };
 
-  // Bulk delete
   const handleBulkDelete = async () => {
     if (selectedIds.length === 0) {
-      alert("Select at least one tenant to delete");
+      toast.error("Select at least one tenant to delete.");
       return;
     }
 
-    const agreed = await confirm({
-      title: "Bulk delete tenants",
-      message: `Delete ${selectedIds.length} tenants? This cannot be undone!`,
-      confirmText: "Delete all",
-      variant: "danger",
-    });
-
-    if (!agreed) return;
-
-    try {
-      for (const id of selectedIds) {
-        await deleteTenant(id);
+    if (
+      window.confirm(
+        `Delete ${selectedIds.length} tenants? This cannot be undone!`,
+      )
+    ) {
+      try {
+        for (const id of selectedIds) {
+          await deleteTenant(id);
+        }
+        toast.success(`${selectedIds.length} tenant(s) deleted.`);
+        fetchTenants();
+        setSelectedIds([]);
+      } catch (err) {
+        toast.error(err.message || "Unable to delete.");
       }
       alert("Deleted successfully");
       fetchTenants();
       setSelectedIds([]);
-    } catch (err) {
-      console.error("Bulk delete error:", err);
-      alert("Error: " + (err.message || "Unable to delete"));
     }
   };
 
-  if (loading) {
-    return <Loading isLoading={true} />;
-  }
+  const inputCls = (field) =>
+    `w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 transition ${
+      fieldErrors[field]
+        ? "border-red-400 focus:ring-red-300"
+        : "border-gray-300 focus:ring-blue-500"
+    }`;
+
+  if (loading) return <Loading isLoading={true} />;
 
   return (
     <div className="h-full flex flex-col max-w-7xl mx-auto p-6">
@@ -240,16 +268,8 @@ function TenantsManagement() {
         <p className="text-gray-600">List of all tenants</p>
       </div>
 
-      {/* Error message */}
-      {error && (
-        <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-          {error}
-        </div>
-      )}
-
       {/* Controls */}
       <div className="mb-4 flex flex-wrap gap-4 items-center">
-        {/* Search */}
         <input
           type="text"
           placeholder="Search by name, email, phone..."
@@ -261,7 +281,6 @@ function TenantsManagement() {
           className="flex-1 min-w-60 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
 
-        {/* Filter status */}
         <select
           value={filterStatus}
           onChange={(e) => {
@@ -275,15 +294,16 @@ function TenantsManagement() {
           <option value="inactive">Inactive</option>
         </select>
 
-        {/* Add button */}
         <button
-          onClick={() => setShowForm(!showForm)}
+          onClick={() => {
+            resetForm();
+            setShowForm(!showForm);
+          }}
           className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
         >
           {showForm ? "Cancel" : "+ Add Tenant"}
         </button>
 
-        {/* Bulk delete */}
         {selectedIds.length > 0 && (
           <button
             onClick={handleBulkDelete}
@@ -303,21 +323,28 @@ function TenantsManagement() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Full name */}
             <div>
-              <label className="block text-sm font-semibold mb-1">Name *</label>
+              <label className="block text-sm font-semibold mb-1">
+                Name <span className="text-red-500">*</span>
+              </label>
               <input
                 type="text"
                 name="fullName"
                 value={formData.fullName}
                 onChange={handleFormChange}
                 placeholder="Enter name"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className={inputCls("fullName")}
               />
+              {fieldErrors.fullName && (
+                <p className="mt-1 text-xs text-red-600 font-medium">
+                  {fieldErrors.fullName}
+                </p>
+              )}
             </div>
 
             {/* Email */}
             <div>
               <label className="block text-sm font-semibold mb-1">
-                Email *
+                Email <span className="text-red-500">*</span>
               </label>
               <input
                 type="email"
@@ -325,8 +352,13 @@ function TenantsManagement() {
                 value={formData.email}
                 onChange={handleFormChange}
                 placeholder="user@example.com"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className={inputCls("email")}
               />
+              {fieldErrors.email && (
+                <p className="mt-1 text-xs text-red-600 font-medium">
+                  {fieldErrors.email}
+                </p>
+              )}
             </div>
 
             {/* Phone */}
@@ -338,8 +370,13 @@ function TenantsManagement() {
                 value={formData.phone}
                 onChange={handleFormChange}
                 placeholder="0123456789"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className={inputCls("phone")}
               />
+              {fieldErrors.phone && (
+                <p className="mt-1 text-xs text-red-600 font-medium">
+                  {fieldErrors.phone}
+                </p>
+              )}
             </div>
 
             {/* Gender */}
@@ -349,7 +386,7 @@ function TenantsManagement() {
                 name="gender"
                 value={formData.gender}
                 onChange={handleFormChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className={inputCls("gender")}
               >
                 <option value="OTHER">Other</option>
                 <option value="MALE">Male</option>
@@ -366,8 +403,13 @@ function TenantsManagement() {
                 value={formData.age}
                 onChange={handleFormChange}
                 placeholder="25"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className={inputCls("age")}
               />
+              {fieldErrors.age && (
+                <p className="mt-1 text-xs text-red-600 font-medium">
+                  {fieldErrors.age}
+                </p>
+              )}
             </div>
 
             {/* Room ID */}
@@ -379,26 +421,35 @@ function TenantsManagement() {
                 value={formData.roomId}
                 onChange={handleFormChange}
                 placeholder="1 (optional)"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className={inputCls("roomId")}
               />
+              {fieldErrors.roomId && (
+                <p className="mt-1 text-xs text-red-600 font-medium">
+                  {fieldErrors.roomId}
+                </p>
+              )}
             </div>
 
             {/* Start date */}
             <div className="md:col-span-2">
               <label className="block text-sm font-semibold mb-1">
-                Start Date
+                Start Date <span className="text-red-500">*</span>
               </label>
               <input
                 type="date"
                 name="startDate"
                 value={formData.startDate}
                 onChange={handleFormChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className={inputCls("startDate")}
               />
+              {fieldErrors.startDate && (
+                <p className="mt-1 text-xs text-red-600 font-medium">
+                  {fieldErrors.startDate}
+                </p>
+              )}
             </div>
           </div>
 
-          {/* Form buttons */}
           <div className="flex gap-4 mt-6">
             <button
               onClick={handleSave}
@@ -416,7 +467,7 @@ function TenantsManagement() {
         </div>
       )}
 
-      {/* Table Container - Scrollable */}
+      {/* Table */}
       <div className="flex-1 bg-white shadow rounded-lg overflow-hidden flex flex-col min-h-0">
         <div className="overflow-auto flex-1">
           <table className="w-full">
@@ -500,7 +551,7 @@ function TenantsManagement() {
           </table>
         </div>
 
-        {/* Pagination - Fixed at bottom */}
+        {/* Pagination */}
         {totalPages > 1 && (
           <div className="border-t border-gray-200 p-4 flex justify-center gap-2 bg-white">
             {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (

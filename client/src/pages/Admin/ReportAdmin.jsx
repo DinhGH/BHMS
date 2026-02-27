@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { Search, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
+import toast from "react-hot-toast";
 import Loading from "../../components/loading.jsx";
 import Pagination from "../../components/Admin/Pagination.jsx";
 import SearchInput from "../../components/Admin/SearchInput.jsx";
@@ -40,19 +41,13 @@ export default function ReportAdmin() {
       const params = new URLSearchParams();
       params.set("page", currentPage);
       params.set("limit", pageSize);
-
-      if (filter !== "all") {
-        params.set("status", filter);
-      }
-
-      if (searchQuery) {
-        params.set("search", searchQuery);
-      }
+      if (filter !== "all") params.set("status", filter);
+      if (searchQuery) params.set("search", searchQuery);
 
       const res = await api.get(`/api/report-admins?${params.toString()}`);
       setReports(res.data || []);
     } catch (error) {
-      console.error("Fetch reports error:", error);
+      toast.error(error?.message || "Failed to load reports.");
       setReports([]);
     } finally {
       setLoading(false);
@@ -69,62 +64,37 @@ export default function ReportAdmin() {
   }, [currentPage, filter, searchQuery]);
 
   const handleSearchKeyDown = (e) => {
-    if (e.key === "Enter") {
-      setSearchQuery(search);
-    }
+    if (e.key === "Enter") setSearchQuery(search);
   };
 
   const handleStatusChange = async (reportId, newStatus) => {
-    const agreed = await confirm({
-      title: "Update report status",
-      message: `Are you sure you want to change status to ${newStatus}?`,
-      confirmText: "Update",
-      variant: "default",
-    });
-    if (!agreed) return;
-
+    const previous = reports.find((r) => r.id === reportId)?.status;
+    // Optimistic update
+    setReports((prev) =>
+      prev.map((r) => (r.id === reportId ? { ...r, status: newStatus } : r)),
+    );
     try {
-      const response = await api.patch(
-        `/api/report-admins/${reportId}/status`,
-        {
-          status: newStatus,
-          confirm: true,
-        },
-      );
-      setReports((prev) =>
-        prev.map((r) => (r.id === reportId ? { ...r, status: newStatus } : r)),
-      );
-
-      const emailStats = response?.email;
-      if (emailStats) {
-        alert(
-          `Status updated successfully. Email: attempted ${emailStats.attempted}, sent ${emailStats.sent}, failed ${emailStats.failed}.`,
-        );
-      } else {
-        alert("Status updated successfully");
-      }
+      await api.patch(`/api/report-admins/${reportId}/status`, {
+        status: newStatus,
+      });
+      toast.success(`Status updated to ${newStatus}.`);
     } catch (error) {
-      console.error("Update status error:", error);
-      alert("Failed to update status");
+      // Rollback
+      setReports((prev) =>
+        prev.map((r) => (r.id === reportId ? { ...r, status: previous } : r)),
+      );
+      toast.error(error?.message || "Failed to update status.");
     }
   };
 
   const handleDelete = async (reportId) => {
-    const agreed = await confirm({
-      title: "Delete report",
-      message: "Are you sure you want to delete this report?",
-      confirmText: "Delete",
-      variant: "danger",
-    });
-    if (!agreed) return;
-
+    if (!window.confirm("Are you sure you want to delete this report?")) return;
     try {
       await api.delete(`/api/report-admins/${reportId}`, { confirm: true });
       setReports((prev) => prev.filter((r) => r.id !== reportId));
-      alert("Report deleted successfully");
+      toast.success("Report deleted.");
     } catch (error) {
-      console.error("Delete error:", error);
-      alert("Failed to delete report");
+      toast.error(error?.message || "Failed to delete report.");
     }
   };
 
@@ -142,17 +112,10 @@ export default function ReportAdmin() {
 
   const handleBulkDelete = async () => {
     if (selectedIds.length === 0) {
-      alert("Select at least one report to delete");
+      toast.error("Select at least one report to delete.");
       return;
     }
-
-    const agreed = await confirm({
-      title: "Bulk delete reports",
-      message: `Delete ${selectedIds.length} report(s)?`,
-      confirmText: "Delete all",
-      variant: "danger",
-    });
-    if (!agreed) return;
+    if (!window.confirm(`Delete ${selectedIds.length} report(s)?`)) return;
 
     try {
       for (const id of selectedIds) {
@@ -160,16 +123,13 @@ export default function ReportAdmin() {
       }
       setReports((prev) => prev.filter((r) => !selectedIds.includes(r.id)));
       setSelectedIds([]);
-      alert("Reports deleted successfully");
+      toast.success(`${selectedIds.length} report(s) deleted.`);
     } catch (error) {
-      console.error("Bulk delete error:", error);
-      alert("Failed to delete some reports");
+      toast.error(error?.message || "Failed to delete some reports.");
     }
   };
 
-  if (loading) {
-    return <Loading isLoading={true} />;
-  }
+  if (loading) return <Loading isLoading={true} />;
 
   return (
     <div className="h-full flex flex-col max-w-7xl mx-auto p-3 sm:p-4 lg:p-6">
@@ -187,7 +147,6 @@ export default function ReportAdmin() {
           onKeyDown={handleSearchKeyDown}
           placeholder="Search by email or content... (Press Enter)"
         />
-
         <select
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
@@ -205,23 +164,17 @@ export default function ReportAdmin() {
       {/* Bulk Actions */}
       {selectedIds.length > 0 && (
         <div className="mb-4 flex gap-2">
-          <button
-            onClick={handleBulkDelete}
-            className="app-btn-danger"
-          >
+          <button onClick={handleBulkDelete} className="app-btn-danger">
             Delete Selected ({selectedIds.length})
           </button>
-          <button
-            onClick={() => setSelectedIds([])}
-            className="app-btn-muted"
-          >
+          <button onClick={() => setSelectedIds([])} className="app-btn-muted">
             Clear Selection
           </button>
         </div>
       )}
 
-      {/* Table Container - Scrollable */}
-      <div className="flex-1 app-panel overflow-hidden flex flex-col min-h-0">
+      {/* Table */}
+      <div className="flex-1 bg-white shadow-lg rounded-lg overflow-hidden flex flex-col min-h-0">
         {reports.length === 0 ? (
           <div className="p-8 text-center text-gray-500">
             <p>No reports found</p>
@@ -273,11 +226,9 @@ export default function ReportAdmin() {
                       </td>
                       <td className="px-6 py-3 font-semibold">#{report.id}</td>
                       <td className="px-6 py-3">
-                        <div className="text-sm">
-                          <p className="font-medium">
-                            {report.sender?.email || "Unknown"}
-                          </p>
-                        </div>
+                        <p className="text-sm font-medium">
+                          {report.sender?.email || "Unknown"}
+                        </p>
                       </td>
                       <td className="px-6 py-3 text-sm">
                         <span className="inline-flex max-w-xs items-center justify-center rounded-full bg-slate-100 px-3 py-1.5 text-[11px] font-semibold text-slate-800 leading-tight shadow-sm ring-1 ring-slate-200 whitespace-nowrap">
@@ -295,8 +246,8 @@ export default function ReportAdmin() {
                           }
                           className={`w-full min-h-12 rounded-xl px-4 py-3 text-sm font-bold uppercase cursor-pointer border-2 shadow-sm transition focus:outline-none focus:ring-2 focus:ring-offset-1 ${
                             STATUS_COLORS[report.status] ||
-                            "bg-gray-100 text-gray-800 ring-1 ring-gray-200"
-                          } border-current`}
+                            "bg-gray-100 text-gray-800"
+                          }`}
                         >
                           {STATUS_OPTIONS.map((status) => (
                             <option key={status} value={status}>
@@ -323,7 +274,6 @@ export default function ReportAdmin() {
               </table>
             </div>
 
-            {/* Pagination - Fixed at bottom */}
             {reports.length > 0 && (
               <div className="border-t border-gray-200 p-4 flex justify-center bg-white">
                 <Pagination

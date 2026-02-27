@@ -1,36 +1,31 @@
 import React, { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 import Loading from "../loading.jsx";
 
 export default function AdminDashBoard() {
   const [dashboard, setDashboard] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchDashboard = async (showLoader = true, forceRefresh = false) => {
-    if (showLoader) {
-      setLoading(true);
-    }
-    setError("");
+    if (showLoader) setLoading(true);
     try {
       const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
       const apiBase = baseUrl.endsWith("/api") ? baseUrl : `${baseUrl}/api`;
       const params = new URLSearchParams({ t: Date.now().toString() });
-      if (forceRefresh) {
-        params.set("refresh", "true");
-      }
+      if (forceRefresh) params.set("refresh", "true");
+
       const res = await fetch(
         `${apiBase}/users/dashboard?${params.toString()}`,
       );
       if (!res.ok) throw new Error("Failed to load dashboard");
       const data = await res.json();
       setDashboard(data);
-    } catch {
-      setError("Không thể tải dữ liệu dashboard");
+      if (forceRefresh) toast.success("Dashboard refreshed.");
+    } catch (err) {
+      toast.error(err?.message || "Unable to load dashboard data.");
     } finally {
-      if (showLoader) {
-        setLoading(false);
-      }
+      if (showLoader) setLoading(false);
       setRefreshing(false);
     }
   };
@@ -64,9 +59,7 @@ export default function AdminDashBoard() {
 
   const formattedDate = new Intl.DateTimeFormat("vi-VN").format(new Date());
 
-  if (loading) {
-    return <Loading isLoading={true} />;
-  }
+  if (loading) return <Loading isLoading={true} />;
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
@@ -92,8 +85,7 @@ export default function AdminDashBoard() {
         </div>
       </div>
 
-      {error && <div className="text-sm text-red-500">{error}</div>}
-
+      {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
           <p className="text-sm text-gray-500">Total users</p>
@@ -133,7 +125,9 @@ export default function AdminDashBoard() {
         </div>
       </div>
 
+      {/* Charts Row */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        {/* Donut Chart */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900">
@@ -141,7 +135,6 @@ export default function AdminDashBoard() {
             </h2>
             <span className="text-sm text-gray-500">Total: {totalUsers}</span>
           </div>
-
           <div className="flex items-center gap-6">
             <div className="flex-1 flex justify-center">
               <div className="relative w-60 h-60">
@@ -159,7 +152,6 @@ export default function AdminDashBoard() {
                 </div>
               </div>
             </div>
-
             <div className="space-y-3">
               <div className="flex items-center gap-3">
                 <span className="w-3 h-3 rounded-full bg-green-500" />
@@ -186,6 +178,7 @@ export default function AdminDashBoard() {
           </div>
         </div>
 
+        {/* Bar Chart */}
         <div className="xl:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900">
@@ -193,7 +186,6 @@ export default function AdminDashBoard() {
             </h2>
             <span className="text-sm text-gray-500">Unit: Million VND</span>
           </div>
-
           <div className="h-64 flex items-end gap-3 overflow-x-auto pb-2">
             {revenueByMonth.map((item) => (
               <div
@@ -215,14 +207,15 @@ export default function AdminDashBoard() {
               </div>
             ))}
           </div>
-
           <div className="mt-4 text-sm text-gray-600">
             Total annual revenue: {currency(dashboard?.totalAnnualRevenue ?? 0)}
           </div>
         </div>
       </div>
 
+      {/* Bottom Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Recent Activity */}
         <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">
             Recent activity
@@ -240,46 +233,47 @@ export default function AdminDashBoard() {
           </div>
         </div>
 
+        {/* Report Status */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">
-              Report Admin status
-            </h2>
-            <div className="space-y-4">
-              {[
-                {
-                  label: "Reviewing",
-                  value: dashboard?.reportAdminSummary?.reviewing ?? 0,
-                  color: "bg-blue-500",
-                },
-                {
-                  label: "Fixing",
-                  value: dashboard?.reportAdminSummary?.fixing ?? 0,
-                  color: "bg-amber-500",
-                },
-                {
-                  label: "Fixed",
-                  value: dashboard?.reportAdminSummary?.fixed ?? 0,
-                  color: "bg-green-500",
-                },
-              ].map((item) => (
-                <div key={item.label}>
-                  <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
-                    <span>{item.label}</span>
-                    <span>{item.value}</span>
-                  </div>
-                  <div className="h-2 bg-gray-100 rounded-full">
-                    <div
-                      className={`h-2 rounded-full ${item.color}`}
-                      style={{ width: `${Math.min(item.value * 10, 100)}%` }}
-                    />
-                  </div>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+            Report Admin status
+          </h2>
+          <div className="space-y-4">
+            {[
+              {
+                label: "Reviewing",
+                value: dashboard?.reportAdminSummary?.reviewing ?? 0,
+                color: "bg-blue-500",
+              },
+              {
+                label: "Fixing",
+                value: dashboard?.reportAdminSummary?.fixing ?? 0,
+                color: "bg-amber-500",
+              },
+              {
+                label: "Fixed",
+                value: dashboard?.reportAdminSummary?.fixed ?? 0,
+                color: "bg-green-500",
+              },
+            ].map((item) => (
+              <div key={item.label}>
+                <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
+                  <span>{item.label}</span>
+                  <span>{item.value}</span>
                 </div>
-              ))}
-            </div>
+                <div className="h-2 bg-gray-100 rounded-full">
+                  <div
+                    className={`h-2 rounded-full ${item.color}`}
+                    style={{ width: `${Math.min(item.value * 10, 100)}%` }}
+                  />
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
+
+      {/* Refresh overlay */}
       {refreshing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/70">
           <div className="flex flex-col items-center gap-3">

@@ -131,6 +131,46 @@ function App() {
 
         <ThemeToggle />
       </ThemeProvider>
+      <Toaster
+        position="top-right"
+        gutter={12}
+        containerStyle={{
+          top: 20,
+          right: 20,
+        }}
+        toastOptions={{
+          duration: 3000,
+          style: {
+            background: "#ffffff",
+            color: "#1f2937",
+            padding: "16px 20px",
+            borderRadius: "14px",
+            boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
+            fontSize: "14px",
+            fontWeight: "500",
+          },
+
+          success: {
+            iconTheme: {
+              primary: "#22c55e",
+              secondary: "#ffffff",
+            },
+            style: {
+              borderLeft: "6px solid #22c55e",
+            },
+          },
+
+          error: {
+            iconTheme: {
+              primary: "#ef4444",
+              secondary: "#ffffff",
+            },
+            style: {
+              borderLeft: "6px solid #ef4444",
+            },
+          },
+        }}
+      />
     </AuthProvider>
   );
 }

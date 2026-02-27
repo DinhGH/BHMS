@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 import Loading from "./loading.jsx";
 import {
   createReport,
@@ -51,6 +52,48 @@ const Search = () => (
   </svg>
 );
 
+// ── Validation ────────────────────────────────────────────────────────────────
+function validateCreateForm(form) {
+  const errors = {};
+  const email = form.senderEmail.trim();
+  if (!email) {
+    errors.senderEmail = "Sender email is required.";
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    errors.senderEmail = "Please enter a valid email address.";
+  }
+  if (!form.target.trim()) {
+    errors.target = "Target is required.";
+  } else if (form.target.trim().length > 100) {
+    errors.target = "Target must not exceed 100 characters.";
+  }
+  if (!form.content.trim()) {
+    errors.content = "Content is required.";
+  } else if (form.content.trim().length < 20) {
+    errors.content = "Content must be at least 20 characters.";
+  } else if (form.content.trim().length > 2000) {
+    errors.content = "Content must not exceed 2000 characters.";
+  }
+  return errors;
+}
+
+function validateEditForm(form) {
+  const errors = {};
+  if (!form.target.trim()) {
+    errors.target = "Target is required.";
+  } else if (form.target.trim().length > 100) {
+    errors.target = "Target must not exceed 100 characters.";
+  }
+  if (!form.content.trim()) {
+    errors.content = "Content is required.";
+  } else if (form.content.trim().length < 20) {
+    errors.content = "Content must be at least 20 characters.";
+  } else if (form.content.trim().length > 2000) {
+    errors.content = "Content must not exceed 2000 characters.";
+  }
+  return errors;
+}
+
+// ── Main Component ────────────────────────────────────────────────────────────
 function ReportManagement() {
   const { confirm, confirmDialog } = useConfirmDialog();
   const [expandedReport, setExpandedReport] = useState(null);
@@ -65,31 +108,32 @@ function ReportManagement() {
   const [totalPages, setTotalPages] = useState(1);
   const [counts, setCounts] = useState({ reviewing: 0, fixing: 0, fixed: 0 });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
+
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [createLoading, setCreateLoading] = useState(false);
-  const [createError, setCreateError] = useState("");
+  const [createFieldErrors, setCreateFieldErrors] = useState({});
   const [createForm, setCreateForm] = useState({
     senderEmail: "",
     target: "Room",
     content: "",
     images: [],
   });
+
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
-  const [editError, setEditError] = useState("");
+  const [editFieldErrors, setEditFieldErrors] = useState({});
   const [editForm, setEditForm] = useState({
     id: null,
     target: "",
     content: "",
     images: [],
   });
+
   const [deleteLoadingId, setDeleteLoadingId] = useState(null);
 
   const reportsPerPage = 10;
   const currentReports = reports;
-
   const reviewingCount = counts.reviewing || 0;
   const fixingCount = counts.fixing || 0;
   const fixedCount = counts.fixed || 0;
@@ -105,7 +149,6 @@ function ReportManagement() {
     const fetchReports = async () => {
       try {
         setLoading(true);
-        setError("");
         const res = await getReports({
           page: currentPage,
           limit: reportsPerPage,
@@ -120,14 +163,12 @@ function ReportManagement() {
         setCounts(res.counts || { reviewing: 0, fixing: 0, fixed: 0 });
         setExpandedReport(null);
       } catch (err) {
-        console.error(err);
-        setError("Failed to load reports");
+        toast.error(err?.message || "Failed to load reports.");
         setReports([]);
       } finally {
         setLoading(false);
       }
     };
-
     fetchReports();
   }, [
     activeTab,
@@ -139,22 +180,18 @@ function ReportManagement() {
     refreshKey,
   ]);
 
-  const toggleReport = (id) => {
+  const toggleReport = (id) =>
     setExpandedReport(expandedReport === id ? null : id);
-  };
-
   const goToPage = (pageNumber) => {
     setCurrentPage(pageNumber);
     setExpandedReport(null);
   };
-
   const goToPreviousPage = () => {
     if (currentPage > 1) {
       setCurrentPage(currentPage - 1);
       setExpandedReport(null);
     }
   };
-
   const goToNextPage = () => {
     if (currentPage < totalPages) {
       setCurrentPage(currentPage + 1);
@@ -164,13 +201,12 @@ function ReportManagement() {
 
   const handleSearch = (e) => {
     setSearchQuery(e.target.value);
-    setCurrentPage(1); // Reset về trang 1 khi search
+    setCurrentPage(1);
     setExpandedReport(null);
   };
-
   const handleTabChange = (tab) => {
     setActiveTab(tab);
-    setCurrentPage(1); // Reset về trang 1 khi đổi tab
+    setCurrentPage(1);
     setExpandedReport(null);
   };
 
@@ -187,12 +223,12 @@ function ReportManagement() {
 
   const resetCreateForm = () => {
     setCreateForm({ senderEmail: "", target: "Room", content: "", images: [] });
-    setCreateError("");
+    setCreateFieldErrors({});
   };
 
   const resetEditForm = () => {
     setEditForm({ id: null, target: "", content: "", images: [] });
-    setEditError("");
+    setEditFieldErrors({});
   };
 
   const handleCreateFiles = async (files) => {
@@ -204,51 +240,48 @@ function ReportManagement() {
         reader.onerror = reject;
         reader.readAsDataURL(file);
       });
-
     try {
       const images = await Promise.all([...files].map(toBase64));
       setCreateForm((prev) => ({
         ...prev,
         images: [...prev.images, ...images],
       }));
-    } catch (err) {
-      console.error(err);
-      setCreateError("Failed to read images");
+    } catch {
+      toast.error("Failed to read images.");
+    }
+  };
+
+  const handleCreateFormChange = (field, value) => {
+    setCreateForm((prev) => ({ ...prev, [field]: value }));
+    if (createFieldErrors[field]) {
+      setCreateFieldErrors((prev) => ({ ...prev, [field]: undefined }));
     }
   };
 
   const handleCreateReport = async (e) => {
     e.preventDefault();
-    setCreateError("");
-
-    const senderEmail = createForm.senderEmail.trim();
-    if (!senderEmail) {
-      setCreateError("Sender Email is required");
+    const errors = validateCreateForm(createForm);
+    if (Object.keys(errors).length > 0) {
+      setCreateFieldErrors(errors);
+      toast.error("Please fix the highlighted fields before saving.");
       return;
     }
-    if (!createForm.target.trim()) {
-      setCreateError("Target is required");
-      return;
-    }
-    if (createForm.content.trim().length < 20) {
-      setCreateError("Content must be at least 20 characters");
-      return;
-    }
+    setCreateFieldErrors({});
 
     try {
       setCreateLoading(true);
       await createReport({
-        senderEmail,
+        senderEmail: createForm.senderEmail.trim(),
         target: createForm.target.trim(),
         content: createForm.content.trim(),
         images: createForm.images.length ? createForm.images : undefined,
       });
+      toast.success("Report created successfully.");
       setIsCreateOpen(false);
       resetCreateForm();
       setRefreshKey((prev) => prev + 1);
     } catch (err) {
-      console.error(err);
-      setCreateError("Failed to create report");
+      toast.error(err?.message || "Failed to create report.");
     } finally {
       setCreateLoading(false);
     }
@@ -261,7 +294,7 @@ function ReportManagement() {
       content: report.content || "",
       images: Array.isArray(report.images) ? report.images : [],
     });
-    setEditError("");
+    setEditFieldErrors({});
     setIsEditOpen(true);
   };
 
@@ -274,35 +307,30 @@ function ReportManagement() {
         reader.onerror = reject;
         reader.readAsDataURL(file);
       });
-
     try {
       const images = await Promise.all([...files].map(toBase64));
-      setEditForm((prev) => ({
-        ...prev,
-        images: [...prev.images, ...images],
-      }));
-    } catch (err) {
-      console.error(err);
-      setEditError("Failed to read images");
+      setEditForm((prev) => ({ ...prev, images: [...prev.images, ...images] }));
+    } catch {
+      toast.error("Failed to read images.");
+    }
+  };
+
+  const handleEditFormChange = (field, value) => {
+    setEditForm((prev) => ({ ...prev, [field]: value }));
+    if (editFieldErrors[field]) {
+      setEditFieldErrors((prev) => ({ ...prev, [field]: undefined }));
     }
   };
 
   const handleEditReport = async (e) => {
     e.preventDefault();
-    setEditError("");
-
-    if (!editForm.id) {
-      setEditError("Invalid report");
+    const errors = validateEditForm(editForm);
+    if (Object.keys(errors).length > 0) {
+      setEditFieldErrors(errors);
+      toast.error("Please fix the highlighted fields before saving.");
       return;
     }
-    if (!editForm.target.trim()) {
-      setEditError("Target is required");
-      return;
-    }
-    if (editForm.content.trim().length < 20) {
-      setEditError("Content must be at least 20 characters");
-      return;
-    }
+    setEditFieldErrors({});
 
     try {
       const agreed = await confirm({
@@ -320,12 +348,12 @@ function ReportManagement() {
         content: editForm.content.trim(),
         images: editForm.images.length ? editForm.images : null,
       });
+      toast.success("Report updated successfully.");
       setIsEditOpen(false);
       resetEditForm();
       setRefreshKey((prev) => prev + 1);
     } catch (err) {
-      console.error(err);
-      setEditError("Failed to update report");
+      toast.error(err?.message || "Failed to update report.");
     } finally {
       setEditLoading(false);
     }
@@ -333,22 +361,15 @@ function ReportManagement() {
 
   const handleDeleteReport = async (id) => {
     if (!id) return;
-    const agreed = await confirm({
-      title: "Delete report",
-      message: "Delete this report?",
-      confirmText: "Delete",
-      variant: "danger",
-    });
-    if (!agreed) return;
-
+    if (!window.confirm("Delete this report?")) return;
     try {
       setDeleteLoadingId(id);
       await deleteReport(id);
+      toast.success("Report deleted.");
       setExpandedReport(null);
       setRefreshKey((prev) => prev + 1);
     } catch (err) {
-      console.error(err);
-      setError("Failed to delete report");
+      toast.error(err?.message || "Failed to delete report.");
     } finally {
       setDeleteLoadingId(null);
     }
@@ -380,27 +401,24 @@ function ReportManagement() {
       const current = previousReports.find((report) => report.id === id);
       const currentStatus = current?.status;
       if (!currentStatus || currentStatus === status) return prev;
-
       const next = { ...prev };
       if (currentStatus === "REVIEWING")
         next.reviewing = Math.max(0, next.reviewing - 1);
       if (currentStatus === "FIXING")
         next.fixing = Math.max(0, next.fixing - 1);
       if (currentStatus === "FIXED") next.fixed = Math.max(0, next.fixed - 1);
-
       if (status === "REVIEWING") next.reviewing += 1;
       if (status === "FIXING") next.fixing += 1;
       if (status === "FIXED") next.fixed += 1;
-
       return next;
     });
 
     setExpandedReport(null);
     try {
       await updateReportStatus(id, status);
+      toast.success(`Status updated to ${statusLabel(status)}.`);
     } catch (err) {
-      console.error(err);
-      setError("Failed to update report");
+      toast.error(err?.message || "Failed to update status.");
       setReports(previousReports);
       setCounts(previousCounts);
     }
@@ -408,8 +426,7 @@ function ReportManagement() {
 
   const formatDate = (iso) => {
     if (!iso) return "";
-    const d = new Date(iso);
-    return d.toLocaleString();
+    return new Date(iso).toLocaleString();
   };
 
   const statusLabel = (status) => {
@@ -419,41 +436,38 @@ function ReportManagement() {
     return status;
   };
 
-  // Tạo array các số trang để hiển thị
   const getPageNumbers = () => {
     const pages = [];
     const maxPagesToShow = 5;
-
     if (totalPages <= maxPagesToShow + 2) {
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i);
-      }
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
     } else {
       if (currentPage <= 3) {
-        for (let i = 1; i <= maxPagesToShow; i++) {
-          pages.push(i);
-        }
+        for (let i = 1; i <= maxPagesToShow; i++) pages.push(i);
         pages.push("...");
         pages.push(totalPages);
       } else if (currentPage >= totalPages - 2) {
         pages.push(1);
         pages.push("...");
-        for (let i = totalPages - maxPagesToShow + 1; i <= totalPages; i++) {
+        for (let i = totalPages - maxPagesToShow + 1; i <= totalPages; i++)
           pages.push(i);
-        }
       } else {
         pages.push(1);
         pages.push("...");
-        for (let i = currentPage - 1; i <= currentPage + 1; i++) {
-          pages.push(i);
-        }
+        for (let i = currentPage - 1; i <= currentPage + 1; i++) pages.push(i);
         pages.push("...");
         pages.push(totalPages);
       }
     }
-
     return pages;
   };
+
+  const inputCls = (errors, field) =>
+    `mt-2 w-full rounded-md border px-3 py-2 text-base focus:outline-none focus:ring-2 transition ${
+      errors[field]
+        ? "border-red-400 focus:ring-red-300"
+        : "border-gray-300 focus:ring-blue-500"
+    }`;
 
   return (
     <div className="w-full h-full bg-gray-50">
@@ -465,62 +479,50 @@ function ReportManagement() {
           </h1>
         </div>
 
-        {/* Tabs and Actions */}
         <div className="bg-white rounded-none shadow-sm flex-1 flex flex-col w-full">
+          {/* Tabs and Actions */}
           <div className="flex flex-col gap-4 px-4 py-4 border-b border-gray-200 sm:flex-row sm:items-center sm:justify-between sm:px-6">
             <div className="flex flex-wrap gap-4 sm:gap-8">
-              <button
-                className={`pb-3 font-medium transition-colors relative text-base ${
-                  activeTab === "all"
-                    ? "text-blue-600 border-b-2 border-blue-600"
-                    : "text-gray-600 hover:text-gray-900"
-                }`}
-                onClick={() => handleTabChange("all")}
-              >
-                All Reports
-              </button>
-              <button
-                className={`pb-3 font-medium transition-colors relative text-base ${
-                  activeTab === "reviewing"
-                    ? "text-blue-600 border-b-2 border-blue-600"
-                    : "text-gray-600 hover:text-gray-900"
-                }`}
-                onClick={() => handleTabChange("reviewing")}
-              >
-                Reviewing
-                <span className="ml-2 bg-blue-100 text-blue-600 text-xs font-semibold px-2.5 py-1 rounded-full">
-                  {reviewingCount}
-                </span>
-              </button>
-              <button
-                className={`pb-3 font-medium transition-colors text-base ${
-                  activeTab === "fixing"
-                    ? "text-blue-600 border-b-2 border-blue-600"
-                    : "text-gray-600 hover:text-gray-900"
-                }`}
-                onClick={() => handleTabChange("fixing")}
-              >
-                Fixing
-                <span className="ml-2 bg-amber-100 text-amber-700 text-xs font-semibold px-2.5 py-1 rounded-full">
-                  {fixingCount}
-                </span>
-              </button>
-              <button
-                className={`pb-3 font-medium transition-colors text-base ${
-                  activeTab === "fixed"
-                    ? "text-blue-600 border-b-2 border-blue-600"
-                    : "text-gray-600 hover:text-gray-900"
-                }`}
-                onClick={() => handleTabChange("fixed")}
-              >
-                Fixed
-                <span className="ml-2 bg-emerald-100 text-emerald-700 text-xs font-semibold px-2.5 py-1 rounded-full">
-                  {fixedCount}
-                </span>
-              </button>
-              <button className="pb-3 text-gray-400 font-medium text-base">
-                ...
-              </button>
+              {[
+                { key: "all", label: "All Reports", badge: null },
+                {
+                  key: "reviewing",
+                  label: "Reviewing",
+                  badge: reviewingCount,
+                  badgeCls: "bg-blue-100 text-blue-600",
+                },
+                {
+                  key: "fixing",
+                  label: "Fixing",
+                  badge: fixingCount,
+                  badgeCls: "bg-amber-100 text-amber-700",
+                },
+                {
+                  key: "fixed",
+                  label: "Fixed",
+                  badge: fixedCount,
+                  badgeCls: "bg-emerald-100 text-emerald-700",
+                },
+              ].map(({ key, label, badge, badgeCls }) => (
+                <button
+                  key={key}
+                  className={`pb-3 font-medium transition-colors relative text-base ${
+                    activeTab === key
+                      ? "text-blue-600 border-b-2 border-blue-600"
+                      : "text-gray-600 hover:text-gray-900"
+                  }`}
+                  onClick={() => handleTabChange(key)}
+                >
+                  {label}
+                  {badge !== null && (
+                    <span
+                      className={`ml-2 text-xs font-semibold px-2.5 py-1 rounded-full ${badgeCls}`}
+                    >
+                      {badge}
+                    </span>
+                  )}
+                </button>
+              ))}
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
@@ -593,7 +595,7 @@ function ReportManagement() {
                   </select>
                 </div>
                 <button
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md transition-all duration-200 hover:bg-gray-50 hover:-translate-y-0.5 active:translate-y-0"
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md transition-all duration-200 hover:bg-gray-50"
                   onClick={() => {
                     setTargetFilter("all");
                     setSortBy("createdAt");
@@ -610,11 +612,7 @@ function ReportManagement() {
           <div className="divide-y divide-gray-200 flex-1 overflow-y-auto">
             <Loading isLoading={loading} />
             {!loading &&
-              (error ? (
-                <div className="px-4 py-10 text-center text-red-600 sm:px-6 sm:py-12">
-                  <p className="text-lg">{error}</p>
-                </div>
-              ) : currentReports.length > 0 ? (
+              (currentReports.length > 0 ? (
                 currentReports.map((report) => (
                   <div key={report.id} className="border-b border-gray-200">
                     <div
@@ -803,7 +801,6 @@ function ReportManagement() {
               >
                 Previous
               </button>
-
               {getPageNumbers().map((page, index) =>
                 page === "..." ? (
                   <span
@@ -826,7 +823,6 @@ function ReportManagement() {
                   </button>
                 ),
               )}
-
               <button
                 onClick={goToNextPage}
                 disabled={currentPage === totalPages}
@@ -843,6 +839,7 @@ function ReportManagement() {
         </div>
       </div>
 
+      {/* Create Modal */}
       {isCreateOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
           <div className="w-full max-w-2xl rounded-lg bg-white shadow-xl">
@@ -861,58 +858,77 @@ function ReportManagement() {
               </button>
             </div>
 
-            <form onSubmit={handleCreateReport} className="px-6 py-5">
+            <form
+              onSubmit={handleCreateReport}
+              className="px-6 py-5"
+              noValidate
+            >
               <div className="grid gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
-                    Sender Email
+                    Sender Email <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="email"
                     value={createForm.senderEmail}
                     onChange={(e) =>
-                      setCreateForm((prev) => ({
-                        ...prev,
-                        senderEmail: e.target.value,
-                      }))
+                      handleCreateFormChange("senderEmail", e.target.value)
                     }
-                    className="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={inputCls(createFieldErrors, "senderEmail")}
                     placeholder="tenant@example.com"
                   />
+                  {createFieldErrors.senderEmail && (
+                    <p className="mt-1 text-xs text-red-600 font-medium">
+                      {createFieldErrors.senderEmail}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
-                    Target
+                    Target <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     value={createForm.target}
                     onChange={(e) =>
-                      setCreateForm((prev) => ({
-                        ...prev,
-                        target: e.target.value,
-                      }))
+                      handleCreateFormChange("target", e.target.value)
                     }
-                    className="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={inputCls(createFieldErrors, "target")}
                     placeholder="Room / Service / Payment"
                   />
+                  {createFieldErrors.target && (
+                    <p className="mt-1 text-xs text-red-600 font-medium">
+                      {createFieldErrors.target}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
-                    Content
+                    Content <span className="text-red-500">*</span>
                   </label>
                   <textarea
                     rows={4}
                     value={createForm.content}
                     onChange={(e) =>
-                      setCreateForm((prev) => ({
-                        ...prev,
-                        content: e.target.value,
-                      }))
+                      handleCreateFormChange("content", e.target.value)
                     }
-                    className="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Describe the issue"
+                    className={inputCls(createFieldErrors, "content")}
+                    placeholder="Describe the issue (min. 20 characters)"
                   />
+                  <div className="flex justify-between mt-1">
+                    {createFieldErrors.content ? (
+                      <p className="text-xs text-red-600 font-medium">
+                        {createFieldErrors.content}
+                      </p>
+                    ) : (
+                      <span />
+                    )}
+                    <p
+                      className={`text-xs ${createForm.content.length > 1900 ? "text-red-500" : "text-gray-400"}`}
+                    >
+                      {createForm.content.length}/2000
+                    </p>
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
@@ -931,11 +947,6 @@ function ReportManagement() {
                     </p>
                   )}
                 </div>
-                {createError && (
-                  <div className="rounded-md bg-red-50 px-4 py-2 text-sm text-red-600">
-                    {createError}
-                  </div>
-                )}
               </div>
 
               <div className="mt-6 flex justify-end gap-3">
@@ -962,6 +973,7 @@ function ReportManagement() {
         </div>
       )}
 
+      {/* Edit Modal */}
       {isEditOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
           <div className="w-full max-w-2xl rounded-lg bg-white shadow-xl">
@@ -980,41 +992,54 @@ function ReportManagement() {
               </button>
             </div>
 
-            <form onSubmit={handleEditReport} className="px-6 py-5">
+            <form onSubmit={handleEditReport} className="px-6 py-5" noValidate>
               <div className="grid gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
-                    Target
+                    Target <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     value={editForm.target}
                     onChange={(e) =>
-                      setEditForm((prev) => ({
-                        ...prev,
-                        target: e.target.value,
-                      }))
+                      handleEditFormChange("target", e.target.value)
                     }
-                    className="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={inputCls(editFieldErrors, "target")}
                     placeholder="Room / Service / Payment"
                   />
+                  {editFieldErrors.target && (
+                    <p className="mt-1 text-xs text-red-600 font-medium">
+                      {editFieldErrors.target}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
-                    Content
+                    Content <span className="text-red-500">*</span>
                   </label>
                   <textarea
                     rows={4}
                     value={editForm.content}
                     onChange={(e) =>
-                      setEditForm((prev) => ({
-                        ...prev,
-                        content: e.target.value,
-                      }))
+                      handleEditFormChange("content", e.target.value)
                     }
-                    className="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Describe the issue"
+                    className={inputCls(editFieldErrors, "content")}
+                    placeholder="Describe the issue (min. 20 characters)"
                   />
+                  <div className="flex justify-between mt-1">
+                    {editFieldErrors.content ? (
+                      <p className="text-xs text-red-600 font-medium">
+                        {editFieldErrors.content}
+                      </p>
+                    ) : (
+                      <span />
+                    )}
+                    <p
+                      className={`text-xs ${editForm.content.length > 1900 ? "text-red-500" : "text-gray-400"}`}
+                    >
+                      {editForm.content.length}/2000
+                    </p>
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
@@ -1033,11 +1058,6 @@ function ReportManagement() {
                     </p>
                   )}
                 </div>
-                {editError && (
-                  <div className="rounded-md bg-red-50 px-4 py-2 text-sm text-red-600">
-                    {editError}
-                  </div>
-                )}
               </div>
 
               <div className="mt-6 flex justify-end gap-3">

@@ -1,5 +1,5 @@
 import { prisma } from "../lib/prisma.js";
-
+import { Prisma } from "@prisma/client";
 export async function listTenants() {
   const tenants = await prisma.tenant.findMany({
     include: {
@@ -200,15 +200,37 @@ export async function updateTenant(id, data) {
 }
 
 export async function deleteTenant(id) {
+  const tenantId = parseInt(id, 10);
+
   const tenant = await prisma.tenant.findUnique({
-    where: { id: parseInt(id, 10) },
+    where: { id: tenantId },
   });
+
   if (!tenant) {
     const error = new Error("Tenant not found");
     error.status = 404;
     throw error;
   }
 
-  await prisma.tenant.delete({ where: { id: parseInt(id, 10) } });
-  return { message: "Tenant deleted successfully" };
+  try {
+    await prisma.tenant.delete({
+      where: { id: tenantId },
+    });
+
+    return { message: "Tenant deleted successfully" };
+  } catch (error) {
+    // 🔥 Handle foreign key constraint error (P2003)
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2003"
+    ) {
+      const customError = new Error(
+        "Cannot delete tenant because related invoices or rental contracts exist.",
+      );
+      customError.status = 400;
+      throw customError;
+    }
+
+    throw error; // re-throw other errors
+  }
 }
