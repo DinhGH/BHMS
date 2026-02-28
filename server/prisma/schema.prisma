@@ -142,6 +142,7 @@ model Invoice {
   month        Int
   year         Int
   createdAt    DateTime      @default(now())
+  imageUrl     String?
   Room         Room          @relation(fields: [roomId], references: [id])
   Tenant       Tenant        @relation(fields: [tenantId], references: [id])
   payment      Payment[]

@@ -102,10 +102,25 @@ export async function createTenant(data) {
       error.status = 400;
       throw error;
     }
-    const room = await prisma.room.findUnique({ where: { id: roomIdNumber } });
+    const room = await prisma.room.findUnique({
+      where: { id: roomIdNumber },
+      include: {
+        _count: {
+          select: {
+            Tenant: true,
+          },
+        },
+      },
+    });
     if (!room) {
       const error = new Error("Phòng không tồn tại");
       error.status = 404;
+      throw error;
+    }
+
+    if (room.isLocked || room._count.Tenant > 0) {
+      const error = new Error("Room is not available. Please select an empty room");
+      error.status = 400;
       throw error;
     }
   }
