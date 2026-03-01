@@ -188,7 +188,7 @@ function HomePageOwner() {
           className={`flex-1 min-w-0 overflow-y-auto bg-slate-50 ${
             activeSection === "reports" || activeSection === "report-issue"
               ? "p-0"
-              : "p-3 sm:p-4 lg:p-6"
+              : "p-2.5 sm:p-4 lg:p-6"
           }`}
         >
           {renderContent()}
@@ -207,13 +207,9 @@ function HomePageOwner() {
 
       {/* Notifications Panel */}
       <div
-        className={`fixed right-0 w-full sm:w-96 app-surface border-y-0 border-r-0 z-50 transform transition-transform duration-300 ease-in-out ${
+        className={`fixed right-0 top-14 sm:top-16 h-[calc(100dvh-3.5rem)] sm:h-[calc(100dvh-4rem)] w-full sm:w-96 app-surface border-y-0 border-r-0 z-50 transform transition-transform duration-300 ease-in-out ${
           showNotifications ? "translate-x-0" : "translate-x-full"
         }`}
-        style={{
-          height: "calc(100dvh - 3.5rem)",
-          top: "3.5rem",
-        }}
       >
         <div className="h-full flex flex-col">
           <div className="flex items-center justify-center px-4 py-3 border-b border-slate-200 font-semibold text-sm sm:text-base text-slate-900">

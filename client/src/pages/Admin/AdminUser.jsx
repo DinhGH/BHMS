@@ -165,7 +165,8 @@ export default function AdminUsers() {
 
         {/* Tabs */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
-          <div className="inline-flex items-center gap-2 p-1 bg-gray-100 rounded-lg">
+          <div className="overflow-x-auto">
+            <div className="inline-flex items-center gap-2 p-1 bg-gray-100 rounded-lg min-w-max">
             {[
               ["all", "All"],
               ["active", "Active"],
@@ -175,7 +176,7 @@ export default function AdminUsers() {
               <button
                 key={key}
                 onClick={() => setFilter(key)}
-                className={`px-4 py-2 text-sm font-medium rounded-md transition-all whitespace-nowrap ${
+                className={`px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium rounded-md transition-all whitespace-nowrap ${
                   filter === key
                     ? "bg-white text-blue-600 shadow-sm"
                     : "text-gray-600 hover:text-gray-900 hover:bg-white/50"
@@ -184,6 +185,7 @@ export default function AdminUsers() {
                 {label}
               </button>
             ))}
+            </div>
           </div>
           <div className="flex">
             <div className="w-full sm:w-64">
@@ -198,17 +200,17 @@ export default function AdminUsers() {
         {/* Table */}
         <div className="bg-white rounded-md shadow-sm overflow-hidden">
           <div className="max-h-[calc(100vh-260px)] sm:max-h-[calc(100vh-280px)] overflow-y-auto overflow-x-auto">
-            <table className="w-full text-sm min-w-160">
+            <table className="w-full text-sm min-w-[720px]">
               <thead className="bg-gray-50 border-b sticky top-0 z-10">
                 <tr className="text-left text-gray-500">
-                  <th className="px-4 py-3">User</th>
-                  <th className="px-4 py-3">Email</th>
-                  <th className="px-4 py-3 hidden md:table-cell">Role</th>
-                  <th className="px-4 py-3 hidden lg:table-cell">
+                  <th className="px-3 sm:px-4 py-3">User</th>
+                  <th className="px-3 sm:px-4 py-3">Email</th>
+                  <th className="px-3 sm:px-4 py-3 hidden md:table-cell">Role</th>
+                  <th className="px-3 sm:px-4 py-3 hidden lg:table-cell">
                     Date Created Account
                   </th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3 text-right">Actions</th>
+                  <th className="px-3 sm:px-4 py-3">Status</th>
+                  <th className="px-3 sm:px-4 py-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -217,18 +219,18 @@ export default function AdminUsers() {
                     key={u.id}
                     className="border-b last:border-none hover:bg-gray-50"
                   >
-                    <td className="px-4 py-3">
+                    <td className="px-3 sm:px-4 py-3">
                       <div className="font-medium">
                         {u.fullName || "User Name"}
                       </div>
                       <div className="text-xs text-gray-400">Address</div>
                     </td>
-                    <td className="px-4 py-3">{u.email}</td>
-                    <td className="px-4 py-3 hidden md:table-cell">{u.role}</td>
-                    <td className="px-4 py-3 hidden lg:table-cell">
+                    <td className="px-3 sm:px-4 py-3">{u.email}</td>
+                    <td className="px-3 sm:px-4 py-3 hidden md:table-cell">{u.role}</td>
+                    <td className="px-3 sm:px-4 py-3 hidden lg:table-cell">
                       {new Date(u.createdAt).toLocaleDateString()}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-3 sm:px-4 py-3">
                       <span
                         className={`px-3 py-1 rounded-full text-xs font-semibold ${
                           u.status === "ACTIVE"
@@ -239,7 +241,7 @@ export default function AdminUsers() {
                         {u.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-3 sm:px-4 py-3 text-right">
                       <button
                         className="px-3 py-1 rounded bg-blue-500 text-white text-xs"
                         onClick={() => startEdit(u)}

@@ -136,12 +136,14 @@ export default function ReportAdmin() {
     <div className="h-full flex flex-col max-w-7xl mx-auto p-3 sm:p-4 lg:p-6">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-black mb-2">Admin Reports</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-black mb-2">
+          Admin Reports
+        </h1>
         <p className="text-gray-600">Manage reports from owners</p>
       </div>
 
       {/* Filters & Search */}
-      <div className="mb-4 flex flex-col md:flex-row gap-4">
+      <div className="mb-4 flex flex-col md:flex-row gap-3 sm:gap-4">
         <SearchInput
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -151,7 +153,7 @@ export default function ReportAdmin() {
         <select
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          className="app-select md:min-w-44"
+          className="app-select md:min-w-[180px]"
         >
           <option value="all">All Status</option>
           {STATUS_OPTIONS.map((status) => (
@@ -164,7 +166,7 @@ export default function ReportAdmin() {
 
       {/* Bulk Actions */}
       {selectedIds.length > 0 && (
-        <div className="mb-4 flex gap-2">
+        <div className="mb-4 flex flex-wrap gap-2">
           <button onClick={handleBulkDelete} className="app-btn-danger">
             Delete Selected ({selectedIds.length})
           </button>
@@ -183,10 +185,10 @@ export default function ReportAdmin() {
         ) : (
           <>
             <div className="overflow-auto flex-1">
-              <table className="w-full min-w-220 text-sm">
+              <table className="w-full min-w-[980px] text-sm">
                 <thead className="bg-gray-100 border-b border-gray-200 sticky top-0 z-10">
                   <tr>
-                    <th className="px-6 py-3 text-left">
+                    <th className="px-3 sm:px-6 py-3 text-left">
                       <input
                         type="checkbox"
                         checked={
@@ -197,19 +199,19 @@ export default function ReportAdmin() {
                         className="rounded"
                       />
                     </th>
-                    <th className="px-6 py-3 text-left font-semibold">ID</th>
-                    <th className="px-6 py-3 text-left font-semibold">Owner</th>
-                    <th className="px-6 py-3 text-left font-semibold">
+                    <th className="px-3 sm:px-6 py-3 text-left font-semibold">ID</th>
+                    <th className="px-3 sm:px-6 py-3 text-left font-semibold">Owner</th>
+                    <th className="px-3 sm:px-6 py-3 text-left font-semibold">
                       Target
                     </th>
-                    <th className="px-6 py-3 text-left font-semibold">
+                    <th className="px-3 sm:px-6 py-3 text-left font-semibold">
                       Content
                     </th>
-                    <th className="px-6 py-3 text-left font-semibold min-w-55">
+                    <th className="px-3 sm:px-6 py-3 text-left font-semibold min-w-[180px]">
                       Status
                     </th>
-                    <th className="px-6 py-3 text-left font-semibold">Date</th>
-                    <th className="px-6 py-3 text-left font-semibold">
+                    <th className="px-3 sm:px-6 py-3 text-left font-semibold">Date</th>
+                    <th className="px-3 sm:px-6 py-3 text-left font-semibold">
                       Actions
                     </th>
                   </tr>
@@ -217,7 +219,7 @@ export default function ReportAdmin() {
                 <tbody>
                   {reports.map((report) => (
                     <tr key={report.id} className="border-b hover:bg-gray-50">
-                      <td className="px-6 py-3">
+                      <td className="px-3 sm:px-6 py-3">
                         <input
                           type="checkbox"
                           checked={selectedIds.includes(report.id)}
@@ -225,27 +227,27 @@ export default function ReportAdmin() {
                           className="rounded"
                         />
                       </td>
-                      <td className="px-6 py-3 font-semibold">#{report.id}</td>
-                      <td className="px-6 py-3">
+                      <td className="px-3 sm:px-6 py-3 font-semibold">#{report.id}</td>
+                      <td className="px-3 sm:px-6 py-3">
                         <p className="text-sm font-medium">
                           {report.sender?.email || "Unknown"}
                         </p>
                       </td>
-                      <td className="px-6 py-3 text-sm">
+                      <td className="px-3 sm:px-6 py-3 text-sm">
                         <span className="inline-flex max-w-xs items-center justify-center rounded-full bg-slate-100 px-3 py-1.5 text-[11px] font-semibold text-slate-800 leading-tight shadow-sm ring-1 ring-slate-200 whitespace-nowrap">
                           {report.target}
                         </span>
                       </td>
-                      <td className="px-6 py-3 text-sm max-w-xs truncate">
+                      <td className="px-3 sm:px-6 py-3 text-sm max-w-xs truncate">
                         {report.content}
                       </td>
-                      <td className="px-6 py-3 min-w-55">
+                      <td className="px-3 sm:px-6 py-3 min-w-[180px]">
                         <select
                           value={report.status || ""}
                           onChange={(e) =>
                             handleStatusChange(report.id, e.target.value)
                           }
-                          className={`w-full min-h-12 rounded-xl px-4 py-3 text-sm font-bold uppercase cursor-pointer border-2 shadow-sm transition focus:outline-none focus:ring-2 focus:ring-offset-1 ${
+                          className={`w-full min-h-11 rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 text-sm font-bold uppercase cursor-pointer border-2 shadow-sm transition focus:outline-none focus:ring-2 focus:ring-offset-1 ${
                             STATUS_COLORS[report.status] ||
                             "bg-gray-100 text-gray-800"
                           }`}
@@ -257,10 +259,10 @@ export default function ReportAdmin() {
                           ))}
                         </select>
                       </td>
-                      <td className="px-6 py-3 text-sm text-gray-600">
+                      <td className="px-3 sm:px-6 py-3 text-sm text-gray-600">
                         {new Date(report.createdAt).toLocaleDateString()}
                       </td>
-                      <td className="px-6 py-3">
+                      <td className="px-3 sm:px-6 py-3">
                         <button
                           onClick={() => handleDelete(report.id)}
                           className="text-red-600 hover:text-red-800 transition"

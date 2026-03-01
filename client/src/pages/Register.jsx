@@ -98,8 +98,8 @@ const Register = () => {
   return (
     <>
       <Loading isLoading={loading} />
-      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-gray-100 to-gray-200 p-4">
-        <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md border border-gray-200">
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-gray-100 to-gray-200 px-3 py-6 sm:p-4">
+        <div className="bg-white rounded-xl shadow-2xl p-5 sm:p-8 w-full max-w-md border border-gray-200">
           {/* Logo & Brand */}
           <Link
             to="/"
@@ -118,8 +118,10 @@ const Register = () => {
             </div>
           </Link>
 
-          <div className="mb-6 text-center">
-            <h2 className="text-3xl font-bold text-black">Create Account</h2>
+          <div className="mb-5 sm:mb-6 text-center">
+            <h2 className="text-2xl sm:text-3xl font-bold text-black">
+              Create Account
+            </h2>
             <p className="text-gray-600 mt-2">Sign up to get started</p>
           </div>
 

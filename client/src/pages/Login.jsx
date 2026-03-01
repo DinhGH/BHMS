@@ -67,10 +67,10 @@ const Login = () => {
     <>
       <Loading isLoading={loading} />
       <div
-        className="min-h-screen flex items-center justify-center p-4"
+        className="min-h-screen flex items-center justify-center px-3 py-6 sm:p-4"
         style={{ backgroundColor: "var(--app-bg)" }}
       >
-        <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md border border-gray-200">
+        <div className="bg-white rounded-xl shadow-2xl p-5 sm:p-8 w-full max-w-md border border-gray-200">
           {/* Logo & Brand */}
           <Link
             to="/"
@@ -89,8 +89,8 @@ const Login = () => {
             </div>
           </Link>
 
-          <div className="mb-6 text-center">
-            <h2 className="text-3xl font-bold text-black">Log in</h2>
+          <div className="mb-5 sm:mb-6 text-center">
+            <h2 className="text-2xl sm:text-3xl font-bold text-black">Log in</h2>
           </div>
 
           <form onSubmit={handleSubmit}>

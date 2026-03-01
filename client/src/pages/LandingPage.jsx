@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 function LandingPage() {
@@ -112,7 +112,7 @@ function LandingPage() {
                   </button>
                   <button
                     onClick={() => {
-                      navigate("/signup");
+                      navigate("/register");
                       setIsMobileMenuOpen(false);
                     }}
                     className="flex-1 px-4 py-2 bg-linear-to-r from-blue-600 to-blue-500 text-white font-semibold rounded-lg transition-all duration-300 shadow-md hover:shadow-lg hover:from-blue-700 hover:to-blue-600"
@@ -135,13 +135,13 @@ function LandingPage() {
         className="w-full flex flex-col lg:flex-row items-center justify-between gap-8 sm:gap-12 lg:gap-16 pt-24 sm:pt-28 lg:pt-32 pb-16 sm:pb-20 lg:pb-24 px-4 sm:px-6 md:px-10 bg-linear-to-br from-blue-50 via-indigo-50 to-white min-h-screen"
       >
         <div className="flex-1 pr-0 lg:pr-8 mb-8 lg:mb-0 text-center lg:text-left w-full">
-          <h1 className="text-2xl xs:text-3xl sm:text-4xl lg:text-5xl xl:text-6xl leading-tight mb-3 sm:mb-4 text-slate-900 font-bold">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl leading-tight mb-3 sm:mb-4 text-slate-900 font-bold">
             Smart & Efficient
           </h1>
-          <h1 className="text-2xl xs:text-3xl sm:text-4xl lg:text-5xl xl:text-6xl leading-tight mb-6 sm:mb-8 bg-linear-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent font-bold">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl leading-tight mb-6 sm:mb-8 bg-linear-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent font-bold">
             Boarding House Management
           </h1>
-          <p className="text-sm xs:text-base sm:text-lg text-slate-600 mb-8 sm:mb-10 max-w-xl mx-auto lg:mx-0 leading-relaxed">
+          <p className="text-sm sm:text-lg text-slate-600 mb-8 sm:mb-10 max-w-xl mx-auto lg:mx-0 leading-relaxed">
             Streamline your operations with our all-in-one solution. Digitalize
             contracts, automate utility billing with AI, and connect landlords
             with tenants seamlessly.
@@ -509,8 +509,28 @@ function LandingPage() {
     ];
 
     const [startIndex, setStartIndex] = useState(0);
-    const itemsToShow =
-      window.innerWidth < 640 ? 1 : window.innerWidth < 1024 ? 2 : 3;
+    const [viewportWidth, setViewportWidth] = useState(() =>
+      typeof window === "undefined" ? 1024 : window.innerWidth,
+    );
+    const itemsToShow = viewportWidth < 640 ? 1 : viewportWidth < 1024 ? 2 : 3;
+
+    useEffect(() => {
+      const handleResize = () => {
+        setViewportWidth(window.innerWidth);
+      };
+
+      window.addEventListener("resize", handleResize);
+      return () => {
+        window.removeEventListener("resize", handleResize);
+      };
+    }, []);
+
+    useEffect(() => {
+      const maxStart = Math.max(reviews.length - itemsToShow, 0);
+      if (startIndex > maxStart) {
+        setStartIndex(0);
+      }
+    }, [itemsToShow, reviews.length, startIndex]);
 
     const handleNext = () => {
       setStartIndex((prevIndex) => {

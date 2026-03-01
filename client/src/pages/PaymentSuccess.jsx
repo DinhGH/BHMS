@@ -82,9 +82,9 @@ export default function PaymentSuccess() {
   }, [sessionId]);
 
   return (
-    <div className="min-h-screen bg-gray-50 px-4 py-8">
+    <div className="min-h-screen bg-gray-50 px-3 sm:px-4 py-6 sm:py-8">
       <div className="mx-auto w-full max-w-4xl space-y-5">
-        <div className="bg-white shadow-lg rounded-2xl p-6 sm:p-8 text-center border border-gray-200">
+        <div className="bg-white shadow-lg rounded-2xl p-4 sm:p-8 text-center border border-gray-200">
           <div className="text-5xl mb-3">✅</div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
             Payment successful
@@ -118,7 +118,7 @@ export default function PaymentSuccess() {
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <Link
               to="/"
-              className="inline-flex items-center justify-center px-5 py-2.5 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition"
+              className="inline-flex w-full sm:w-auto items-center justify-center px-5 py-2.5 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition"
             >
               Back to Home
             </Link>
@@ -126,7 +126,7 @@ export default function PaymentSuccess() {
               <button
                 type="button"
                 onClick={() => window.print()}
-                className="inline-flex items-center justify-center px-5 py-2.5 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-100 transition"
+                className="inline-flex w-full sm:w-auto items-center justify-center px-5 py-2.5 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-100 transition"
               >
                 Print invoice
               </button>
@@ -213,7 +213,7 @@ export default function PaymentSuccess() {
               </div>
             </section>
 
-            <section className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 lg:col-span-2 space-y-4">
+            <section className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-5 lg:col-span-2 space-y-4">
               <div className="flex items-center justify-between gap-3 flex-wrap">
                 <h2 className="text-lg font-semibold text-gray-900">
                   Invoice Details
@@ -265,7 +265,7 @@ export default function PaymentSuccess() {
                 {Array.isArray(receipt?.invoice?.serviceItems) &&
                 receipt.invoice.serviceItems.length > 0 ? (
                   <div className="overflow-x-auto">
-                    <table className="w-full min-w-130 border border-gray-200 rounded-lg overflow-hidden">
+                    <table className="w-full min-w-[560px] border border-gray-200 rounded-lg overflow-hidden">
                       <thead className="bg-gray-100 text-gray-700">
                         <tr>
                           <th className="px-3 py-2 text-left font-medium">

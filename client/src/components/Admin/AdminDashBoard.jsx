@@ -128,31 +128,31 @@ export default function AdminDashBoard() {
       {/* Charts Row */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Donut Chart */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900">
               Active user rate
             </h2>
             <span className="text-sm text-gray-500">Total: {totalUsers}</span>
           </div>
-          <div className="flex items-center gap-6">
+          <div className="flex flex-col sm:flex-row items-center gap-5 sm:gap-6">
             <div className="flex-1 flex justify-center">
-              <div className="relative w-60 h-60">
+              <div className="relative w-44 h-44 sm:w-60 sm:h-60">
                 <div
                   className="absolute inset-0 rounded-full"
                   style={{
                     background: `conic-gradient(#22c55e 0% ${activePct}%, #ef4444 ${activePct}% 100%)`,
                   }}
                 />
-                <div className="absolute inset-7 bg-white rounded-full flex flex-col items-center justify-center shadow-inner">
-                  <span className="text-3xl font-bold text-gray-900">
+                <div className="absolute inset-5 sm:inset-7 bg-white rounded-full flex flex-col items-center justify-center shadow-inner">
+                  <span className="text-2xl sm:text-3xl font-bold text-gray-900">
                     {activePct}%
                   </span>
                   <span className="text-sm text-gray-500">Active</span>
                 </div>
               </div>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-3 w-full sm:w-auto">
               <div className="flex items-center gap-3">
                 <span className="w-3 h-3 rounded-full bg-green-500" />
                 <div>
@@ -216,7 +216,7 @@ export default function AdminDashBoard() {
       {/* Bottom Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Activity */}
-        <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">
             Recent activity
           </h2>
@@ -224,7 +224,7 @@ export default function AdminDashBoard() {
             {(dashboard?.recentActivity ?? []).map((item, index) => (
               <div
                 key={index}
-                className="flex items-center justify-between border-b border-gray-100 pb-3"
+                className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-gray-100 pb-3"
               >
                 <div className="text-sm text-gray-700">{item.title}</div>
                 <div className="text-xs text-gray-400">{item.time}</div>
@@ -234,7 +234,7 @@ export default function AdminDashBoard() {
         </div>
 
         {/* Report Status */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">
             Report Admin status
           </h2>
