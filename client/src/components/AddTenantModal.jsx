@@ -11,8 +11,11 @@ export default function AddTenantModal({ open, roomId, onClose, onAdded }) {
 
   /* ================= SEARCH TENANTS ================= */
   useEffect(() => {
-    if (!searchQuery.trim()) {
-      setSuggestions([]);
+    if (!open) {
+      return;
+    }
+
+    if (selectedTenant && searchQuery === selectedTenant.fullName) {
       return;
     }
 
@@ -26,16 +29,15 @@ export default function AddTenantModal({ open, roomId, onClose, onAdded }) {
       } finally {
         setSearching(false);
       }
-    }, 300); // Debounce 300ms
+    }, searchQuery.trim() ? 300 : 0);
 
     return () => clearTimeout(timer);
-  }, [searchQuery]);
+  }, [open, searchQuery, selectedTenant]);
 
   /* ================= SELECT TENANT ================= */
   const handleSelectTenant = (tenant) => {
     setSelectedTenant(tenant);
     setSearchQuery(tenant.fullName);
-    setSuggestions([]);
   };
 
   /* ================= SUBMIT ================= */
@@ -77,11 +79,11 @@ export default function AddTenantModal({ open, roomId, onClose, onAdded }) {
   /* ================= UI ================= */
   return (
     <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
-      <div className="bg-white p-6 rounded-lg w-full max-w-md space-y-4">
+      <div className="bg-white p-6 rounded-lg w-full max-w-lg space-y-4">
         <h2 className="text-lg font-semibold">Add Tenant to Room</h2>
 
         {/* Search Input */}
-        <div className="relative">
+        <div>
           <label className="block text-sm font-medium mb-1">
             Search Tenant <span className="text-red-500">*</span>
           </label>
@@ -96,39 +98,46 @@ export default function AddTenantModal({ open, roomId, onClose, onAdded }) {
             placeholder="Type tenant name or email..."
           />
 
-          {/* Loading indicator */}
-          {searching && (
-            <div className="absolute right-3 top-9 text-sm text-gray-400">
-              Searching...
-            </div>
-          )}
+          <div className="mt-2 border rounded-md max-h-56 overflow-y-auto bg-white">
+            {searching && (
+              <div className="px-4 py-3 text-sm text-gray-500">Searching...</div>
+            )}
 
-          {/* Suggestions Dropdown */}
-          {suggestions.length > 0 && !selectedTenant && (
-            <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-y-auto">
-              {suggestions.map((tenant) => (
-                <div
-                  key={tenant.id}
-                  onClick={() => handleSelectTenant(tenant)}
-                  className="px-4 py-3 hover:bg-blue-50 cursor-pointer border-b last:border-b-0"
-                >
-                  <div className="font-medium">{tenant.fullName}</div>
-                  <div className="text-sm text-gray-500">{tenant.email}</div>
-                  <div className="text-xs text-gray-400 mt-1">
-                    {tenant.age} years • {tenant.gender} •{" "}
-                    {tenant.phone || "No phone"}
-                  </div>
+            {!searching && suggestions.length > 0 && (
+              <>
+                <div className="px-4 py-2 text-xs text-gray-500 border-b bg-gray-50">
+                  {searchQuery.trim()
+                    ? "Matching tenants without room"
+                    : "Tenants without room"}
                 </div>
-              ))}
-            </div>
-          )}
+                {suggestions.map((tenant) => (
+                  <button
+                    type="button"
+                    key={tenant.id}
+                    onClick={() => handleSelectTenant(tenant)}
+                    className={`w-full text-left px-4 py-3 hover:bg-blue-50 border-b last:border-b-0 ${
+                      selectedTenant?.id === tenant.id ? "bg-blue-50" : ""
+                    }`}
+                  >
+                    <div className="font-medium">{tenant.fullName}</div>
+                    <div className="text-sm text-gray-500">{tenant.email}</div>
+                    <div className="text-xs text-gray-400 mt-1">
+                      {tenant.age} years • {tenant.gender} •{" "}
+                      {tenant.phone || "No phone"}
+                    </div>
+                  </button>
+                ))}
+              </>
+            )}
 
-          {/* No results */}
-          {searchQuery.trim() && !searching && suggestions.length === 0 && (
-            <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg p-4 text-center text-gray-500 text-sm">
-              No available tenants found
-            </div>
-          )}
+            {!searching && suggestions.length === 0 && (
+              <div className="px-4 py-3 text-sm text-gray-500">
+                {searchQuery.trim()
+                  ? "No tenants without room match this search"
+                  : "No tenants without room available"}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Selected Tenant Info */}
@@ -162,8 +171,7 @@ export default function AddTenantModal({ open, roomId, onClose, onAdded }) {
 
         {/* Help Text */}
         <div className="text-xs text-gray-500 italic">
-          💡 You can add any tenant. If they already have a room, they will be
-          moved to this room.
+          💡 Only tenants who do not have a room are shown in this list.
         </div>
 
         {/* Actions */}

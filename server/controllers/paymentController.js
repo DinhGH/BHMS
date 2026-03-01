@@ -2,6 +2,19 @@ import { getAllPayments } from "../services/paymentService.js";
 import Stripe from "stripe";
 import { prisma } from "../lib/prisma.js";
 import { sendInvoicePaidEmail } from "../lib/mailer.js";
+import { uploadImageToCloudinary } from "../lib/cloudinary.js";
+
+const PAYMENT_METHODS = ["GATEWAY", "QR_TRANSFER", "CASH"];
+
+const parseOptionalBoolean = (value) => {
+  if (value === undefined || value === null || value === "") return undefined;
+  if (typeof value === "boolean") return value;
+
+  const normalized = String(value).trim().toLowerCase();
+  if (["true", "1", "yes"].includes(normalized)) return true;
+  if (["false", "0", "no"].includes(normalized)) return false;
+  return null;
+};
 
 const getStripeClient = () => {
   const secretKey = process.env.STRIPE_SECRET_KEY;
@@ -225,6 +238,171 @@ export async function getPayments(req, res) {
   } catch (error) {
     console.error("Failed to fetch payments", error);
     res.status(500).json({ message: "Failed to fetch payments" });
+  }
+}
+
+export async function updatePaymentByOwner(req, res) {
+  try {
+    const paymentId = Number(req.params.id);
+
+    if (!paymentId || Number.isNaN(paymentId)) {
+      return res.status(400).json({ message: "Invalid payment ID" });
+    }
+
+    const existingRows = await prisma.$queryRawUnsafe(
+      `
+        SELECT
+          p.id,
+          p.invoiceId,
+          p.amount,
+          p.method,
+          p.confirmed,
+          p.proofImage,
+          i.totalAmount AS invoiceTotalAmount
+        FROM Payment p
+        LEFT JOIN Invoice i ON i.id = p.invoiceId
+        WHERE p.id = ?
+        LIMIT 1
+      `,
+      paymentId,
+    );
+
+    const existing = existingRows?.[0] || null;
+
+    if (!existing) {
+      return res.status(404).json({ message: "Payment not found" });
+    }
+
+    const nextMethod = req.body?.method
+      ? String(req.body.method).trim().toUpperCase()
+      : existing.method;
+
+    if (!PAYMENT_METHODS.includes(nextMethod)) {
+      return res.status(400).json({
+        message: `Invalid payment method. Allowed: ${PAYMENT_METHODS.join(", ")}`,
+      });
+    }
+
+    const updateData = {
+      method: nextMethod,
+    };
+
+    if (req.body?.amount !== undefined && req.body?.amount !== "") {
+      const amountValue = Number(req.body.amount);
+      if (!Number.isFinite(amountValue) || amountValue <= 0) {
+        return res
+          .status(400)
+          .json({ message: "Payment amount must be greater than 0" });
+      }
+
+      if (
+        Number.isFinite(Number(existing?.invoiceTotalAmount)) &&
+        amountValue > Number(existing.invoiceTotalAmount)
+      ) {
+        return res.status(400).json({
+          message: "Payment amount cannot exceed invoice total amount",
+        });
+      }
+
+      updateData.amount = amountValue;
+    }
+
+    const confirmedValue = parseOptionalBoolean(req.body?.confirmed);
+    if (confirmedValue === null) {
+      return res.status(400).json({
+        message: "Invalid confirmed value. Use true/false",
+      });
+    }
+    if (confirmedValue !== undefined) {
+      updateData.confirmed = confirmedValue;
+    }
+
+    if (req.file?.buffer) {
+      if (nextMethod !== "QR_TRANSFER") {
+        return res.status(400).json({
+          message: "Proof image is only allowed for QR_TRANSFER method",
+        });
+      }
+
+      const uploadResult = await uploadImageToCloudinary(req.file.buffer, {
+        folder: "bhms/payments/proofs",
+      });
+
+      updateData.proofImage = uploadResult?.secure_url || null;
+    }
+
+    const shouldRemoveProof =
+      String(req.body?.removeProof || "").trim().toLowerCase() === "true";
+
+    if (nextMethod !== "QR_TRANSFER" || shouldRemoveProof) {
+      updateData.proofImage = null;
+    }
+
+    const setClauses = [];
+    const values = [];
+
+    if (Object.prototype.hasOwnProperty.call(updateData, "method")) {
+      setClauses.push("`method` = ?");
+      values.push(updateData.method);
+    }
+    if (Object.prototype.hasOwnProperty.call(updateData, "amount")) {
+      setClauses.push("`amount` = ?");
+      values.push(updateData.amount);
+    }
+    if (Object.prototype.hasOwnProperty.call(updateData, "confirmed")) {
+      setClauses.push("`confirmed` = ?");
+      values.push(updateData.confirmed ? 1 : 0);
+    }
+    if (Object.prototype.hasOwnProperty.call(updateData, "proofImage")) {
+      setClauses.push("`proofImage` = ?");
+      values.push(updateData.proofImage);
+    }
+
+    if (setClauses.length === 0) {
+      return res.status(400).json({ message: "No valid fields to update" });
+    }
+
+    const rows = await prisma.$queryRawUnsafe(
+      `SELECT id FROM Payment WHERE id = ? LIMIT 1`,
+      paymentId,
+    );
+
+    if (!rows?.length) {
+      return res.status(404).json({ message: "Payment not found" });
+    }
+
+    await prisma.$executeRawUnsafe(
+      `UPDATE Payment SET ${setClauses.join(", ")} WHERE id = ?`,
+      ...values,
+      paymentId,
+    );
+
+    const payments = await getAllPayments();
+    const updated = payments.find((item) => Number(item.id) === paymentId);
+
+    if (!updated) {
+      return res.status(500).json({ message: "Failed to load updated payment" });
+    }
+
+    return res.status(200).json({
+      message: "Payment updated successfully",
+      payment: {
+        id: updated.id,
+        invoiceId: updated.invoiceId,
+        amount: updated.amount,
+        method: updated.method,
+        confirmed: updated.confirmed,
+        createdAt: updated.createdAt,
+        img: updated.img || null,
+      },
+    });
+  } catch (error) {
+    console.error("UPDATE PAYMENT ERROR:", {
+      message: error?.message,
+      stack: error?.stack,
+    });
+
+    return res.status(500).json({ message: "Failed to update payment" });
   }
 }
 

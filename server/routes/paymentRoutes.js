@@ -3,7 +3,10 @@ import {
   confirmStripeSessionPayment,
   getPayments,
   handleStripeWebhook,
+  updatePaymentByOwner,
 } from "../controllers/paymentController.js";
+import upload from "../middlewares/upload.middleware.js";
+import { authOwner } from "../middlewares/owner.middleware.js";
 
 const router = express.Router();
 
@@ -13,6 +16,7 @@ const router = express.Router();
 
 router.get("/", getPayments);
 router.post("/confirm-session", confirmStripeSessionPayment);
+router.patch("/:id", authOwner, upload.single("proof"), updatePaymentByOwner);
 
 export { handleStripeWebhook };
 export default router;

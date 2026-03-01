@@ -456,9 +456,11 @@ export const addTenantToRoom = async (req, res) => {
 };
 export const searchAvailableTenants = async (req, res) => {
   try {
-    const { query } = req.query;
+    const { query, limit } = req.query;
 
-    const where = {};
+    const where = {
+      roomId: null,
+    };
 
     if (query && query.trim()) {
       where.OR = [
@@ -475,6 +477,11 @@ export const searchAvailableTenants = async (req, res) => {
       ];
     }
 
+    const parsedLimit = Number(limit);
+    const take = Number.isFinite(parsedLimit)
+      ? Math.max(1, Math.min(parsedLimit, 30))
+      : 10;
+
     const tenants = await prisma.tenant.findMany({
       where,
       select: {
@@ -486,7 +493,7 @@ export const searchAvailableTenants = async (req, res) => {
         gender: true,
         roomId: true,
       },
-      take: 10,
+      take,
       orderBy: {
         fullName: "asc",
       },

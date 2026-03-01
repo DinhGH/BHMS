@@ -343,6 +343,42 @@ export async function getPayments() {
   if (!res.ok) throw new Error("Failed to fetch payments");
   return await res.json();
 }
+
+export async function updatePayment(paymentId, payload = {}) {
+  const token = localStorage.getItem("token");
+  const formData = new FormData();
+
+  if (payload.method) formData.append("method", payload.method);
+  if (payload.amount !== undefined && payload.amount !== null) {
+    formData.append("amount", String(payload.amount));
+  }
+  if (payload.confirmed !== undefined && payload.confirmed !== null) {
+    formData.append("confirmed", String(payload.confirmed));
+  }
+  if (payload.removeProof) {
+    formData.append("removeProof", "true");
+  }
+  if (payload.proofFile) {
+    formData.append("proof", payload.proofFile);
+  }
+
+  const res = await fetch(`${API_BASE_URL}/api/payments/${paymentId}`, {
+    method: "PATCH",
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    credentials: "include",
+    body: formData,
+  });
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(data?.message || "Failed to update payment");
+  }
+
+  return data;
+}
+
 export async function getReportAdmins({
   page = 1,
   limit = 10,

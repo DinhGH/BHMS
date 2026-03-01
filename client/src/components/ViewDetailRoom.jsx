@@ -179,18 +179,67 @@ export default function ViewDetailRoom({ roomId, onBack }) {
   }
 
   const isOccupied = room.status === "OCCUPIED";
+  const roomStatusText = room.isLocked ? "Locked" : isOccupied ? "Occupied" : "Empty";
+  const roomStatusStyle = room.isLocked
+    ? "bg-amber-100 text-amber-700"
+    : isOccupied
+      ? "bg-emerald-100 text-emerald-700"
+      : "bg-slate-100 text-slate-600";
+  const paymentStatusStyle =
+    room.paymentStatus === "OVERDUE"
+      ? "bg-red-100 text-red-700"
+      : room.paymentStatus === "PAID"
+        ? "bg-emerald-100 text-emerald-700"
+        : "bg-slate-100 text-slate-600";
 
   return (
     <div className="space-y-8">
       {/* HEADER */}
-      <div className="flex items-center gap-3">
-        <button
-          onClick={onBack}
-          className="text-sm px-3 py-1 rounded-md border hover:bg-slate-100"
-        >
-          ← Back
-        </button>
-        <h2 className="text-xl font-semibold">Room Details</h2>
+      <div className="bg-white rounded-xl shadow-sm border p-4 sm:p-5 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <button
+              onClick={onBack}
+              className="text-sm px-3 py-1.5 rounded-md border hover:bg-slate-100"
+            >
+              ← Back
+            </button>
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900">{room.name}</h2>
+              <p className="text-sm text-gray-500 mt-1">Room details and operations</p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <span className={`inline-flex text-xs font-medium px-2.5 py-1 rounded-full ${roomStatusStyle}`}>
+              {roomStatusText}
+            </span>
+            <span
+              className={`inline-flex text-xs font-medium px-2.5 py-1 rounded-full ${paymentStatusStyle}`}
+            >
+              {renderInvoiceStatus(room.paymentStatus)}
+            </span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="rounded-lg border bg-slate-50 px-4 py-3">
+            <div className="text-xs text-slate-500">Rent</div>
+            <div className="text-lg font-semibold text-slate-900">{formatUsd(room.price)}</div>
+          </div>
+          <div className="rounded-lg border bg-blue-50 px-4 py-3">
+            <div className="text-xs text-blue-600">Tenants</div>
+            <div className="text-lg font-semibold text-blue-900">{room.tenants?.length || 0}</div>
+          </div>
+          <div className="rounded-lg border bg-violet-50 px-4 py-3">
+            <div className="text-xs text-violet-600">Services Cost</div>
+            <div className="text-lg font-semibold text-violet-900">{formatUsd(calcServiceCost())}</div>
+          </div>
+          <div className="rounded-lg border bg-emerald-50 px-4 py-3">
+            <div className="text-xs text-emerald-600">Est. Total</div>
+            <div className="text-lg font-semibold text-emerald-900">{formatUsd(calcTotalCost())}</div>
+          </div>
+        </div>
       </div>
 
       {/* MAIN CARD */}
@@ -215,12 +264,7 @@ export default function ViewDetailRoom({ roomId, onBack }) {
 
           {/* INFO */}
           <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <InfoBox
-              label="Room Status"
-              value={
-                room.isLocked ? "Locked" : isOccupied ? "Occupied" : "Empty"
-              }
-            />
+            <InfoBox label="Room Status" value={roomStatusText} />
 
             <InfoBox
               label="Payment Status"
@@ -287,7 +331,10 @@ export default function ViewDetailRoom({ roomId, onBack }) {
       {/* SERVICE SECTION */}
       <div className="bg-white rounded-xl shadow p-6 space-y-4">
         <div className="flex justify-between items-center">
-          <h3 className="font-semibold">Room Services</h3>
+          <h3 className="font-semibold text-gray-900">Room Services</h3>
+          <span className="text-sm text-gray-500">
+            Total: {formatUsd(calcServiceCost())}
+          </span>
         </div>
 
         {roomServices.length > 0 ? (
@@ -393,7 +440,7 @@ export default function ViewDetailRoom({ roomId, onBack }) {
       {/* INVOICES SECTION */}
       <div className="bg-white rounded-xl shadow p-6 space-y-4">
         <div className="flex justify-between items-center">
-          <h3 className="font-semibold">Room Invoices</h3>
+          <h3 className="font-semibold text-gray-900">Room Invoices</h3>
           <span className="text-sm text-gray-500">
             Total: {invoices.length}
           </span>
@@ -468,7 +515,8 @@ export default function ViewDetailRoom({ roomId, onBack }) {
       </div>
 
       {/* ACTIONS */}
-      <div className="flex justify-center gap-4">
+      <div className="bg-white border rounded-xl p-4 shadow-sm">
+        <div className="flex flex-wrap justify-center gap-3">
         {/* Make Invoice */}
         <ActionButton
           label="Make Invoice"
@@ -537,6 +585,7 @@ export default function ViewDetailRoom({ roomId, onBack }) {
           disabled={deleting}
           onClick={handleDeleteRoom}
         />
+        </div>
       </div>
 
       {/* EDIT MODAL */}

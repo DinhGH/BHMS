@@ -51,6 +51,9 @@ export async function getAllPayments() {
     const paymentImgSelect = hasCol(paymentCols, "img")
       ? "p.img"
       : "NULL AS img";
+    const paymentProofImageSelect = hasCol(paymentCols, "proofImage")
+      ? "p.proofImage AS proofImage"
+      : "NULL AS proofImage";
 
     const sql = `
       SELECT
@@ -61,6 +64,7 @@ export async function getAllPayments() {
         p.confirmed,
         p.createdAt,
         ${paymentImgSelect},
+        ${paymentProofImageSelect},
         ${invoiceSelectParts.join(", ")},
         ${tenantSelectParts.join(", ")},
         r.name AS roomName,
@@ -74,6 +78,88 @@ export async function getAllPayments() {
     `;
 
     const payments = await prisma.$queryRawUnsafe(sql);
+
+    const invoiceIds = [
+      ...new Set(
+        payments
+          .map((payment) => Number(payment.invoiceId))
+          .filter((id) => Number.isFinite(id) && id > 0),
+      ),
+    ];
+
+    const invoiceDetailList = invoiceIds.length
+      ? await prisma.invoice.findMany({
+          where: { id: { in: invoiceIds } },
+          select: {
+            id: true,
+            month: true,
+            year: true,
+            roomPrice: true,
+            electricCost: true,
+            waterCost: true,
+            serviceCost: true,
+            totalAmount: true,
+            status: true,
+            createdAt: true,
+            Room: {
+              select: {
+                roomServices: {
+                  select: {
+                    id: true,
+                    quantity: true,
+                    price: true,
+                    totalPrice: true,
+                    service: {
+                      select: {
+                        name: true,
+                        unit: true,
+                        priceType: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        })
+      : [];
+
+    const invoiceDetailsById = new Map(
+      invoiceDetailList.map((invoice) => {
+        const serviceItems = (invoice?.Room?.roomServices || []).map((item) => {
+          const quantity = Number(item?.quantity ?? 1) || 1;
+          const unitPrice = Number(item?.price || 0);
+          const totalPrice = Number(item?.totalPrice ?? unitPrice * quantity);
+
+          return {
+            id: item.id,
+            name: item?.service?.name || "Service",
+            unit: item?.service?.unit || null,
+            priceType: item?.service?.priceType || null,
+            quantity,
+            unitPrice,
+            totalPrice,
+          };
+        });
+
+        return [
+          invoice.id,
+          {
+            id: invoice.id,
+            month: invoice.month,
+            year: invoice.year,
+            roomPrice: invoice.roomPrice,
+            electricCost: invoice.electricCost,
+            waterCost: invoice.waterCost,
+            serviceCost: invoice.serviceCost,
+            totalAmount: invoice.totalAmount,
+            status: invoice.status,
+            createdAt: invoice.createdAt,
+            serviceItems,
+          },
+        ];
+      }),
+    );
 
     const data = payments.map((payment) => {
       const roomLabel = payment.roomName
@@ -90,6 +176,8 @@ export async function getAllPayments() {
           : null;
       }
 
+      const invoiceDetail = invoiceDetailsById.get(Number(payment.invoiceId));
+
       return {
         id: payment.id,
         paymentId,
@@ -97,10 +185,13 @@ export async function getAllPayments() {
         method: payment.method,
         confirmed: !!payment.confirmed,
         createdAt: payment.createdAt,
-        img: payment.img ?? null,
+        img: payment.proofImage ?? payment.img ?? null,
         invoiceId: payment.invoiceId,
         invoiceStatus: invoice.status ?? null,
-        invoice,
+        invoice: {
+          ...invoice,
+          ...(invoiceDetail || {}),
+        },
         tenantName: payment.tenantName || payment.tenantEmail || "",
         roomName: payment.roomName ?? "",
         houseName: payment.houseName ?? "",

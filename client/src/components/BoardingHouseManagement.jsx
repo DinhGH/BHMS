@@ -16,6 +16,7 @@ import "../index.css";
 export default function BoardingHouseManagement({ ownerId }) {
   const [houses, setHouses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedHouse, setSelectedHouse] = useState(null);
@@ -40,13 +41,14 @@ export default function BoardingHouseManagement({ ownerId }) {
       setLoading(true);
       const data = await getBoardingHouses(search);
       setHouses(data);
+      setLoadError("");
     } catch (error) {
       const message =
         error?.response?.data?.message ||
         error?.message ||
         "Cannot load boarding houses";
       toast.error(message);
-      setHouses([]);
+      setLoadError(message);
     } finally {
       setLoading(false);
     }
@@ -69,6 +71,9 @@ export default function BoardingHouseManagement({ ownerId }) {
   const totalPages = Math.ceil(houses.length / pageSize);
   const startIndex = (currentPage - 1) * pageSize;
   const paginatedHouses = houses.slice(startIndex, startIndex + pageSize);
+  const totalRooms = houses.reduce((sum, house) => sum + (house.totalRooms || 0), 0);
+  const totalOccupied = houses.reduce((sum, house) => sum + (house.occupied || 0), 0);
+  const totalAvailable = houses.reduce((sum, house) => sum + (house.available || 0), 0);
   // Pagination logic
   //handle delete by name
   const handleDelete = async (houseName) => {
@@ -91,27 +96,60 @@ export default function BoardingHouseManagement({ ownerId }) {
       ) : (
         <>
           {/* HEADER */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="bg-white border rounded-xl p-4 sm:p-5 shadow-sm space-y-4">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">Boarding House Management</h2>
+                <p className="text-sm text-gray-500 mt-1">
+                  Manage your houses, rooms, and occupancy status in one place.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <button
+                  className="px-4 py-2 text-sm bg-red-500 hover:bg-red-600 text-white rounded-md transition"
+                  onClick={() => setOpenDeleteModal(true)}
+                >
+                  Delete House
+                </button>
+                <button
+                  className="px-4 py-2 text-sm bg-blue-500 hover:bg-blue-600 text-white rounded-md transition shadow"
+                  onClick={() => setOpenModal(true)}
+                >
+                  + Add New House
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="rounded-lg border bg-slate-50 px-4 py-3">
+                <div className="text-xs text-slate-500">Houses Found</div>
+                <div className="text-xl font-semibold text-slate-900">{houses.length}</div>
+              </div>
+              <div className="rounded-lg border bg-blue-50 px-4 py-3">
+                <div className="text-xs text-blue-600">Total Rooms</div>
+                <div className="text-xl font-semibold text-blue-900">{totalRooms}</div>
+              </div>
+              <div className="rounded-lg border bg-emerald-50 px-4 py-3">
+                <div className="text-xs text-emerald-600">Occupancy</div>
+                <div className="text-xl font-semibold text-emerald-900">
+                  {totalOccupied}/{Math.max(totalOccupied + totalAvailable, 0)}
+                </div>
+              </div>
+            </div>
+
             <SearchInput
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search boarding house..."
-              className="sm:max-w-sm"
+              placeholder="Search boarding house by name or address..."
+              className="sm:max-w-md"
             />
-            <div className="flex gap-3">
-              <button
-                className="px-4 py-2 text-sm bg-red-500 hover:bg-red-600 text-white rounded-md transition"
-                onClick={() => setOpenDeleteModal(true)}
-              >
-                Delete
-              </button>
-              <button
-                className="px-4 py-2 text-sm bg-blue-500 hover:bg-blue-600 text-white rounded-md transition shadow"
-                onClick={() => setOpenModal(true)}
-              >
-                + Add New
-              </button>
-            </div>
+
+            {loadError && (
+              <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                Failed to load boarding houses: {loadError}
+              </div>
+            )}
           </div>
 
           {/* MODALS */}
@@ -164,17 +202,27 @@ export default function BoardingHouseManagement({ ownerId }) {
                           <h3 className="font-semibold text-lg text-gray-800">
                             {house.name}
                           </h3>
-                          <div className="text-sm text-slate-600 space-y-1">
-                            <div>Total Rooms: {house.totalRooms}</div>
-                            <div>Occupied: {house.occupied}</div>
-                            <div>Available: {house.available}</div>
+                          <p className="text-sm text-slate-500">{house.address}</p>
+                          <div className="grid grid-cols-3 gap-2 text-center text-xs pt-1">
+                            <div className="rounded-md bg-slate-50 px-2 py-2 border">
+                              <div className="text-slate-500">Rooms</div>
+                              <div className="font-semibold text-slate-800">{house.totalRooms}</div>
+                            </div>
+                            <div className="rounded-md bg-emerald-50 px-2 py-2 border">
+                              <div className="text-emerald-600">Occupied</div>
+                              <div className="font-semibold text-emerald-800">{house.occupied}</div>
+                            </div>
+                            <div className="rounded-md bg-blue-50 px-2 py-2 border">
+                              <div className="text-blue-600">Available</div>
+                              <div className="font-semibold text-blue-800">{house.available}</div>
+                            </div>
                           </div>
                           <div className="flex justify-between pt-2">
                             <button
                               className="text-sm font-medium text-blue-600 hover:underline"
                               onClick={() => setSelectedHouse(house)}
                             >
-                              View Detail →
+                              View Detail
                             </button>
                             <button
                               className="text-sm font-medium text-amber-600 hover:underline"
@@ -183,7 +231,7 @@ export default function BoardingHouseManagement({ ownerId }) {
                                 setOpenEditModal(true);
                               }}
                             >
-                              Edit
+                              Edit House
                             </button>
                           </div>
                         </div>
