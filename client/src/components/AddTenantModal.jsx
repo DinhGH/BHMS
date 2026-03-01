@@ -80,9 +80,9 @@ export default function AddTenantModal({ open, roomId, onClose, onAdded }) {
 
   /* ================= UI ================= */
   return (
-    <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
-      <div className="bg-white p-6 rounded-lg w-full max-w-md space-y-4">
-        <h2 className="text-lg font-semibold">Add Tenant to Room</h2>
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-50 p-4">
+      <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-xl w-full max-w-md space-y-4">
+        <h2 className="text-lg font-semibold text-slate-900">Add Tenant to Room</h2>
 
         {/* Search Input */}
         <div className="relative">
@@ -96,7 +96,7 @@ export default function AddTenantModal({ open, roomId, onClose, onAdded }) {
               setSearchQuery(e.target.value);
               setSelectedTenant(null); // Reset selection when typing
             }}
-            className="w-full border p-2 rounded"
+            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="Type tenant name or email..."
           />
 
@@ -109,12 +109,12 @@ export default function AddTenantModal({ open, roomId, onClose, onAdded }) {
 
           {/* Suggestions Dropdown */}
           {suggestions.length > 0 && !selectedTenant && (
-            <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-y-auto">
+            <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
               {suggestions.map((tenant) => (
                 <div
                   key={tenant.id}
                   onClick={() => handleSelectTenant(tenant)}
-                  className="px-4 py-3 hover:bg-blue-50 cursor-pointer border-b last:border-b-0"
+                  className="px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0"
                 >
                   <div className="font-medium">{tenant.fullName}</div>
                   <div className="text-sm text-gray-500">{tenant.email}</div>
@@ -129,7 +129,7 @@ export default function AddTenantModal({ open, roomId, onClose, onAdded }) {
 
           {/* No results */}
           {searchQuery.trim() && !searching && suggestions.length === 0 && (
-            <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg p-4 text-center text-gray-500 text-sm">
+            <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-4 text-center text-gray-500 text-sm">
               No available tenants found
             </div>
           )}
@@ -138,7 +138,7 @@ export default function AddTenantModal({ open, roomId, onClose, onAdded }) {
         {/* Selected Tenant Info */}
         {selectedTenant && (
           <div>
-            <div className="bg-white p-4 rounded-md border border-blue-200">
+            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
               <div className="text-sm font-medium text-blue-900 mb-2">
                 Selected Tenant:
               </div>
@@ -158,7 +158,7 @@ export default function AddTenantModal({ open, roomId, onClose, onAdded }) {
                 </div>
               </div>
             </div>
-            <div className="bg-red-50 p-3 rounded text-sm mt-4">
+            <div className="bg-slate-50 border border-slate-200 p-3 rounded-lg text-sm mt-4">
               Selected: <strong>{selectedTenant.fullName}</strong>
             </div>
           </div>
@@ -175,7 +175,7 @@ export default function AddTenantModal({ open, roomId, onClose, onAdded }) {
           <button
             onClick={handleClose}
             disabled={loading}
-            className="border px-4 py-2 rounded hover:bg-gray-100"
+            className="border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-100 transition"
           >
             Cancel
           </button>

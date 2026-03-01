@@ -67,9 +67,9 @@ export default function RemoveTenantModal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-      <div className="bg-white p-6 rounded-lg w-full max-w-md space-y-4">
-        <h2 className="text-lg font-semibold ">Remove Tenant From Room</h2>
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-xl w-full max-w-md space-y-4">
+        <h2 className="text-lg font-semibold text-slate-900">Remove Tenant From Room</h2>
 
         <input
           value={searchQuery}
@@ -78,18 +78,18 @@ export default function RemoveTenantModal({
             setSelectedTenant(null);
           }}
           placeholder="Type tenant name..."
-          className="w-full border p-2 rounded"
+          className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400"
         />
 
         {searching && <div className="text-sm text-gray-400">Searching...</div>}
 
         {suggestions.length > 0 && (
-          <div className="border rounded max-h-48 overflow-y-auto">
+          <div className="border border-gray-200 rounded-lg max-h-48 overflow-y-auto">
             {suggestions.map((t) => (
               <div
                 key={t.id}
                 onClick={() => handleSelectTenant(t)}
-                className="p-3 hover:bg-red-50 cursor-pointer"
+                className="p-3 hover:bg-red-50 cursor-pointer border-b border-gray-100 last:border-b-0"
               >
                 <div className="font-medium">{t.fullName}</div>
                 <div className="text-sm text-gray-500">{t.email}</div>
@@ -101,20 +101,29 @@ export default function RemoveTenantModal({
           </div>
         )}
 
+        {searchQuery.trim() && !searching && suggestions.length === 0 && (
+          <div className="text-sm text-gray-500 border border-gray-200 rounded-lg px-3 py-2 bg-gray-50">
+            No tenants found in this room.
+          </div>
+        )}
+
         {selectedTenant && (
-          <div className="bg-red-50 p-3 rounded text-sm">
+          <div className="bg-red-50 border border-red-200 p-3 rounded-lg text-sm">
             Selected: <strong>{selectedTenant.fullName}</strong>
           </div>
         )}
 
         <div className="flex justify-end gap-3 pt-3">
-          <button onClick={onClose} className="border px-4 py-2 rounded">
+          <button
+            onClick={onClose}
+            className="border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-100 transition"
+          >
             Cancel
           </button>
           <button
             onClick={handleSubmit}
             disabled={!selectedTenant || loading}
-            className="bg-amber-500 text-white hover:bg-amber-600 focus:ring-amber-400 active:bg-amber-700 border border-amber-500 px-4 py-2 rounded"
+            className="bg-amber-500 text-white hover:bg-amber-600 focus:ring-amber-400 active:bg-amber-700 border border-amber-500 px-4 py-2 rounded-lg disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {loading ? "Removing..." : "Remove"}
           </button>
