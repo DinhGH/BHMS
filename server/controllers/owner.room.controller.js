@@ -106,6 +106,19 @@ export const getRoomDetail = async (req, res) => {
           },
         },
         Tenant: true,
+        RentalContract: {
+          include: {
+            Tenant: {
+              select: {
+                id: true,
+                fullName: true,
+                email: true,
+                phone: true,
+              },
+            },
+          },
+          orderBy: { startDate: "desc" },
+        },
         Invoice: {
           take: 1,
           orderBy: { createdAt: "desc" },
@@ -123,6 +136,54 @@ export const getRoomDetail = async (req, res) => {
     }
 
     const invoice = room.Invoice[0] ?? null;
+    const now = new Date();
+
+    const activeContract = room.RentalContract.find((contract) => {
+      const startTime = new Date(contract.startDate).getTime();
+      const endTime = contract.endDate
+        ? new Date(contract.endDate).getTime()
+        : null;
+      return (
+        startTime <= now.getTime() &&
+        (endTime === null || endTime >= now.getTime())
+      );
+    });
+
+    const latestContract = activeContract || room.RentalContract[0] || null;
+
+    let resolvedContract = null;
+
+    if (latestContract) {
+      let status = "ACTIVE";
+      if (new Date(latestContract.startDate).getTime() > now.getTime()) {
+        status = "UPCOMING";
+      } else if (
+        latestContract.endDate &&
+        new Date(latestContract.endDate).getTime() < now.getTime()
+      ) {
+        status = "EXPIRED";
+      }
+
+      resolvedContract = {
+        id: latestContract.id,
+        tenantId: latestContract.tenantId,
+        roomId: latestContract.roomId,
+        start: latestContract.startDate,
+        end: latestContract.endDate,
+        startDate: latestContract.startDate,
+        endDate: latestContract.endDate,
+        terms: latestContract.terms,
+        status,
+        tenant: latestContract.Tenant || null,
+      };
+    } else if (room.contractStart || room.contractEnd) {
+      resolvedContract = {
+        start: room.contractStart,
+        end: room.contractEnd,
+        startDate: room.contractStart,
+        endDate: room.contractEnd,
+      };
+    }
 
     res.json({
       id: room.id,
@@ -146,10 +207,7 @@ export const getRoomDetail = async (req, res) => {
 
       tenants: room.Tenant,
 
-      contract: {
-        start: room.contractStart,
-        end: room.contractEnd,
-      },
+      contract: resolvedContract,
 
       paymentStatus: invoice?.status ?? "NO_INVOICE",
       lastInvoice: invoice,

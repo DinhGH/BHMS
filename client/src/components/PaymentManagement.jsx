@@ -11,9 +11,11 @@ const PAYMENT_METHODS = [
 
 const formatAmount = (amount) => {
   const value = Number(amount || 0);
-  return new Intl.NumberFormat("vi-VN", {
+  return new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency: "VND",
+    currency: "USD",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
   }).format(value);
 };
 
@@ -215,7 +217,9 @@ function PaymentManagement() {
     <div className="min-h-screen bg-gray-50 p-3 md:p-4 lg:p-6">
       <div className="w-full space-y-4">
         <div className="flex flex-col gap-1">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Payments</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+            Payments
+          </h1>
           <p className="text-sm md:text-base text-gray-600">
             Manage payment confirmations and invoice breakdowns.
           </p>
@@ -306,7 +310,8 @@ function PaymentManagement() {
         {!loading && (
           <div className="text-sm text-gray-600">
             Showing {filteredPayments.length === 0 ? 0 : startIndex + 1} -{" "}
-            {Math.min(endIndex, filteredPayments.length)} of {filteredPayments.length}
+            {Math.min(endIndex, filteredPayments.length)} of{" "}
+            {filteredPayments.length}
           </div>
         )}
 
@@ -348,13 +353,25 @@ function PaymentManagement() {
                     {currentPayments.map((payment) => (
                       <tr key={payment.id} className="hover:bg-gray-50">
                         <td className="px-4 py-3">
-                          <div className="font-medium text-gray-900">{payment.author}</div>
-                          <div className="text-xs text-gray-500">{payment.room}</div>
+                          <div className="font-medium text-gray-900">
+                            {payment.author}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {payment.room}
+                          </div>
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-700">{payment.paymentId}</td>
-                        <td className="px-4 py-3 text-sm font-medium text-gray-900">{payment.amount}</td>
-                        <td className="px-4 py-3 text-sm text-gray-700">{payment.method}</td>
-                        <td className="px-4 py-3 text-sm text-gray-700">{payment.dateCreated}</td>
+                        <td className="px-4 py-3 text-sm text-gray-700">
+                          {payment.paymentId}
+                        </td>
+                        <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                          {payment.amount}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700">
+                          {payment.method}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700">
+                          {payment.dateCreated}
+                        </td>
                         <td className="px-4 py-3">
                           <span
                             className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${statusBadge(payment.status)}`}
@@ -389,9 +406,15 @@ function PaymentManagement() {
                   <div key={payment.id} className="p-4 space-y-3">
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <div className="font-medium text-gray-900">{payment.author}</div>
-                        <div className="text-xs text-gray-500">{payment.room}</div>
-                        <div className="text-xs text-gray-500 mt-1">{payment.paymentId}</div>
+                        <div className="font-medium text-gray-900">
+                          {payment.author}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {payment.room}
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          {payment.paymentId}
+                        </div>
                       </div>
                       <span
                         className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${statusBadge(payment.status)}`}
@@ -399,9 +422,15 @@ function PaymentManagement() {
                         {payment.status}
                       </span>
                     </div>
-                    <div className="text-sm text-gray-700">{payment.amount}</div>
-                    <div className="text-sm text-gray-600">{payment.method}</div>
-                    <div className="text-xs text-gray-500">{payment.dateCreated}</div>
+                    <div className="text-sm text-gray-700">
+                      {payment.amount}
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      {payment.method}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {payment.dateCreated}
+                    </div>
                     <div className="flex gap-2">
                       <button
                         onClick={() => setSelectedPayment(payment)}
@@ -451,7 +480,9 @@ function PaymentManagement() {
             ))}
 
             <button
-              onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+              onClick={() =>
+                setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+              }
               disabled={currentPage === totalPages}
               className="px-3 py-2 text-sm rounded-lg border border-gray-200 text-gray-700 disabled:opacity-50"
             >
@@ -471,7 +502,9 @@ function PaymentManagement() {
           <div className="relative w-full max-w-4xl bg-white rounded-2xl shadow-xl border border-gray-200 max-h-[92vh] overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">Payment Details</h3>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Payment Details
+                </h3>
                 <p className="text-xs text-gray-500 mt-0.5">
                   {selectedPayment.paymentId} - {selectedPayment.author}
                 </p>
@@ -488,11 +521,15 @@ function PaymentManagement() {
               <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                 <div className="rounded-lg border border-gray-200 p-3 bg-gray-50">
                   <div className="text-xs text-gray-500">Method</div>
-                  <div className="text-sm font-semibold text-gray-900 mt-1">{selectedPayment.method}</div>
+                  <div className="text-sm font-semibold text-gray-900 mt-1">
+                    {selectedPayment.method}
+                  </div>
                 </div>
                 <div className="rounded-lg border border-gray-200 p-3 bg-gray-50">
                   <div className="text-xs text-gray-500">Amount</div>
-                  <div className="text-sm font-semibold text-gray-900 mt-1">{selectedPayment.amount}</div>
+                  <div className="text-sm font-semibold text-gray-900 mt-1">
+                    {selectedPayment.amount}
+                  </div>
                 </div>
                 <div className="rounded-lg border border-gray-200 p-3 bg-gray-50">
                   <div className="text-xs text-gray-500">Status</div>
@@ -508,14 +545,18 @@ function PaymentManagement() {
                   <div className="text-xs text-gray-500">Created At</div>
                   <div className="text-sm font-semibold text-gray-900 mt-1">
                     {selectedPayment.createdAt
-                      ? new Date(selectedPayment.createdAt).toLocaleString("vi-VN")
+                      ? new Date(selectedPayment.createdAt).toLocaleString(
+                          "vi-VN",
+                        )
                       : "-"}
                   </div>
                 </div>
               </div>
 
               <div className="rounded-xl border border-gray-200 p-4">
-                <h4 className="text-sm font-semibold text-gray-900 mb-3">Invoice Breakdown</h4>
+                <h4 className="text-sm font-semibold text-gray-900 mb-3">
+                  Invoice Breakdown
+                </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
                   <div className="rounded-lg bg-gray-50 border border-gray-200 p-3">
                     <div className="text-xs text-gray-500">Room Price</div>
@@ -551,9 +592,13 @@ function PaymentManagement() {
               </div>
 
               <div className="rounded-xl border border-gray-200 p-4">
-                <h4 className="text-sm font-semibold text-gray-900 mb-3">Service Details</h4>
+                <h4 className="text-sm font-semibold text-gray-900 mb-3">
+                  Service Details
+                </h4>
                 {serviceItems.length === 0 ? (
-                  <div className="text-sm text-gray-500">No service items for this invoice.</div>
+                  <div className="text-sm text-gray-500">
+                    No service items for this invoice.
+                  </div>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
@@ -567,16 +612,27 @@ function PaymentManagement() {
                       </thead>
                       <tbody>
                         {serviceItems.map((item, idx) => (
-                          <tr key={item.id || idx} className="border-b last:border-b-0 border-gray-100">
+                          <tr
+                            key={item.id || idx}
+                            className="border-b last:border-b-0 border-gray-100"
+                          >
                             <td className="py-2 pr-3 text-gray-900">
                               {item.name}
                               {item.unit ? (
-                                <span className="ml-1 text-xs text-gray-500">({item.unit})</span>
+                                <span className="ml-1 text-xs text-gray-500">
+                                  ({item.unit})
+                                </span>
                               ) : null}
                             </td>
-                            <td className="py-2 pr-3 text-gray-700">{item.quantity || 1}</td>
-                            <td className="py-2 pr-3 text-gray-700">{formatAmount(item.unitPrice)}</td>
-                            <td className="py-2 text-gray-900 font-medium">{formatAmount(item.totalPrice)}</td>
+                            <td className="py-2 pr-3 text-gray-700">
+                              {item.quantity || 1}
+                            </td>
+                            <td className="py-2 pr-3 text-gray-700">
+                              {formatAmount(item.unitPrice)}
+                            </td>
+                            <td className="py-2 text-gray-900 font-medium">
+                              {formatAmount(item.totalPrice)}
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -586,19 +642,30 @@ function PaymentManagement() {
               </div>
 
               <div className="rounded-xl border border-gray-200 p-4">
-                <h4 className="text-sm font-semibold text-gray-900 mb-3">Proof Image</h4>
+                <h4 className="text-sm font-semibold text-gray-900 mb-3">
+                  Proof Image
+                </h4>
                 {selectedPayment.methodValue === "QR_TRANSFER" ? (
                   selectedPayment.imageUrl ? (
-                    <a href={selectedPayment.imageUrl} target="_blank" rel="noreferrer" className="block w-full max-w-sm">
+                    <a
+                      href={selectedPayment.imageUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="block w-full max-w-sm"
+                    >
                       <img
                         src={selectedPayment.imageUrl}
                         alt="QR proof"
                         className="w-full h-52 object-cover rounded-lg border border-gray-200"
                       />
-                      <div className="text-xs text-blue-600 mt-2">Click to open full image</div>
+                      <div className="text-xs text-blue-600 mt-2">
+                        Click to open full image
+                      </div>
                     </a>
                   ) : (
-                    <div className="text-sm text-gray-500">No proof image uploaded yet.</div>
+                    <div className="text-sm text-gray-500">
+                      No proof image uploaded yet.
+                    </div>
                   )
                 ) : (
                   <div className="text-sm text-gray-500">
@@ -613,13 +680,20 @@ function PaymentManagement() {
 
       {editingPayment && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
-          <div className="absolute inset-0 bg-black/45" onClick={() => !savingEdit && setEditingPayment(null)} />
+          <div
+            className="absolute inset-0 bg-black/45"
+            onClick={() => !savingEdit && setEditingPayment(null)}
+          />
 
           <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
             <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">Edit Payment</h3>
-                <p className="text-xs text-gray-500 mt-0.5">{editingPayment.paymentId}</p>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Edit Payment
+                </h3>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {editingPayment.paymentId}
+                </p>
               </div>
               <button
                 onClick={() => !savingEdit && setEditingPayment(null)}
@@ -632,7 +706,9 @@ function PaymentManagement() {
 
             <div className="p-5 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Amount</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Amount
+                </label>
                 <input
                   type="number"
                   min="1"
@@ -649,7 +725,9 @@ function PaymentManagement() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Method</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Method
+                </label>
                 <select
                   value={editForm.method}
                   onChange={(e) =>
@@ -657,7 +735,9 @@ function PaymentManagement() {
                       ...prev,
                       method: e.target.value,
                       removeProof:
-                        e.target.value === "QR_TRANSFER" ? prev.removeProof : true,
+                        e.target.value === "QR_TRANSFER"
+                          ? prev.removeProof
+                          : true,
                     }))
                   }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -671,7 +751,9 @@ function PaymentManagement() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Confirmation</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Confirmation
+                </label>
                 <select
                   value={String(editForm.confirmed)}
                   onChange={(e) =>
@@ -689,7 +771,9 @@ function PaymentManagement() {
 
               {editForm.method === "QR_TRANSFER" && (
                 <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 space-y-3">
-                  <label className="block text-sm font-medium text-gray-700">Proof Image (QR only)</label>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Proof Image (QR only)
+                  </label>
                   <input
                     type="file"
                     accept="image/*"
@@ -703,13 +787,15 @@ function PaymentManagement() {
                     className="block w-full text-sm text-gray-600 file:mr-3 file:px-3 file:py-2 file:border-0 file:rounded-md file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                   />
 
-                  {!editForm.proofFile && editingPayment.imageUrl && !editForm.removeProof && (
-                    <img
-                      src={editingPayment.imageUrl}
-                      alt="Current proof"
-                      className="w-full max-w-xs h-36 object-cover rounded-lg border border-gray-200"
-                    />
-                  )}
+                  {!editForm.proofFile &&
+                    editingPayment.imageUrl &&
+                    !editForm.removeProof && (
+                      <img
+                        src={editingPayment.imageUrl}
+                        alt="Current proof"
+                        className="w-full max-w-xs h-36 object-cover rounded-lg border border-gray-200"
+                      />
+                    )}
 
                   <label className="inline-flex items-center gap-2 text-sm text-gray-700">
                     <input

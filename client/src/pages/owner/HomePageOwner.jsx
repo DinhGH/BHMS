@@ -163,7 +163,7 @@ function HomePageOwner() {
   };
 
   return (
-    <div className="flex flex-col h-dvh bg-slate-50 overflow-hidden">
+    <div className="flex flex-col h-screen bg-white overflow-hidden">
       <Navbar
         onMenuClick={() => setSidebarOpen(!sidebarOpen)}
         onBellClick={toggleNotifications}
@@ -176,7 +176,7 @@ function HomePageOwner() {
         user={user}
         notificationCount={unreadCount}
       />
-      <div className="flex flex-1 min-h-0 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden">
         <Sidebar
           activeSection={activeSection}
           setActiveSection={setActiveSection}
@@ -185,10 +185,10 @@ function HomePageOwner() {
           onLogout={logout}
         />
         <main
-          className={`flex-1 min-w-0 overflow-y-auto bg-slate-50 ${
+          className={`flex-1 overflow-y-auto bg-gray-50 ${
             activeSection === "reports" || activeSection === "report-issue"
               ? "p-0"
-              : "p-2.5 sm:p-4 lg:p-6"
+              : "p-3 sm:p-4 md:p-6"
           }`}
         >
           {renderContent()}
@@ -207,9 +207,13 @@ function HomePageOwner() {
 
       {/* Notifications Panel */}
       <div
-        className={`fixed right-0 top-14 sm:top-16 h-[calc(100dvh-3.5rem)] sm:h-[calc(100dvh-4rem)] w-full sm:w-96 app-surface border-y-0 border-r-0 z-50 transform transition-transform duration-300 ease-in-out ${
+        className={`fixed right-0 w-full sm:w-80 bg-white border-l border-slate-200 z-50 transform transition-transform duration-300 ease-in-out shadow-xl ${
           showNotifications ? "translate-x-0" : "translate-x-full"
         }`}
+        style={{
+          height: "calc(100vh - 65px)",
+          top: "65px",
+        }}
       >
         <div className="h-full flex flex-col">
           <div className="flex items-center justify-center px-4 py-3 border-b border-slate-200 font-semibold text-sm sm:text-base text-slate-900">
@@ -221,7 +225,7 @@ function HomePageOwner() {
               placeholder="Search notifications..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="app-input"
+              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50">

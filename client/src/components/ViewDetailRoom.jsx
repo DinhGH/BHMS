@@ -18,6 +18,11 @@ import Loading from "./loading.jsx";
 import api from "../server/api";
 import { toast } from "react-hot-toast";
 import useConfirmDialog from "../hooks/useConfirmDialog";
+import {
+  getContractDetail,
+  updateContract,
+  deleteContract,
+} from "../services/contractService";
 
 export default function ViewDetailRoom({ roomId, onBack }) {
   const { confirm, confirmDialog } = useConfirmDialog();
@@ -34,6 +39,17 @@ export default function ViewDetailRoom({ roomId, onBack }) {
   const [editingInvoice, setEditingInvoice] = useState(null);
   const [showEditServiceQuantity, setShowEditServiceQuantity] = useState(false);
   const [serviceToEdit, setServiceToEdit] = useState(null);
+  const [contractDetail, setContractDetail] = useState(null);
+  const [showContractDetail, setShowContractDetail] = useState(false);
+  const [loadingContractDetail, setLoadingContractDetail] = useState(false);
+  const [showEditContract, setShowEditContract] = useState(false);
+  const [savingContract, setSavingContract] = useState(false);
+  const [contractForm, setContractForm] = useState({
+    tenantId: "",
+    startDate: "",
+    endDate: "",
+    terms: "",
+  });
 
   /* ================= FETCH ================= */
 
@@ -135,6 +151,18 @@ export default function ViewDetailRoom({ roomId, onBack }) {
       maximumFractionDigits: 2,
     }).format(Number(value || 0));
 
+  const formatDate = (value) => {
+    if (!value) return "-";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "-";
+    return date.toLocaleDateString("en-US");
+  };
+
+  const toInputDate = (value) => {
+    if (!value) return "";
+    return String(value).slice(0, 10);
+  };
+
   /* ================= ACTIONS ================= */
 
   const handleDeleteRoom = async () => {
@@ -168,6 +196,106 @@ export default function ViewDetailRoom({ roomId, onBack }) {
     setShowMakeInvoice(true);
   };
 
+  const handleViewContract = async () => {
+    const contractId = room?.contract?.id;
+    if (!contractId) {
+      toast.error("This room has no contract to view");
+      return;
+    }
+
+    try {
+      setShowContractDetail(true);
+      setLoadingContractDetail(true);
+      const data = await getContractDetail(contractId);
+      setContractDetail(data);
+    } catch (err) {
+      toast.error(err?.message || "Failed to load contract detail");
+      setShowContractDetail(false);
+    } finally {
+      setLoadingContractDetail(false);
+    }
+  };
+
+  const handleOpenEditContract = () => {
+    const contract = room?.contract;
+    if (!contract?.id) {
+      toast.error("This room has no contract to edit");
+      return;
+    }
+
+    const fallbackTenantId = room?.tenants?.[0]?.id || "";
+    setContractForm({
+      tenantId: String(contract.tenantId || fallbackTenantId || ""),
+      startDate: toInputDate(contract.startDate || contract.start),
+      endDate: toInputDate(contract.endDate || contract.end),
+      terms: contract.terms || "",
+    });
+    setShowEditContract(true);
+  };
+
+  const handleSaveContract = async () => {
+    const contract = room?.contract;
+    if (!contract?.id) {
+      toast.error("This room has no contract to update");
+      return;
+    }
+
+    if (!contractForm.tenantId || !contractForm.startDate) {
+      toast.error("Please select tenant and start date");
+      return;
+    }
+
+    if (contractForm.endDate && contractForm.endDate < contractForm.startDate) {
+      toast.error("End date must be greater than or equal to start date");
+      return;
+    }
+
+    try {
+      setSavingContract(true);
+      await updateContract(contract.id, {
+        roomId: Number(room.id),
+        tenantId: Number(contractForm.tenantId),
+        startDate: contractForm.startDate,
+        endDate: contractForm.endDate || null,
+        terms: contractForm.terms?.trim() || null,
+      });
+      toast.success("Contract updated successfully");
+      setShowEditContract(false);
+      await fetchRoomDetail();
+    } catch (err) {
+      toast.error(err?.message || "Failed to update contract");
+    } finally {
+      setSavingContract(false);
+    }
+  };
+
+  const handleDeleteContract = async () => {
+    const contract = room?.contract;
+    if (!contract?.id) {
+      toast.error("This room has no contract to delete");
+      return;
+    }
+
+    const agreed = await confirm({
+      title: "Delete contract",
+      message: `Delete contract #${contract.id} for room ${room?.name || "?"}?`,
+      confirmText: "Delete",
+      variant: "danger",
+    });
+
+    if (!agreed) return;
+
+    try {
+      await deleteContract(contract.id);
+      toast.success("Contract deleted successfully");
+      setShowContractDetail(false);
+      setContractDetail(null);
+      await fetchRoomDetail();
+    } catch (err) {
+      toast.error(err?.message || "Failed to delete contract");
+    }
+  };
+
   /* ================= UI ================= */
 
   if (loading) {
@@ -179,7 +307,11 @@ export default function ViewDetailRoom({ roomId, onBack }) {
   }
 
   const isOccupied = room.status === "OCCUPIED";
-  const roomStatusText = room.isLocked ? "Locked" : isOccupied ? "Occupied" : "Empty";
+  const roomStatusText = room.isLocked
+    ? "Locked"
+    : isOccupied
+      ? "Occupied"
+      : "Empty";
   const roomStatusStyle = room.isLocked
     ? "bg-amber-100 text-amber-700"
     : isOccupied
@@ -205,13 +337,19 @@ export default function ViewDetailRoom({ roomId, onBack }) {
               ← Back
             </button>
             <div>
-              <h2 className="text-xl font-semibold text-gray-900">{room.name}</h2>
-              <p className="text-sm text-gray-500 mt-1">Room details and operations</p>
+              <h2 className="text-xl font-semibold text-gray-900">
+                {room.name}
+              </h2>
+              <p className="text-sm text-gray-500 mt-1">
+                Room details and operations
+              </p>
             </div>
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <span className={`inline-flex text-xs font-medium px-2.5 py-1 rounded-full ${roomStatusStyle}`}>
+            <span
+              className={`inline-flex text-xs font-medium px-2.5 py-1 rounded-full ${roomStatusStyle}`}
+            >
               {roomStatusText}
             </span>
             <span
@@ -225,19 +363,27 @@ export default function ViewDetailRoom({ roomId, onBack }) {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <div className="rounded-lg border bg-slate-50 px-4 py-3">
             <div className="text-xs text-slate-500">Rent</div>
-            <div className="text-lg font-semibold text-slate-900">{formatUsd(room.price)}</div>
+            <div className="text-lg font-semibold text-slate-900">
+              {formatUsd(room.price)}
+            </div>
           </div>
           <div className="rounded-lg border bg-blue-50 px-4 py-3">
             <div className="text-xs text-blue-600">Tenants</div>
-            <div className="text-lg font-semibold text-blue-900">{room.tenants?.length || 0}</div>
+            <div className="text-lg font-semibold text-blue-900">
+              {room.tenants?.length || 0}
+            </div>
           </div>
           <div className="rounded-lg border bg-violet-50 px-4 py-3">
             <div className="text-xs text-violet-600">Services Cost</div>
-            <div className="text-lg font-semibold text-violet-900">{formatUsd(calcServiceCost())}</div>
+            <div className="text-lg font-semibold text-violet-900">
+              {formatUsd(calcServiceCost())}
+            </div>
           </div>
           <div className="rounded-lg border bg-emerald-50 px-4 py-3">
             <div className="text-xs text-emerald-600">Est. Total</div>
-            <div className="text-lg font-semibold text-emerald-900">{formatUsd(calcTotalCost())}</div>
+            <div className="text-lg font-semibold text-emerald-900">
+              {formatUsd(calcTotalCost())}
+            </div>
           </div>
         </div>
       </div>
@@ -447,7 +593,7 @@ export default function ViewDetailRoom({ roomId, onBack }) {
         </div>
 
         {invoices.length > 0 ? (
-          <div className="space-y-3">
+          <div className="space-y-3 max-h-115 overflow-y-auto pr-1">
             {invoices.map((invoice) => (
               <div
                 key={invoice.id}
@@ -512,79 +658,156 @@ export default function ViewDetailRoom({ roomId, onBack }) {
             <div className="italic text-sm">No invoices yet</div>
           </div>
         )}
+
+        <div className="border-t pt-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <h4 className="font-semibold text-gray-900">Room Contract</h4>
+            <div className="text-xs text-gray-500">
+              {room.contract?.id
+                ? `Contract #${room.contract.id}`
+                : "No active contract"}
+            </div>
+          </div>
+
+          {room.contract?.id ? (
+            <div className="border border-slate-200 rounded-lg p-4 bg-slate-50 space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
+                <div>
+                  <div className="text-xs text-gray-500">Start Date</div>
+                  <div className="font-medium text-gray-900">
+                    {formatDate(room.contract.startDate || room.contract.start)}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500">End Date</div>
+                  <div className="font-medium text-gray-900">
+                    {formatDate(room.contract.endDate || room.contract.end)}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500">Tenant</div>
+                  <div className="font-medium text-gray-900">
+                    {room.contract.tenant?.fullName ||
+                      room.tenants?.[0]?.fullName ||
+                      "-"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500">Status</div>
+                  <div className="font-medium text-gray-900">
+                    {room.contract.status || "-"}
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <div className="text-xs text-gray-500">Terms</div>
+                <div className="text-sm text-gray-700 mt-1 whitespace-pre-wrap">
+                  {room.contract.terms || "No terms"}
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-2 justify-end">
+                <button
+                  onClick={handleViewContract}
+                  className="px-3 py-2 rounded-md border border-indigo-200 text-indigo-600 hover:bg-indigo-50 text-sm"
+                >
+                  View
+                </button>
+                <button
+                  onClick={handleOpenEditContract}
+                  className="px-3 py-2 rounded-md border border-blue-200 text-blue-600 hover:bg-blue-50 text-sm"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={handleDeleteContract}
+                  className="px-3 py-2 rounded-md border border-red-200 text-red-600 hover:bg-red-50 text-sm"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="text-sm text-gray-500 italic">
+              No contract found for this room.
+            </div>
+          )}
+        </div>
       </div>
 
       {/* ACTIONS */}
       <div className="bg-white border rounded-xl p-4 shadow-sm">
         <div className="flex flex-wrap justify-center gap-3">
-        {/* Make Invoice */}
-        <ActionButton
-          label="Make Invoice"
-          variant="success"
-          disabled={!isOccupied}
-          onClick={handleMakeInvoice}
-        />
-        {/* Add Services */}
-        <ActionButton
-          label="Add Services"
-          variant="info"
-          onClick={() => setShowAddService(true)}
-        />
-        {showAddService && (
-          <AddServiceModal
-            roomId={room.id}
-            onClose={() => setShowAddService(false)}
-            onAdded={fetchRoomServices}
-          />
-        )}
-
-        {/* ADD TENANT */}
-        <>
+          {/* Make Invoice */}
           <ActionButton
-            label="Add Tenant"
+            label="Make Invoice"
             variant="success"
-            onClick={() => setShowAddTenant(true)}
+            disabled={!isOccupied}
+            onClick={handleMakeInvoice}
           />
-          {showAddTenant && (
-            <AddTenantModal
-              open={showAddTenant}
-              roomId={room.id}
-              onClose={() => setShowAddTenant(false)}
-              onAdded={fetchRoomDetail}
-            />
-          )}
-        </>
-
-        {/* REMOVE TENANT */}
-        <>
+          {/* Add Services */}
           <ActionButton
-            label="Remove Tenant"
-            variant="warning"
-            disabled={!room.tenants || room.tenants.length === 0}
-            onClick={() => setShowRemoveTenant(true)}
+            label="Add Services"
+            variant="info"
+            onClick={() => setShowAddService(true)}
           />
-          {showRemoveTenant && (
-            <RemoveTenantModal
-              open={showRemoveTenant}
+          {showAddService && (
+            <AddServiceModal
               roomId={room.id}
-              onClose={() => setShowRemoveTenant(false)}
-              onRemoved={fetchRoomDetail}
+              onClose={() => setShowAddService(false)}
+              onAdded={fetchRoomServices}
             />
           )}
-        </>
 
-        <ActionButton
-          label="Edit"
-          variant="info"
-          onClick={() => setShowEdit(true)}
-        />
+          {/* ADD TENANT */}
+          <>
+            <ActionButton
+              label="Add Tenant"
+              variant="success"
+              onClick={() => setShowAddTenant(true)}
+            />
+            {showAddTenant && (
+              <AddTenantModal
+                open={showAddTenant}
+                roomId={room.id}
+                onClose={() => setShowAddTenant(false)}
+                onAdded={fetchRoomDetail}
+              />
+            )}
+          </>
 
-        <ActionButton
-          label={deleting ? "Deleting..." : "Delete"}
-          variant="danger"
-          disabled={deleting}
-          onClick={handleDeleteRoom}
-        />
+          {/* REMOVE TENANT */}
+          <>
+            <ActionButton
+              label="Remove Tenant"
+              variant="warning"
+              disabled={!room.tenants || room.tenants.length === 0}
+              onClick={() => setShowRemoveTenant(true)}
+            />
+            {showRemoveTenant && (
+              <RemoveTenantModal
+                open={showRemoveTenant}
+                roomId={room.id}
+                roomTenants={room.tenants || []}
+                onClose={() => setShowRemoveTenant(false)}
+                onRemoved={fetchRoomDetail}
+              />
+            )}
+          </>
+
+          <ActionButton
+            label="Edit"
+            variant="info"
+            onClick={() => setShowEdit(true)}
+          />
+
+          <ActionButton
+            label={deleting ? "Deleting..." : "Delete"}
+            variant="danger"
+            disabled={deleting}
+            onClick={handleDeleteRoom}
+          />
         </div>
       </div>
 
@@ -620,6 +843,210 @@ export default function ViewDetailRoom({ roomId, onBack }) {
             fetchRoomDetail();
           }}
         />
+      )}
+
+      {showContractDetail && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/45"
+            onClick={() => {
+              setShowContractDetail(false);
+              setContractDetail(null);
+            }}
+          />
+          <div className="relative w-full max-w-2xl bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden">
+            <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Contract Detail
+              </h3>
+              <button
+                onClick={() => {
+                  setShowContractDetail(false);
+                  setContractDetail(null);
+                }}
+                className="w-9 h-9 rounded-md text-gray-500 hover:bg-gray-100"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4 max-h-[80vh] overflow-y-auto">
+              {loadingContractDetail ? (
+                <div className="text-sm text-gray-500">
+                  Loading contract detail...
+                </div>
+              ) : contractDetail ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <div className="text-xs text-gray-500">Contract ID</div>
+                    <div className="font-medium text-gray-900">
+                      #{contractDetail.id}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500">Status</div>
+                    <div className="font-medium text-gray-900">
+                      {contractDetail.status || "-"}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500">Room</div>
+                    <div className="font-medium text-gray-900">
+                      {contractDetail.room?.name || "-"}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500">Tenant</div>
+                    <div className="font-medium text-gray-900">
+                      {contractDetail.tenant?.fullName || "-"}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500">Start Date</div>
+                    <div className="font-medium text-gray-900">
+                      {formatDate(contractDetail.startDate)}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500">End Date</div>
+                    <div className="font-medium text-gray-900">
+                      {formatDate(contractDetail.endDate)}
+                    </div>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <div className="text-xs text-gray-500">Terms</div>
+                    <div className="font-medium text-gray-900 whitespace-pre-wrap">
+                      {contractDetail.terms || "No terms"}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-sm text-gray-500">
+                  No contract detail found.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showEditContract && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/45"
+            onClick={() => !savingContract && setShowEditContract(false)}
+          />
+          <div className="relative w-full max-w-xl bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden">
+            <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Edit Contract
+              </h3>
+              <button
+                onClick={() => !savingContract && setShowEditContract(false)}
+                disabled={savingContract}
+                className="w-9 h-9 rounded-md text-gray-500 hover:bg-gray-100 disabled:opacity-50"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Tenant
+                </label>
+                <select
+                  value={contractForm.tenantId}
+                  onChange={(e) =>
+                    setContractForm((prev) => ({
+                      ...prev,
+                      tenantId: e.target.value,
+                    }))
+                  }
+                  className="w-full border border-gray-300 rounded-md px-3 py-2"
+                >
+                  <option value="">Select tenant</option>
+                  {(room.tenants || []).map((tenant) => (
+                    <option key={tenant.id} value={tenant.id}>
+                      {tenant.fullName}{" "}
+                      {tenant.email ? `(${tenant.email})` : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Start Date
+                  </label>
+                  <input
+                    type="date"
+                    value={contractForm.startDate}
+                    onChange={(e) =>
+                      setContractForm((prev) => ({
+                        ...prev,
+                        startDate: e.target.value,
+                      }))
+                    }
+                    className="w-full border border-gray-300 rounded-md px-3 py-2"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    End Date
+                  </label>
+                  <input
+                    type="date"
+                    value={contractForm.endDate}
+                    onChange={(e) =>
+                      setContractForm((prev) => ({
+                        ...prev,
+                        endDate: e.target.value,
+                      }))
+                    }
+                    className="w-full border border-gray-300 rounded-md px-3 py-2"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Terms
+                </label>
+                <textarea
+                  value={contractForm.terms}
+                  onChange={(e) =>
+                    setContractForm((prev) => ({
+                      ...prev,
+                      terms: e.target.value,
+                    }))
+                  }
+                  rows={4}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2"
+                  placeholder="Enter contract terms"
+                />
+              </div>
+            </div>
+
+            <div className="px-5 py-4 border-t border-gray-200 flex justify-end gap-3">
+              <button
+                onClick={() => setShowEditContract(false)}
+                disabled={savingContract}
+                className="px-4 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveContract}
+                disabled={savingContract}
+                className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60"
+              >
+                {savingContract ? "Saving..." : "Save"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       <EditServiceQuantityModal
