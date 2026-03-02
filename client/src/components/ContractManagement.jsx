@@ -12,6 +12,7 @@ import {
   deleteContract,
 } from "../services/contractService";
 import api from "../server/api.js";
+import { toast } from "react-hot-toast";
 import useConfirmDialog from "../hooks/useConfirmDialog";
 
 const defaultForm = {
@@ -280,12 +281,12 @@ function ContractManagement() {
 
   const handleSave = async () => {
     if (!form.roomId || !form.tenantId || !form.startDate) {
-      alert("Please provide Room, Tenant, and Start Date");
+      toast.error("Please provide Room, Tenant, and Start Date");
       return;
     }
 
     if (form.endDate && form.endDate < form.startDate) {
-      alert("End Date must be greater than or equal to Start Date");
+      toast.error("End Date must be greater than or equal to Start Date");
       return;
     }
 
@@ -312,14 +313,16 @@ function ContractManagement() {
 
       if (editingId) {
         await updateContract(editingId, payload);
+        toast.success("Contract updated successfully");
       } else {
         await createContract(payload);
+        toast.success("Contract created successfully");
       }
 
       await loadData();
       resetForm();
     } catch (err) {
-      alert(err?.message || "Unable to save contract");
+      toast.error(err?.message || "Unable to save contract");
     } finally {
       setSaving(false);
     }
@@ -328,7 +331,9 @@ function ContractManagement() {
   const handleDelete = async (contract) => {
     const agreed = await confirm({
       title: "Delete contract",
-      message: `Delete contract #${contract.id} for room ${contract.room?.name || "?"}?`,
+      message: `Delete contract #${contract.id} for room ${
+        contract.room?.name || "?"
+      }?`,
       confirmText: "Delete",
       variant: "danger",
     });
@@ -336,9 +341,10 @@ function ContractManagement() {
 
     try {
       await deleteContract(contract.id);
+      toast.success("Contract deleted successfully");
       await loadData();
     } catch (err) {
-      alert(err?.message || "Unable to delete contract");
+      toast.error(err?.message || "Unable to delete contract");
     }
   };
 
@@ -349,7 +355,7 @@ function ContractManagement() {
       const data = await getContractDetail(contractId);
       setContractDetail(data);
     } catch (err) {
-      alert(err?.message || "Unable to load contract detail");
+      toast.error(err?.message || "Unable to load contract detail");
       setOpenDetail(false);
     } finally {
       setLoadingDetail(false);
@@ -364,7 +370,7 @@ function ContractManagement() {
       const data = await getContractInvoices(contract.id);
       setInvoiceHistory(Array.isArray(data) ? data : []);
     } catch (err) {
-      alert(err?.message || "Unable to load invoice history");
+      toast.error(err?.message || "Unable to load invoice history");
       setOpenInvoices(false);
     } finally {
       setLoadingInvoices(false);
@@ -384,7 +390,7 @@ function ContractManagement() {
         roomHistory: Array.isArray(data?.roomHistory) ? data.roomHistory : [],
       });
     } catch (err) {
-      alert(err?.message || "Unable to load stay history");
+      toast.error(err?.message || "Unable to load stay history");
       setOpenStayHistory(false);
     } finally {
       setLoadingStayHistory(false);
