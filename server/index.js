@@ -17,8 +17,6 @@ import paymentRoutes from "./routes/paymentRoutes.js";
 import tenantRoutes from "./routes/tenantRoutes.js";
 import reportRoutes from "./routes/reportRoutes.js";
 import reportAdminRoutes from "./routes/reportAdminRoutes.js";
-import stripeRoute from "./routes/stripe.routes.js";
-
 import ownerRoute from "./routes/owner.route.js";
 import adminRoutes from "./routes/admin.routes.js";
 
@@ -37,7 +35,7 @@ app.use(
   }),
 );
 // Stripe webhook (raw body middleware inside route)
-app.use("/webhook", stripeRoute);
+// app.use("/webhook", stripeRoute);
 // Stripe webhook must be registered BEFORE express.json()
 // because it needs raw body for signature verification
 app.post(
