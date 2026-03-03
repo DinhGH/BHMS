@@ -18,6 +18,9 @@ const normalizeNumber = (value, fallback = null) => {
   return Number.isNaN(num) ? fallback : num;
 };
 
+const ALLOWED_INVOICE_STATUSES = ["PENDING", "PAID", "OVERDUE"];
+const PAYMENT_METHODS = ["QR_TRANSFER", "CASH", "GATEWAY"];
+
 const ensureSuccessUrlHasSessionId = (url) => {
   if (!url) return url;
   if (url.includes("{CHECKOUT_SESSION_ID}")) return url;
@@ -547,8 +550,32 @@ export const updateInvoice = async (req, res) => {
         .json({ message: "Total amount must be greater than 0" });
     }
 
-    const nextStatus = "PENDING";
-    const nowPaid = false;
+    const rawStatus = req.body?.status;
+    const nextStatus =
+      rawStatus === undefined || rawStatus === null || rawStatus === ""
+        ? invoice.status
+        : String(rawStatus).toUpperCase();
+
+    if (!ALLOWED_INVOICE_STATUSES.includes(nextStatus)) {
+      return res.status(400).json({
+        message: `Invalid status. Allowed: ${ALLOWED_INVOICE_STATUSES.join(", ")}`,
+      });
+    }
+
+    const nextPaymentMethod = req.body?.paymentMethod
+      ? String(req.body.paymentMethod).trim().toUpperCase()
+      : "QR_TRANSFER";
+
+    if (
+      req.body?.paymentMethod &&
+      !PAYMENT_METHODS.includes(nextPaymentMethod)
+    ) {
+      return res.status(400).json({
+        message: `Invalid payment method. Allowed: ${PAYMENT_METHODS.join(", ")}`,
+      });
+    }
+
+    const nowPaid = invoice.status !== "PAID" && nextStatus === "PAID";
 
     const updated = await prisma.$transaction(async (tx) => {
       const updatedInvoice = await tx.invoice.update({
@@ -570,6 +597,35 @@ export const updateInvoice = async (req, res) => {
           where: { id: roomId },
           data: roomMeterPatch,
         });
+      }
+
+      if (nowPaid) {
+        const confirmedAgg = await tx.payment.aggregate({
+          where: {
+            invoiceId,
+            confirmed: true,
+          },
+          _sum: {
+            amount: true,
+          },
+        });
+
+        const confirmedTotal = Number(confirmedAgg?._sum?.amount || 0);
+        const remainingAmount = Math.max(
+          0,
+          Number(updatedInvoice.totalAmount || 0) - confirmedTotal,
+        );
+
+        if (remainingAmount > 0) {
+          await tx.payment.create({
+            data: {
+              invoiceId,
+              method: nextPaymentMethod,
+              amount: remainingAmount,
+              confirmed: true,
+            },
+          });
+        }
       }
 
       return updatedInvoice;
@@ -599,7 +655,7 @@ export const updateInvoice = async (req, res) => {
     }
 
     let emailResent = false;
-    if (invoice.Tenant?.email) {
+    if (invoice.Tenant?.email && nextStatus !== "PAID") {
       try {
         const stripe = getStripeClient();
         if (!stripe) {

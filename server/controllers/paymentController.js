@@ -6,6 +6,16 @@ import { uploadImageToCloudinary } from "../lib/cloudinary.js";
 
 const PAYMENT_METHODS = ["GATEWAY", "QR_TRANSFER", "CASH"];
 
+const toCanonicalPaymentMethod = (method) => {
+  const normalized = String(method || "")
+    .trim()
+    .toUpperCase();
+
+  if (normalized === "STRIPE") return "GATEWAY";
+  if (PAYMENT_METHODS.includes(normalized)) return normalized;
+  return "GATEWAY";
+};
+
 const parseOptionalBoolean = (value) => {
   if (value === undefined || value === null || value === "") return undefined;
   if (typeof value === "boolean") return value;
@@ -181,19 +191,62 @@ const markInvoiceAsPaid = async (invoiceId, source, extra = {}) => {
 
   const existing = await prisma.invoice.findUnique({
     where: { id: parsedInvoiceId },
-    select: { id: true, status: true, roomId: true },
+    select: { id: true, status: true, roomId: true, totalAmount: true },
   });
 
   if (!existing) {
     throw new Error(`Invoice #${parsedInvoiceId} not found`);
   }
 
-  const updateResult = await prisma.invoice.updateMany({
-    where: {
-      id: parsedInvoiceId,
-      status: { not: "PAID" },
-    },
-    data: { status: "PAID" },
+  const paymentMethod = toCanonicalPaymentMethod(extra?.paymentMethod);
+  const amountHint = Number(extra?.amount);
+
+  const updateResult = await prisma.$transaction(async (tx) => {
+    const updateManyResult = await tx.invoice.updateMany({
+      where: {
+        id: parsedInvoiceId,
+        status: { not: "PAID" },
+      },
+      data: { status: "PAID" },
+    });
+
+    if (updateManyResult.count === 0) {
+      return updateManyResult;
+    }
+
+    const confirmedAgg = await tx.payment.aggregate({
+      where: {
+        invoiceId: parsedInvoiceId,
+        confirmed: true,
+      },
+      _sum: {
+        amount: true,
+      },
+    });
+
+    const confirmedTotal = Number(confirmedAgg?._sum?.amount || 0);
+    const remainingAmount = Math.max(
+      0,
+      Number(existing.totalAmount || 0) - confirmedTotal,
+    );
+
+    if (remainingAmount > 0) {
+      const paymentAmount =
+        Number.isFinite(amountHint) && amountHint > 0
+          ? Math.min(remainingAmount, amountHint)
+          : remainingAmount;
+
+      await tx.payment.create({
+        data: {
+          invoiceId: parsedInvoiceId,
+          method: paymentMethod,
+          amount: paymentAmount,
+          confirmed: true,
+        },
+      });
+    }
+
+    return updateManyResult;
   });
 
   if (updateResult.count === 0) {
@@ -207,7 +260,7 @@ const markInvoiceAsPaid = async (invoiceId, source, extra = {}) => {
 
   const updated = await prisma.invoice.findUnique({
     where: { id: parsedInvoiceId },
-    select: { id: true, status: true, roomId: true },
+    select: { id: true, status: true, roomId: true, totalAmount: true },
   });
 
   console.log("PAYMENT STATUS: Invoice marked PAID", {
@@ -332,7 +385,9 @@ export async function updatePaymentByOwner(req, res) {
     }
 
     const shouldRemoveProof =
-      String(req.body?.removeProof || "").trim().toLowerCase() === "true";
+      String(req.body?.removeProof || "")
+        .trim()
+        .toLowerCase() === "true";
 
     if (nextMethod !== "QR_TRANSFER" || shouldRemoveProof) {
       updateData.proofImage = null;
@@ -381,7 +436,9 @@ export async function updatePaymentByOwner(req, res) {
     const updated = payments.find((item) => Number(item.id) === paymentId);
 
     if (!updated) {
-      return res.status(500).json({ message: "Failed to load updated payment" });
+      return res
+        .status(500)
+        .json({ message: "Failed to load updated payment" });
     }
 
     return res.status(200).json({
@@ -468,7 +525,8 @@ export async function handleStripeWebhook(req, res) {
         sessionId: session.id,
         paymentIntentId: session.payment_intent,
         currency: session.currency,
-        paymentMethod: "Stripe",
+        paymentMethod: "GATEWAY",
+        amount: Number(session.amount_total || 0) / 100,
         paidAt: session.created,
       });
     }
@@ -525,7 +583,8 @@ export async function confirmStripeSessionPayment(req, res) {
       sessionId: session.id,
       paymentIntentId: session.payment_intent,
       currency: session.currency,
-      paymentMethod: "Stripe",
+      paymentMethod: "GATEWAY",
+      amount: Number(session.amount_total || 0) / 100,
       paidAt: session.created,
     });
 

@@ -36,7 +36,8 @@ export default function EditInvoiceModal({
     electricMeterAfter: Number(inferredElectricAfter || 0),
     waterMeterAfter: Number(inferredWaterAfter || 0),
     serviceCost: invoice?.serviceCost ?? 0,
-    status: "PENDING",
+    status: invoice?.status ?? "PENDING",
+    paymentMethod: "QR_TRANSFER",
   });
   const [loading, setLoading] = useState(false);
 
@@ -103,7 +104,8 @@ export default function EditInvoiceModal({
           electricMeterAfter: Number(form.electricMeterAfter),
           waterMeterAfter: Number(form.waterMeterAfter),
           serviceCost: Number(form.serviceCost),
-          status: "PENDING",
+          status: form.status,
+          paymentMethod: form.paymentMethod,
         },
       );
       toast.success(
@@ -216,16 +218,33 @@ export default function EditInvoiceModal({
           <label className="mb-1 block text-sm font-medium">Status</label>
           <select
             name="status"
-            value="PENDING"
-            disabled
-            className="w-full cursor-not-allowed rounded-md border border-amber-300 bg-amber-50 p-2 text-amber-800 disabled:opacity-100 dark:border-amber-700/60 dark:bg-amber-900/20 dark:text-amber-200"
+            value={form.status}
+            onChange={handleChange}
+            className="w-full rounded-md border border-slate-300 bg-white p-2 text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-400/30 dark:border-slate-600 dark:bg-slate-950 dark:text-slate-100"
           >
             <option value="PENDING">PENDING</option>
+            <option value="PAID">PAID</option>
+            <option value="OVERDUE">OVERDUE</option>
           </select>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-            When an invoice is edited, status is automatically reset to pending.
-          </p>
         </div>
+
+        {form.status === "PAID" && (
+          <div>
+            <label className="mb-1 block text-sm font-medium">
+              Payment Method
+            </label>
+            <select
+              name="paymentMethod"
+              value={form.paymentMethod}
+              onChange={handleChange}
+              className="w-full rounded-md border border-slate-300 bg-white p-2 text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-400/30 dark:border-slate-600 dark:bg-slate-950 dark:text-slate-100"
+            >
+              <option value="QR_TRANSFER">QR Transfer</option>
+              <option value="CASH">Cash</option>
+              <option value="GATEWAY">Gateway</option>
+            </select>
+          </div>
+        )}
 
         <div className="rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-slate-700 dark:border-blue-700/50 dark:bg-blue-900/25 dark:text-slate-100">
           Total: <strong>{formatUsd(totalAmount)}</strong>
