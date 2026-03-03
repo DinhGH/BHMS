@@ -65,6 +65,8 @@ export const getAllBoardingHouses = async (req, res) => {
           id: h.id,
           name: h.name,
           address: h.address,
+          electricFee: h.electricFee,
+          waterFee: h.waterFee,
           totalRooms: h.rooms.length,
           occupied,
           available,

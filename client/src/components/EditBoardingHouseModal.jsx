@@ -26,8 +26,8 @@ export default function EditBoardingHouseModal({
       setForm({
         name: house.name,
         address: house.address,
-        electricFee: house.electricFee,
-        waterFee: house.waterFee,
+        electricFee: house.electricFee ?? house.electricityFee ?? "",
+        waterFee: house.waterFee ?? "",
         image: null,
         preview: house.imageUrl || "",
       });
@@ -119,7 +119,9 @@ export default function EditBoardingHouseModal({
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="md:col-span-2">
-            <label className="block mb-1 font-medium">Boarding House Name *</label>
+            <label className="block mb-1 font-medium">
+              Boarding House Name *
+            </label>
             <input
               name="name"
               value={form.name}
@@ -127,7 +129,9 @@ export default function EditBoardingHouseModal({
               placeholder="Enter boarding house name"
               className="w-full border px-3 py-2 rounded"
             />
-            {errors.name && <p className="text-sm text-red-500 mt-1">{errors.name}</p>}
+            {errors.name && (
+              <p className="text-sm text-red-500 mt-1">{errors.name}</p>
+            )}
           </div>
 
           <div className="md:col-span-2">
@@ -145,7 +149,9 @@ export default function EditBoardingHouseModal({
           </div>
 
           <div>
-            <label className="block mb-1 font-medium">Electricity Fee (VND) *</label>
+            <label className="block mb-1 font-medium">
+              Electricity Fee (VND) *
+            </label>
             <input
               type="number"
               min="1"
@@ -177,7 +183,9 @@ export default function EditBoardingHouseModal({
           </div>
 
           <div className="md:col-span-2">
-            <label className="block mb-1 font-medium">Boarding House Image</label>
+            <label className="block mb-1 font-medium">
+              Boarding House Image
+            </label>
             <input
               type="file"
               accept="image/*"
