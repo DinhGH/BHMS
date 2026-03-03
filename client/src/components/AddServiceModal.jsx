@@ -98,24 +98,26 @@ export default function AddServiceModal({ roomId, onClose, onAdded }) {
   const isUnitBased = selectedService?.priceType === "UNIT_BASED";
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
-      <div className="bg-white rounded-xl shadow-lg w-[450px] p-6 space-y-4">
-        <h2 className="text-lg font-semibold">Add Service to Room</h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4 py-6 backdrop-blur-sm">
+      <div className="w-full max-w-112.5 space-y-4 rounded-xl border border-slate-200 bg-white p-6 text-slate-900 shadow-xl dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+          Add Service to Room
+        </h2>
 
         <Loading isLoading={loadingServices} />
         {!loadingServices && services.length === 0 ? (
-          <div className="text-center py-4 text-gray-500">
+          <div className="py-4 text-center text-slate-500 dark:text-slate-400">
             No active services available
           </div>
         ) : (
           <>
             {/* Service Selection */}
             <div>
-              <label className="block text-sm font-medium mb-1">
+              <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-200">
                 Service <span className="text-red-500">*</span>
               </label>
               <select
-                className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full rounded-md border border-slate-300 bg-white p-2 text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-400/30 dark:border-slate-600 dark:bg-slate-950 dark:text-slate-100"
                 value={serviceId}
                 onChange={(e) => handleSelectService(e.target.value)}
               >
@@ -131,7 +133,7 @@ export default function AddServiceModal({ roomId, onClose, onAdded }) {
               </select>
 
               {selectedService && (
-                <div className="mt-2 text-xs text-gray-600 bg-blue-50 p-2 rounded">
+                <div className="mt-2 rounded border border-blue-200 bg-blue-50 p-2 text-xs text-slate-700 dark:border-blue-700/50 dark:bg-blue-900/30 dark:text-slate-200">
                   <div className="flex items-center gap-2">
                     <span className="font-medium">
                       {selectedService.priceType === "FIXED"
@@ -139,7 +141,7 @@ export default function AddServiceModal({ roomId, onClose, onAdded }) {
                         : "📊 Unit Based"}
                     </span>
                     {selectedService.description && (
-                      <span className="text-gray-500">
+                      <span className="text-slate-500 dark:text-slate-300">
                         - {selectedService.description}
                       </span>
                     )}
@@ -150,7 +152,7 @@ export default function AddServiceModal({ roomId, onClose, onAdded }) {
 
             {/* Price */}
             <div>
-              <label className="block text-sm font-medium mb-1">
+              <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-200">
                 Price per{" "}
                 {isUnitBased ? selectedService?.unit || "unit" : "room"} ($)
                 <span className="text-red-500">*</span>
@@ -159,13 +161,13 @@ export default function AddServiceModal({ roomId, onClose, onAdded }) {
                 type="number"
                 min="0"
                 step="1"
-                className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full rounded-md border border-slate-300 bg-white p-2 text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-400/30 dark:border-slate-600 dark:bg-slate-950 dark:text-slate-100"
                 placeholder="Enter price"
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
               />
               {serviceId && (
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                   Default:{" "}
                   {services
                     .find((s) => s.id === Number(serviceId))
@@ -178,7 +180,7 @@ export default function AddServiceModal({ roomId, onClose, onAdded }) {
             {/* Quantity - Only for UNIT_BASED */}
             {isUnitBased && (
               <div>
-                <label className="block text-sm font-medium mb-1">
+                <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-200">
                   Quantity ({selectedService?.unit || "units"})
                   <span className="text-red-500">*</span>
                 </label>
@@ -186,12 +188,12 @@ export default function AddServiceModal({ roomId, onClose, onAdded }) {
                   type="number"
                   min="1"
                   step="1"
-                  className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full rounded-md border border-slate-300 bg-white p-2 text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-400/30 dark:border-slate-600 dark:bg-slate-950 dark:text-slate-100"
                   placeholder="Enter quantity"
                   value={quantity}
                   onChange={(e) => setQuantity(Number(e.target.value))}
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                   For services like parking, drinks, etc.
                 </p>
               </div>
@@ -199,17 +201,17 @@ export default function AddServiceModal({ roomId, onClose, onAdded }) {
 
             {/* Total Price Display */}
             {selectedService && price && (
-              <div className="bg-green-50 border border-green-200 rounded-md p-3">
+              <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-700/50 dark:bg-emerald-900/20">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium text-gray-700">
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
                     Total Cost:
                   </span>
-                  <span className="text-lg font-bold text-green-700">
+                  <span className="text-lg font-bold text-emerald-700 dark:text-emerald-300">
                     {calculateTotal().toLocaleString()}$
                   </span>
                 </div>
                 {isUnitBased && quantity > 1 && (
-                  <div className="text-xs text-gray-600 mt-1">
+                  <div className="mt-1 text-xs text-slate-600 dark:text-slate-300">
                     {price.toLocaleString()}$ × {quantity}{" "}
                     {selectedService.unit || "units"}
                   </div>
@@ -220,11 +222,11 @@ export default function AddServiceModal({ roomId, onClose, onAdded }) {
         )}
 
         {/* Actions */}
-        <div className="flex justify-end gap-3 pt-2 border-t">
+        <div className="flex justify-end gap-3 border-t border-slate-200 pt-2 dark:border-slate-700">
           <button
             onClick={onClose}
             disabled={loading}
-            className="px-4 py-2 rounded-md bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
+            className="rounded-md bg-slate-200 px-4 py-2 text-slate-800 hover:bg-slate-300 disabled:opacity-50 dark:bg-slate-700 dark:text-slate-100 dark:hover:bg-slate-600"
           >
             Cancel
           </button>

@@ -138,6 +138,31 @@ export const getRoomDetail = async (req, res) => {
     const invoice = room.Invoice[0] ?? null;
     const now = new Date();
 
+    const mapContractWithStatus = (contract) => {
+      let status = "ACTIVE";
+      if (new Date(contract.startDate).getTime() > now.getTime()) {
+        status = "UPCOMING";
+      } else if (
+        contract.endDate &&
+        new Date(contract.endDate).getTime() < now.getTime()
+      ) {
+        status = "EXPIRED";
+      }
+
+      return {
+        id: contract.id,
+        tenantId: contract.tenantId,
+        roomId: contract.roomId,
+        start: contract.startDate,
+        end: contract.endDate,
+        startDate: contract.startDate,
+        endDate: contract.endDate,
+        terms: contract.terms,
+        status,
+        tenant: contract.Tenant || null,
+      };
+    };
+
     const activeContract = room.RentalContract.find((contract) => {
       const startTime = new Date(contract.startDate).getTime();
       const endTime = contract.endDate
@@ -150,32 +175,12 @@ export const getRoomDetail = async (req, res) => {
     });
 
     const latestContract = activeContract || room.RentalContract[0] || null;
+    const contractHistory = room.RentalContract.map(mapContractWithStatus);
 
     let resolvedContract = null;
 
     if (latestContract) {
-      let status = "ACTIVE";
-      if (new Date(latestContract.startDate).getTime() > now.getTime()) {
-        status = "UPCOMING";
-      } else if (
-        latestContract.endDate &&
-        new Date(latestContract.endDate).getTime() < now.getTime()
-      ) {
-        status = "EXPIRED";
-      }
-
-      resolvedContract = {
-        id: latestContract.id,
-        tenantId: latestContract.tenantId,
-        roomId: latestContract.roomId,
-        start: latestContract.startDate,
-        end: latestContract.endDate,
-        startDate: latestContract.startDate,
-        endDate: latestContract.endDate,
-        terms: latestContract.terms,
-        status,
-        tenant: latestContract.Tenant || null,
-      };
+      resolvedContract = mapContractWithStatus(latestContract);
     } else if (room.contractStart || room.contractEnd) {
       resolvedContract = {
         start: room.contractStart,
@@ -208,6 +213,7 @@ export const getRoomDetail = async (req, res) => {
       tenants: room.Tenant,
 
       contract: resolvedContract,
+      contractHistory,
 
       paymentStatus: invoice?.status ?? "NO_INVOICE",
       lastInvoice: invoice,

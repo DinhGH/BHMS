@@ -44,6 +44,7 @@ export default function ViewDetailRoom({ roomId, onBack }) {
   const [loadingContractDetail, setLoadingContractDetail] = useState(false);
   const [showEditContract, setShowEditContract] = useState(false);
   const [savingContract, setSavingContract] = useState(false);
+  const [selectedContract, setSelectedContract] = useState(null);
   const [contractForm, setContractForm] = useState({
     tenantId: "",
     startDate: "",
@@ -196,8 +197,7 @@ export default function ViewDetailRoom({ roomId, onBack }) {
     setShowMakeInvoice(true);
   };
 
-  const handleViewContract = async () => {
-    const contractId = room?.contract?.id;
+  const handleViewContract = async (contractId) => {
     if (!contractId) {
       toast.error("This room has no contract to view");
       return;
@@ -216,8 +216,7 @@ export default function ViewDetailRoom({ roomId, onBack }) {
     }
   };
 
-  const handleOpenEditContract = () => {
-    const contract = room?.contract;
+  const handleOpenEditContract = (contract) => {
     if (!contract?.id) {
       toast.error("This room has no contract to edit");
       return;
@@ -230,11 +229,12 @@ export default function ViewDetailRoom({ roomId, onBack }) {
       endDate: toInputDate(contract.endDate || contract.end),
       terms: contract.terms || "",
     });
+    setSelectedContract(contract);
     setShowEditContract(true);
   };
 
   const handleSaveContract = async () => {
-    const contract = room?.contract;
+    const contract = selectedContract || room?.contract;
     if (!contract?.id) {
       toast.error("This room has no contract to update");
       return;
@@ -261,6 +261,7 @@ export default function ViewDetailRoom({ roomId, onBack }) {
       });
       toast.success("Contract updated successfully");
       setShowEditContract(false);
+      setSelectedContract(null);
       await fetchRoomDetail();
     } catch (err) {
       toast.error(err?.message || "Failed to update contract");
@@ -269,8 +270,7 @@ export default function ViewDetailRoom({ roomId, onBack }) {
     }
   };
 
-  const handleDeleteContract = async () => {
-    const contract = room?.contract;
+  const handleDeleteContract = async (contract) => {
     if (!contract?.id) {
       toast.error("This room has no contract to delete");
       return;
@@ -289,6 +289,7 @@ export default function ViewDetailRoom({ roomId, onBack }) {
       await deleteContract(contract.id);
       toast.success("Contract deleted successfully");
       setShowContractDetail(false);
+      setSelectedContract(null);
       setContractDetail(null);
       await fetchRoomDetail();
     } catch (err) {
@@ -323,6 +324,18 @@ export default function ViewDetailRoom({ roomId, onBack }) {
       : room.paymentStatus === "PAID"
         ? "bg-emerald-100 text-emerald-700"
         : "bg-slate-100 text-slate-600";
+  const contractHistory =
+    Array.isArray(room.contractHistory) && room.contractHistory.length > 0
+      ? room.contractHistory
+      : room.contract?.id
+        ? [room.contract]
+        : [];
+  const getContractStatusStyle = (status) => {
+    if (status === "ACTIVE") return "bg-emerald-100 text-emerald-700";
+    if (status === "UPCOMING") return "bg-amber-100 text-amber-700";
+    if (status === "EXPIRED") return "bg-slate-100 text-slate-600";
+    return "bg-slate-100 text-slate-600";
+  };
 
   return (
     <div className="space-y-8">
@@ -663,70 +676,86 @@ export default function ViewDetailRoom({ roomId, onBack }) {
           <div className="flex items-center justify-between">
             <h4 className="font-semibold text-gray-900">Room Contract</h4>
             <div className="text-xs text-gray-500">
-              {room.contract?.id
-                ? `Contract #${room.contract.id}`
-                : "No active contract"}
+              {contractHistory.length > 0
+                ? `${contractHistory.length} contract(s)`
+                : "No contract"}
             </div>
           </div>
 
-          {room.contract?.id ? (
-            <div className="border border-slate-200 rounded-lg p-4 bg-slate-50 space-y-3">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
-                <div>
-                  <div className="text-xs text-gray-500">Start Date</div>
-                  <div className="font-medium text-gray-900">
-                    {formatDate(room.contract.startDate || room.contract.start)}
+          {contractHistory.length > 0 ? (
+            <div className="space-y-3 max-h-120 overflow-y-auto pr-1">
+              {contractHistory.map((contract) => (
+                <div
+                  key={contract.id}
+                  className="border border-slate-200 rounded-lg p-4 bg-slate-50 space-y-3"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="text-sm font-medium text-slate-800">
+                      Contract #{contract.id}
+                    </div>
+                    <span
+                      className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${getContractStatusStyle(contract.status)}`}
+                    >
+                      {contract.status || "-"}
+                    </span>
                   </div>
-                </div>
-                <div>
-                  <div className="text-xs text-gray-500">End Date</div>
-                  <div className="font-medium text-gray-900">
-                    {formatDate(room.contract.endDate || room.contract.end)}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-xs text-gray-500">Tenant</div>
-                  <div className="font-medium text-gray-900">
-                    {room.contract.tenant?.fullName ||
-                      room.tenants?.[0]?.fullName ||
-                      "-"}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-xs text-gray-500">Status</div>
-                  <div className="font-medium text-gray-900">
-                    {room.contract.status || "-"}
-                  </div>
-                </div>
-              </div>
 
-              <div>
-                <div className="text-xs text-gray-500">Terms</div>
-                <div className="text-sm text-gray-700 mt-1 whitespace-pre-wrap">
-                  {room.contract.terms || "No terms"}
-                </div>
-              </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
+                    <div>
+                      <div className="text-xs text-gray-500">Start Date</div>
+                      <div className="font-medium text-gray-900">
+                        {formatDate(contract.startDate || contract.start)}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-500">End Date</div>
+                      <div className="font-medium text-gray-900">
+                        {formatDate(contract.endDate || contract.end)}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-500">Tenant</div>
+                      <div className="font-medium text-gray-900">
+                        {contract.tenant?.fullName || "-"}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-500">Tenant Email</div>
+                      <div className="font-medium text-gray-900 break-all">
+                        {contract.tenant?.email || "-"}
+                      </div>
+                    </div>
+                  </div>
 
-              <div className="flex flex-wrap gap-2 justify-end">
-                <button
-                  onClick={handleViewContract}
-                  className="px-3 py-2 rounded-md border border-indigo-200 text-indigo-600 hover:bg-indigo-50 text-sm"
-                >
-                  View
-                </button>
-                <button
-                  onClick={handleOpenEditContract}
-                  className="px-3 py-2 rounded-md border border-blue-200 text-blue-600 hover:bg-blue-50 text-sm"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={handleDeleteContract}
-                  className="px-3 py-2 rounded-md border border-red-200 text-red-600 hover:bg-red-50 text-sm"
-                >
-                  Delete
-                </button>
-              </div>
+                  <div>
+                    <div className="text-xs text-gray-500">Terms</div>
+                    <div className="text-sm text-gray-700 mt-1 whitespace-pre-wrap">
+                      {contract.terms || "No terms"}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2 justify-end">
+                    <button
+                      onClick={() => handleViewContract(contract.id)}
+                      className="px-3 py-2 rounded-md border border-indigo-200 text-indigo-600 hover:bg-indigo-50 text-sm"
+                    >
+                      View
+                    </button>
+                    <button
+                      onClick={() => handleOpenEditContract(contract)}
+                      className="px-3 py-2 rounded-md border border-blue-200 text-blue-600 hover:bg-blue-50 text-sm"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDeleteContract(contract)}
+                      className="px-3 py-2 rounded-md border border-red-200 text-red-600 hover:bg-red-50 text-sm"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           ) : (
             <div className="text-sm text-gray-500 italic">
@@ -1031,7 +1060,10 @@ export default function ViewDetailRoom({ roomId, onBack }) {
 
             <div className="px-5 py-4 border-t border-gray-200 flex justify-end gap-3">
               <button
-                onClick={() => setShowEditContract(false)}
+                onClick={() => {
+                  setShowEditContract(false);
+                  setSelectedContract(null);
+                }}
                 disabled={savingContract}
                 className="px-4 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50"
               >
