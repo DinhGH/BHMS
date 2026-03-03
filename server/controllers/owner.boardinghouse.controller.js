@@ -19,13 +19,6 @@ export const getAllBoardingHouses = async (req, res) => {
         rooms: {
           include: {
             Tenant: true,
-            Invoice: {
-              orderBy: { createdAt: "desc" },
-              take: 1, // invoice mới nhất
-              include: {
-                payment: true,
-              },
-            },
           },
         },
       },
@@ -44,15 +37,8 @@ export const getAllBoardingHouses = async (req, res) => {
 
         h.rooms.forEach((room) => {
           const hasTenant = room.Tenant.length > 0;
-          const latestInvoice = room.Invoice[0];
-
-          const isPaidInvoice =
-            latestInvoice &&
-            latestInvoice.status === "PAID" &&
-            latestInvoice.payment.some((p) => p.confirmed === true);
-
-          // 🔥 CHỈ OCCUPIED KHI: có người + đã thanh toán
-          const isOccupied = hasTenant && isPaidInvoice;
+          // Occupied = currently has at least one tenant in room
+          const isOccupied = hasTenant;
 
           if (isOccupied) {
             occupied++;

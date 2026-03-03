@@ -2,8 +2,6 @@ import { useMemo, useState } from "react";
 import { toast } from "react-hot-toast";
 import api from "../server/api";
 
-const STATUS_OPTIONS = ["PENDING", "PAID", "OVERDUE"];
-
 export default function EditInvoiceModal({
   invoice,
   roomId,
@@ -38,7 +36,7 @@ export default function EditInvoiceModal({
     electricMeterAfter: Number(inferredElectricAfter || 0),
     waterMeterAfter: Number(inferredWaterAfter || 0),
     serviceCost: invoice?.serviceCost ?? 0,
-    status: invoice?.status ?? "PENDING",
+    status: "PENDING",
   });
   const [loading, setLoading] = useState(false);
 
@@ -105,7 +103,7 @@ export default function EditInvoiceModal({
           electricMeterAfter: Number(form.electricMeterAfter),
           waterMeterAfter: Number(form.waterMeterAfter),
           serviceCost: Number(form.serviceCost),
-          status: form.status,
+          status: "PENDING",
         },
       );
       toast.success(
@@ -125,13 +123,13 @@ export default function EditInvoiceModal({
   if (!invoice) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
-      <div className="bg-white rounded-xl shadow-lg w-120 p-6 space-y-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4 py-6 backdrop-blur-sm">
+      <div className="w-full max-w-2xl space-y-4 rounded-xl border border-slate-200 bg-white p-6 text-slate-900 shadow-xl dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
         <h2 className="text-lg font-semibold">Edit Invoice</h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Month</label>
+            <label className="mb-1 block text-sm font-medium">Month</label>
             <input
               type="number"
               min="1"
@@ -139,35 +137,35 @@ export default function EditInvoiceModal({
               name="month"
               value={form.month}
               onChange={handleChange}
-              className="w-full border rounded-md p-2"
+              className="w-full rounded-md border border-slate-300 bg-white p-2 text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-400/30 dark:border-slate-600 dark:bg-slate-950 dark:text-slate-100"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Year</label>
+            <label className="mb-1 block text-sm font-medium">Year</label>
             <input
               type="number"
               min="2000"
               name="year"
               value={form.year}
               onChange={handleChange}
-              className="w-full border rounded-md p-2"
+              className="w-full rounded-md border border-slate-300 bg-white p-2 text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-400/30 dark:border-slate-600 dark:bg-slate-950 dark:text-slate-100"
             />
           </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Room Price</label>
+            <label className="mb-1 block text-sm font-medium">Room Price</label>
             <input
               type="number"
               name="roomPrice"
               value={form.roomPrice}
               onChange={handleChange}
-              className="w-full border rounded-md p-2"
+              className="w-full rounded-md border border-slate-300 bg-white p-2 text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-400/30 dark:border-slate-600 dark:bg-slate-950 dark:text-slate-100"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">
+            <label className="mb-1 block text-sm font-medium">
               Electric Meter (new reading)
             </label>
             <input
@@ -176,15 +174,15 @@ export default function EditInvoiceModal({
               name="electricMeterAfter"
               value={form.electricMeterAfter}
               onChange={handleChange}
-              className="w-full border rounded-md p-2"
+              className="w-full rounded-md border border-slate-300 bg-white p-2 text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-400/30 dark:border-slate-600 dark:bg-slate-950 dark:text-slate-100"
             />
-            <div className="text-xs text-gray-500 mt-1">
+            <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
               Previous: {previousElectric} · Rate: {formatUsd(electricFee)} ·
               Cost: {formatUsd(electricCost)}
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">
+            <label className="mb-1 block text-sm font-medium">
               Water Meter (new reading)
             </label>
             <input
@@ -193,15 +191,15 @@ export default function EditInvoiceModal({
               name="waterMeterAfter"
               value={form.waterMeterAfter}
               onChange={handleChange}
-              className="w-full border rounded-md p-2"
+              className="w-full rounded-md border border-slate-300 bg-white p-2 text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-400/30 dark:border-slate-600 dark:bg-slate-950 dark:text-slate-100"
             />
-            <div className="text-xs text-gray-500 mt-1">
+            <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
               Previous: {previousWater} · Rate: {formatUsd(waterFee)} · Cost:{" "}
               {formatUsd(waterCost)}
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">
+            <label className="mb-1 block text-sm font-medium">
               Service Cost
             </label>
             <input
@@ -209,43 +207,42 @@ export default function EditInvoiceModal({
               name="serviceCost"
               value={form.serviceCost}
               onChange={handleChange}
-              className="w-full border rounded-md p-2"
+              className="w-full rounded-md border border-slate-300 bg-white p-2 text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-400/30 dark:border-slate-600 dark:bg-slate-950 dark:text-slate-100"
             />
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1">Status</label>
+          <label className="mb-1 block text-sm font-medium">Status</label>
           <select
             name="status"
-            value={form.status}
-            onChange={handleChange}
-            className="w-full border rounded-md p-2"
+            value="PENDING"
+            disabled
+            className="w-full cursor-not-allowed rounded-md border border-amber-300 bg-amber-50 p-2 text-amber-800 disabled:opacity-100 dark:border-amber-700/60 dark:bg-amber-900/20 dark:text-amber-200"
           >
-            {STATUS_OPTIONS.map((status) => (
-              <option key={status} value={status}>
-                {status}
-              </option>
-            ))}
+            <option value="PENDING">PENDING</option>
           </select>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            When an invoice is edited, status is automatically reset to pending.
+          </p>
         </div>
 
-        <div className="bg-blue-50 border border-blue-200 rounded-md p-3 text-sm text-gray-700">
+        <div className="rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-slate-700 dark:border-blue-700/50 dark:bg-blue-900/25 dark:text-slate-100">
           Total: <strong>{formatUsd(totalAmount)}</strong>
         </div>
 
-        <div className="flex justify-end gap-3 pt-2 border-t">
+        <div className="flex justify-end gap-3 border-t border-slate-200 pt-2 dark:border-slate-700">
           <button
             onClick={onClose}
             disabled={loading}
-            className="px-4 py-2 rounded-md bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
+            className="rounded-md bg-slate-200 px-4 py-2 text-slate-800 hover:bg-slate-300 disabled:opacity-50 dark:bg-slate-700 dark:text-slate-100 dark:hover:bg-slate-600"
           >
             Cancel
           </button>
           <button
             onClick={handleSubmit}
             disabled={loading}
-            className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+            className="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
           >
             {loading ? "Saving..." : "Save"}
           </button>

@@ -38,6 +38,7 @@ import {
   getOwnerProfile,
   updateOwnerProfile,
   changePassword,
+  runOwnerOverdueScan,
 } from "../controllers/owner.profile.controller.js";
 import { uploadOwnerImage } from "../controllers/owner.upload.controller.js";
 import { getOwnerDashboard } from "../controllers/owner.dashboard.controller.js";
@@ -65,6 +66,7 @@ router.get("/profile", getOwnerProfile);
 router.get("/dashboard", getOwnerDashboard);
 router.put("/profile", updateOwnerProfile);
 router.put("/change-password", changePassword);
+router.post("/profile/overdue-scan", runOwnerOverdueScan);
 router.post("/uploads/image", upload.single("image"), uploadOwnerImage);
 
 //boarding house

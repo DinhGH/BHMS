@@ -24,7 +24,7 @@ const getNextRunTime = (hour, minute) => {
  * Converts PENDING invoices to OVERDUE if they're older than 7 days
  * Sends notification email to all tenants in the room
  */
-export async function checkAndMarkOverdueInvoices() {
+export async function checkAndMarkOverdueInvoices(ownerId = null) {
   try {
     // Calculate cutoff date based on each invoice createdAt
     const cutoffDate = new Date();
@@ -37,6 +37,15 @@ export async function checkAndMarkOverdueInvoices() {
         createdAt: {
           lte: cutoffDate,
         },
+        ...(ownerId
+          ? {
+              Room: {
+                house: {
+                  ownerId,
+                },
+              },
+            }
+          : {}),
       },
       include: {
         Room: {
@@ -61,7 +70,12 @@ export async function checkAndMarkOverdueInvoices() {
     });
 
     if (overdueInvoices.length === 0) {
-      return { processed: 0, sent: 0 };
+      return {
+        processed: 0,
+        sent: 0,
+        scanned: 0,
+        overdueAfterDays: OVERDUE_AFTER_DAYS,
+      };
     }
 
     let emailsSent = 0;
@@ -124,9 +138,11 @@ export async function checkAndMarkOverdueInvoices() {
     }
 
     const result = {
+      scanned: overdueInvoices.length,
       processed: processedIds.length,
       sent: emailsSent,
       invoiceIds: processedIds,
+      overdueAfterDays: OVERDUE_AFTER_DAYS,
     };
     return result;
   } catch (error) {
@@ -134,7 +150,13 @@ export async function checkAndMarkOverdueInvoices() {
       message: error?.message,
       stack: error?.stack,
     });
-    return { processed: 0, sent: 0, error: error?.message };
+    return {
+      processed: 0,
+      sent: 0,
+      scanned: 0,
+      overdueAfterDays: OVERDUE_AFTER_DAYS,
+      error: error?.message,
+    };
   }
 }
 

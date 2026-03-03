@@ -19,6 +19,7 @@ export default function OwnerProfileModal({ open, onClose, onProfileUpdate }) {
   });
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingQr, setUploadingQr] = useState(false);
+  const [scanningOverdue, setScanningOverdue] = useState(false);
 
   // Fetch profile khi mở modal
   useEffect(() => {
@@ -169,6 +170,44 @@ export default function OwnerProfileModal({ open, onClose, onProfileUpdate }) {
     });
   };
 
+  const handleRunOverdueScan = async () => {
+    const confirmed = await confirm({
+      title: "Scan overdue invoices",
+      message:
+        "This will scan your invoices older than 7 days in PENDING status, mark them OVERDUE, and send reminder emails. Continue?",
+      confirmText: "Scan now",
+      variant: "default",
+    });
+
+    if (!confirmed) return;
+
+    try {
+      setScanningOverdue(true);
+
+      const result = await api.post("/api/owner/profile/overdue-scan", {});
+      const stats = result?.data || {};
+      const processed = Number(stats?.processed || 0);
+      const sent = Number(stats?.sent || 0);
+      const scanned = Number(stats?.scanned || 0);
+      const overdueAfterDays = Number(stats?.overdueAfterDays || 7);
+
+      if (processed === 0) {
+        toast.success(
+          `No pending invoices older than ${overdueAfterDays} days were found.`,
+        );
+      } else {
+        toast.success(
+          `Scan done: ${scanned} found, ${processed} marked OVERDUE, ${sent} email(s) sent.`,
+        );
+      }
+    } catch (err) {
+      console.error("Overdue scan error:", err);
+      toast.error(err?.message || "Failed to scan overdue invoices");
+    } finally {
+      setScanningOverdue(false);
+    }
+  };
+
   if (!open) return null;
 
   return (
@@ -217,7 +256,7 @@ export default function OwnerProfileModal({ open, onClose, onProfileUpdate }) {
                     className="w-24 h-24 rounded-full border border-slate-200 object-cover shadow-lg"
                   />
                 ) : (
-                  <div className="w-24 h-24 rounded-full bg-gradient-to-br from-slate-600 to-slate-700 flex items-center justify-center text-white text-4xl font-bold shadow-lg">
+                  <div className="w-24 h-24 rounded-full bg-linear-to-br from-slate-600 to-slate-700 flex items-center justify-center text-white text-4xl font-bold shadow-lg">
                     {(profileData.fullName || profileData.email || "O")
                       .charAt(0)
                       .toUpperCase()}
@@ -266,6 +305,16 @@ export default function OwnerProfileModal({ open, onClose, onProfileUpdate }) {
                 className="w-full mt-4 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800 transition font-medium text-sm"
               >
                 Edit Profile
+              </button>
+
+              <button
+                onClick={handleRunOverdueScan}
+                disabled={scanningOverdue || loading}
+                className="w-full px-4 py-2 rounded-lg border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 transition font-medium text-sm disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {scanningOverdue
+                  ? "Scanning overdue invoices..."
+                  : "Scan & Send Overdue Emails"}
               </button>
             </div>
           )}

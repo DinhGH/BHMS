@@ -547,9 +547,8 @@ export const updateInvoice = async (req, res) => {
         .json({ message: "Total amount must be greater than 0" });
     }
 
-    const nextStatus = req.body?.status || invoice.status;
-    const statusChanged = invoice.status !== nextStatus;
-    const nowPaid = nextStatus === "PAID" && invoice.status !== "PAID";
+    const nextStatus = "PENDING";
+    const nowPaid = false;
 
     const updated = await prisma.$transaction(async (tx) => {
       const updatedInvoice = await tx.invoice.update({

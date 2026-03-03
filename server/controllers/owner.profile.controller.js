@@ -1,5 +1,6 @@
 import { prisma } from "../lib/prisma.js";
 import bcrypt from "bcryptjs";
+import { checkAndMarkOverdueInvoices } from "../services/overdueService.js";
 
 /* ================= GET OWNER PROFILE ================= */
 export const getOwnerProfile = async (req, res) => {
@@ -187,5 +188,34 @@ export const changePassword = async (req, res) => {
   } catch (err) {
     console.error("changePassword:", err);
     res.status(500).json({ message: "Server error" });
+  }
+};
+
+/* ================= MANUAL OVERDUE SCAN ================= */
+export const runOwnerOverdueScan = async (req, res) => {
+  try {
+    const ownerId = req.ownerId;
+
+    if (!ownerId) {
+      return res.status(400).json({ message: "Owner not found" });
+    }
+
+    const result = await checkAndMarkOverdueInvoices(ownerId);
+
+    if (result?.error) {
+      return res.status(500).json({
+        message: "Overdue scan failed",
+        details: result.error,
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: "Overdue scan completed",
+      data: result,
+    });
+  } catch (err) {
+    console.error("runOwnerOverdueScan:", err);
+    return res.status(500).json({ message: "Server error" });
   }
 };
